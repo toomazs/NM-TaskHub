@@ -15,9 +15,22 @@ um sistema simples de kanban com backend de API em **golang (fiber)** e frontend
 
 ---
 
+## imagens
+
+- login <br> <br>
+  <img src="https://i.imgur.com/nAjDLKQ.jpeg" width="500"/><br><br>
+
+- tela principal kanban <br> <br>
+  <img src="https://i.imgur.com/l75pjmV.jpeg" width="500"/><br><br>
+
+- modal nova tarefa <br> <br>
+  <img src="https://i.imgur.com/GpLOSCf.jpeg" width="300"/><br><br>  
+
+---
+
 ## como rodar
 
-1. instala o go (1.18+): [go.dev](https://go.dev/doc/install)
+1. verifique a versao do go (1.18+): [go.dev](https://go.dev/doc/install)
 2. clona o projeto:
    ```bash
    git clone https://github.com/toomazs/nm-kanban-api.git
