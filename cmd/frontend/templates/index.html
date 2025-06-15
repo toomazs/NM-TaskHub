@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NM Kanban</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div id="loginSection">
+        <div class="login-container">
+            <div class="login-form">
+                <h2><i class="fas fa-network-wired"></i> N-MULTIFIBRA</h2>
+                <p>Faça login para acessar o Kanban</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required value="admin@kanban.local">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" required value="admin123">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Entrar</button>
+                    <div id="loginError" class="error-message" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+        </div>
+
+
+    <div id="kanbanSection" style="display: none;">
+        <div class="header">
+            <h1><i class="fas fa-network-wired"></i> N-MULTIFIBRA</h1>
+            <p>Projeto Kanban para o Suporte</p>
+            <div class="header-actions">
+                 <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalTasks">0</div>
+                        <div>Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="pendingTasks">0</div>
+                        <div>Pendentes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="completedTasks">0</div>
+                        <div>Concluídas</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-logout">Sair <i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+
+        <div class="kanban-container">
+            <div class="column" data-column="validacoes">
+                <div class="column-header">
+                    <div class="column-title"><i class="fas fa-check-circle"></i> Terceirizada - Validações <span class="column-count">0</span></div>
+                    <button class="add-task-btn" onclick="openModal('validacoes')"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+            <div class="column" data-column="escallo">
+                <div class="column-header">
+                    <div class="column-title"><i class="fas fa-phone"></i> O.S. - Escallo <span class="column-count">0</span></div>
+                    <button class="add-task-btn" onclick="openModal('escallo')"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+            <div class="column" data-column="casos-suporte">
+                <div class="column-header">
+                    <div class="column-title"><i class="fas fa-headset"></i> Casos Suporte <span class="column-count">0</span></div>
+                    <button class="add-task-btn" onclick="openModal('casos-suporte')"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+            <div class="column" data-column="upgrades-retencao">
+                <div class="column-header">
+                    <div class="column-title"><i class="fas fa-arrow-up"></i> Upgrades/Retenção <span class="column-count">0</span></div>
+                    <button class="add-task-btn" onclick="openModal('upgrades-retencao')"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+            <div class="column" data-column="reagendamentos">
+                <div class="column-header">
+                    <div class="column-title"><i class="fas fa-calendar-alt"></i> O.S. - Reagendamentos <span class="column-count">0</span></div>
+                    <button class="add-task-btn" onclick="openModal('reagendamentos')"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+        </div>
+    </div>
+
+
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Nova Tarefa</h2>
+        <form id="taskForm">
+            <div class="form-group">
+                <label for="taskTitle">Título</label>
+                <input type="text" id="taskTitle" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="taskDescription">Descrição</label>
+                <textarea id="taskDescription" name="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="taskAssignee">Responsável</label>
+                <input type="text" id="taskAssignee" name="assignee">
+            </div>
+            <div class="form-group">
+                <label for="taskPriority">Prioridade</label>
+                <select id="taskPriority" name="priority">
+                    <option value="baixa">Baixa</option>
+                    <option value="media" selected>Média</option>
+                    <option value="alta">Alta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="taskDate">Data de Entrega</label>
+                <input type="date" id="taskDate" name="date">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
