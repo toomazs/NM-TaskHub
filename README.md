@@ -1,7 +1,7 @@
 
-# kanban API -  n-multifibra
+# Kanban API -  N-Multifibra
 
-um sistema simples de kanban com backend em **golang (fiber)** e frontend em **html, css e javascript**. o projeto é feito para ser simples, rápido e executado localmente com uma configuração mínima.
+um sistema simples de kanban com backend de API em **golang (fiber)** e frontend em **html, css e javascript**. o projeto é feito para ser simples, rápido e executado localmente com uma configuração mínima.
 
 - login e logout com cookie
 - usuários padrão já cadastrados
@@ -35,17 +35,4 @@ um sistema simples de kanban com backend em **golang (fiber)** e frontend em **h
 
 ---
 
-## usuários padrão para login
-
-| usuário   | email                   | senha        | permissão |
-|-----------|-------------------------|--------------|-----------|
-| admin     | admin@kanban.local      | admin123     | admin     |
-| eduardo   | eduardo@kanban.local    | nm12345678   | usuário   |
-| marques   | marques@kanban.local    | nm12345678   | usuário   |
-| rosa      | rosa@kanban.local       | nm12345678   | usuário   |
-| miyake    | miyake@kanban.local     | nm12345678   | usuário   |
-| gomes     | gomes@kanban.local      | nm12345678   | usuário   |
-| pedro     | pedro@kanban.local      | nm12345678   | usuário   |
-| rodrigo   | rodrigo@kanban.local    | nm12345678   | usuário   |
-| rubens    | rubens@kanban.local     | nm12345678   | usuário   |
-
+## usuários padrão para login estão dentro do `main.go`
