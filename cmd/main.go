@@ -297,7 +297,17 @@ func (app *App) createBoard(c *fiber.Ctx) error {
 	}
 	boardID, _ := result.LastInsertId()
 
-	defaultColumns := []string{"Terceirizada - Validações", "O.S. - Escallo", "Casos Suporte", "Upgrades/Retenção", "O.S. - Reagendamentos"}
+	// CORREÇÃO: Ordem das colunas ajustada e nova coluna "Atualização PPPoE" adicionada.
+	defaultColumns := []string{
+		"Casos Suporte",
+		"Upgrades/Retenção",
+		"Terceirizada - Validações",
+		"O.S. - Escallo",
+		"O.S. - Reagendamentos",
+		"Atualização PPPoE",
+		"Solucionado",
+		"Não Solucionado",
+	}
 	for i, title := range defaultColumns {
 		_, err := app.db.Exec(`INSERT INTO columns (board_id, title, position) VALUES (?, ?, ?)`, boardID, title, i)
 		if err != nil {
