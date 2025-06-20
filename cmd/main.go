@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"embed"
@@ -227,32 +228,57 @@ func (app *App) handleAvatarUpload(c *fiber.Ctx) error {
 	}
 	defer src.Close()
 
+	fileBytes, err := io.ReadAll(src)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao ler o arquivo"})
+	}
+
 	ext := filepath.Ext(file.Filename)
 	fileName := fmt.Sprintf("avatar-%s%s", userID, ext)
-	filePath := filepath.Join("./static/avatars", fileName)
-	fileURL := fmt.Sprintf("/static/avatars/%s", fileName)
 
-	dst, err := os.Create(filePath)
+	supabaseURL := os.Getenv("SUPABASE_PROJECT_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
+
+	uploadURL := fmt.Sprintf("%s/storage/v1/object/avatars/%s", supabaseURL, fileName)
+
+	req, err := http.NewRequest("POST", uploadURL, bytes.NewReader(fileBytes))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao criar o arquivo no servidor"})
+		log.Printf("❌ Erro ao criar requisição para o Supabase: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro interno ao preparar upload"})
 	}
-	defer dst.Close()
 
-	if _, err = io.Copy(dst, src); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao salvar o arquivo"})
+	req.Header.Set("Authorization", "Bearer "+supabaseKey)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("x-upsert", "true")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("❌ Erro ao fazer upload para o Supabase: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro interno ao fazer upload"})
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("❌ Supabase retornou status não-OK: %s, Body: %s", resp.Status, string(body))
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Falha ao armazenar o arquivo"})
+	}
+
+	publicURL := fmt.Sprintf("%s/storage/v1/object/public/avatars/%s", supabaseURL, fileName)
 
 	query := `
 		UPDATE auth.users
 		SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('avatar_url', $1::text)
 		WHERE id = $2
 	`
-	_, err = app.db.Exec(context.Background(), query, fileURL, userID)
+	_, err = app.db.Exec(context.Background(), query, publicURL, userID)
 	if err != nil {
+		log.Printf("❌ Erro ao atualizar o avatar do usuário no DB: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao atualizar perfil"})
 	}
 
-	return c.JSON(fiber.Map{"avatar_url": fileURL})
+	return c.JSON(fiber.Map{"avatar_url": publicURL})
 }
 
 // obtém o ID do board a partir de um ID de card
