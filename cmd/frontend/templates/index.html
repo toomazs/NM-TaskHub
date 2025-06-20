@@ -5,23 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NM Kanban</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="shortcut icon" href="/static/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body class="login-page"> <div id="loader" class="loader" style="display: none;">
+        <div class="spinner">
+            <div class="dot1"></div>
+            <div class="dot2"></div>
+            <div class="dot3"></div>
+        </div>
+    </div>
 
     <div id="loginSection">
         <div class="login-container">
             <div class="login-form">
-                <h2><i class="fas fa-network-wired"></i> N-MULTIFIBRA</h2>
-                <p>Faça login para acessar o Kanban</p>
+
+            <div style="text-align: center; margin-bottom: 16px;">
+                <img src="/static/logo.png" alt="Logo N-MULTIFIBRA" style="height: 80px;">
+            </div>
+
                 <form id="loginForm">
-                    <div class="form-group">
+                    <div class="form-group2">
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required value="admin@kanban.local">
+                        <input type="email" id="email" name="email" required placeholder="seu@email.com">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group2">
                         <label for="password">Senha</label>
-                        <input type="password" id="password" name="password" required value="admin123">
+                        <input type="password" id="password" name="password" required placeholder="Sua senha">
                     </div>
                     <button type="submit" class="btn btn-primary">Entrar</button>
                     <div id="loginError" class="error-message" style="display: none;"></div>
@@ -30,224 +40,427 @@
         </div>
     </div>
 
+    <div id="sidebar" class="sidebar" style="display: none;"> <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="/static/logo.png" alt="Logo N-MULTIFIBRA">
+                <div class="logo-text">
+                    <h1>NM Kanban</h1>
+                    <span>Sistema de Gestão</span>
+                </div>
+            </div>
+            </div>
+
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item active" data-section="suporte">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-headset"></i>
+                        <span>Suporte</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="ligacoes">
+                    <a href="ativos.html" class="nav-link">
+                        <i class="fas fa-phone-volume"></i>
+                        <span>Ligações Ativas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="avaliacoes">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-star-half-alt"></i>
+                        <span>Avaliações Negativas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="dashboard">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="monitoramento">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>NMT Monitoramento</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="agenda">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>Agenda Diária</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="avatar-container">
+                    <div class="user-avatar" id="userAvatar">
+                    </div>
+                    <label for="avatarUpload" class="avatar-upload-label" title="Trocar foto">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="avatarUpload" name="avatar" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Usuário</div>
+                    <div class="user-role">Colaborador</div>
+                </div>
+            </div>
+
+            <button class="btn-logout-sidebar" id="btnLogoutSidebar">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sair</span>
+            </button>
+        </div>
+    </div>
+
+    <button id="toggleSidebar" class="toggle-sidebar">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <div id="kanbanSection" style="display: none;">
         <div class="header">
             <div class="header-main">
-                <h1><i class="fas fa-network-wired"></i> N-MULTIFIBRA</h1>
-                <p>Projeto Kanban para o Suporte</p>
+                <h2><i class="fas fa-headset"></i> Suporte </h2>
             </div>
             <div class="header-actions">
                  <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-number" id="totalTasks">0</div>
-                        <div>Total</div>
-                    </div>
-                    <div class="stat-item">
+                    <div class="stat-item clickable-stat" id="pendingTasksStat" onclick="openStatsModal('pendente')">
                         <div class="stat-number" id="pendingTasks">0</div>
-                        <div>Pendentes</div>
+                            <div><i class="fa-solid fa-spinner"></i> Pendentes </div>
                     </div>
-                    <div class="stat-item">
+                    <div class="stat-item clickable-stat" id="solvedTasksStat" onclick="openStatsModal('solucionado')">
                         <div class="stat-number" id="completedTasks">0</div>
-                        <div>Concluídas</div>
+                        <div><i class="fas fa-check-circle"></i> Solucionados</div>
+                    </div>
+                    <div class="stat-item clickable-stat" id="unsolvedTasksStat" onclick="openStatsModal('nao-solucionado')">
+                        <div class="stat-number" id="failedTasks">0</div>
+                        <div><i class="fas fa-times-circle"></i> Não Solucionados</div>
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-logout">Sair <i class="fas fa-sign-out-alt"></i></button>
             </div>
         </div>
 
-        <div class="kanban-container">
-            <div class="column" data-column="casos-suporte">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-headset"></i> Casos Suporte <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('casos-suporte')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+<div class="kanban-container horizontal-scroll-container">
             </div>
-
-            <div class="column" data-column="upgrades-retencao">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-arrow-up"></i> Upgrades/Retenção <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('upgrades-retencao')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-            
-            <div class="column" data-column="validacoes">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-check-circle"></i> Terceirizada - Validações <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('validacoes')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-
-            <div class="column" data-column="escallo">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-phone"></i> O.S. - Escallo <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('escallo')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-
-            <div class="column" data-column="reagendamentos">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-calendar-alt"></i> O.S. - Reagendamentos <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('reagendamentos')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-
-            <div class="column" data-column="atualizacao-pppoe">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-sync-alt"></i> Atualização PPPoE <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('atualizacao-pppoe')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-            
-            <div class="column" data-column="solucionado">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-check-double"></i> Solucionado <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('solucionado')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-
-            <div class="column" data-column="nao-solucionado">
-                <div class="column-header">
-                    <div class="column-title"><i class="fas fa-times-circle"></i> Não Solucionado <span class="column-count">0</span></div>
-                    <button class="add-task-btn" onclick="openModal('nao-solucionado')"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-            </div>
-        </div>
     </div>
 
-    <div id="taskModal" class="modal">
-        <div class="modal-content priority-media">
-            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            
-            <div class="modal-header">
-                <h2 id="modalTitle"><i class="fas fa-edit"></i> Tarefa</h2>
-            </div>
-            
-            <div class="modal-body">
-                <div class="modal-left">
-                    <form id="taskForm">
-                        <div class="form-group priority-group-inline">
-                            <label>Defina a Prioridade:</label>
+<div id="suporteSection" class="content-section" style="display: none;">
+    <div class="content-header">
+        <h2><i class="fas fa-headset"></i> Dashboard</h2>
+        <p>Dashboard suporte</p>
+    </div>
+    <div class="content-body">
+        <div class="placeholder-content">
+            <i class="fas fa-headset placeholder-icon"></i>
+            <h3>Seção de Suporte</h3>
+            <p>Esta seção será implementada em breve</p>
+        </div>
+    </div>
+</div>
+
+<div id="ligacoesSection" class="content-section" style="display: none;">
+    <div class="content-header">
+        <h2><i class="fas fa-phone-volume"></i> Ligações Ativas</h2>
+        <p>Monitore ligações em andamento</p>
+    </div>
+    <div class="content-body">
+        <div class="placeholder-content">
+            <i class="fas fa-phone-volume placeholder-icon"></i>
+            <h3>Ligações Ativas</h3>
+            <p>Esta seção será implementada em breve</p>
+        </div>
+    </div>
+</div>
+
+<div id="avaliacoesSection" class="content-section" style="display: none;">
+    <div class="content-header">
+        <h2><i class="fas fa-star-half-alt"></i> Avaliações Negativas</h2>
+        <p>Acompanhe avaliações que precisam de atenção</p>
+    </div>
+    <div class="content-body">
+        <div class="placeholder-content">
+            <i class="fas fa-star-half-alt placeholder-icon"></i>
+            <h3>Avaliações Negativas</h3>
+            <p>Esta seção será implementada em breve</p>
+        </div>
+    </div>
+</div>
+
+<div id="monitoramentoSection" class="content-section" style="display: none;">
+    <div class="content-header">
+        <h2><i class="fas fa-chart-line"></i> NMT Monitoramento</h2>
+        <p>Dashboard de monitoramento do sistema</p>
+    </div>
+    <div class="content-body">
+        <div class="placeholder-content">
+            <i class="fas fa-chart-line placeholder-icon"></i>
+            <h3>NMT Monitoramento</h3>
+            <p>Esta seção será implementada em breve</p>
+        </div>
+    </div>
+</div>
+
+<div id="agendaSection" class="content-section" style="display: none;">
+    <div class="content-header">
+        <h2><i class="fas fa-calendar-day"></i> Agenda Diária</h2>
+        <p>Organize suas tarefas e compromissos</p>
+    </div>
+    <div class="content-body">
+        <div class="placeholder-content">
+            <i class="fas fa-calendar-day placeholder-icon"></i>
+            <h3>Agenda Diária</h3>
+            <p>Esta seção será implementada em breve</p>
+        </div>
+    </div>
+</div>
+
+<div id="taskModal" class="modal">
+    <div class="modal-content priority-media">
+        <button class="modal-close" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="modal-header">
+            <h2 id="modalTitle">
+                <i class="fas fa-edit"></i> 
+                <span>Tarefa</span>
+            </h2>
+        </div>
+        
+        <div class="modal-body">
+            <div class="modal-main">
+                <form id="taskForm">
+                    <div class="form-section">
+                        <div class="form-group priority-group">
+                            <label class="section-label">
+                                <i class="fas fa-flag"></i>
+                                Prioridade
+                            </label>
                             <div class="priority-options">
                                 <label class="priority-radio">
                                     <input type="radio" name="priority" value="baixa">
-                                    <span class="priority-dot priority-baixa"></span>
-                                    Normal
+                                    <span class="priority-indicator priority-baixa"></span>
+                                    <span class="priority-text">Normal</span>
                                 </label>
                                 <label class="priority-radio">
                                     <input type="radio" name="priority" value="media" checked>
-                                    <span class="priority-dot priority-media"></span>
-                                    Importante
+                                    <span class="priority-indicator priority-media"></span>
+                                    <span class="priority-text">Importante</span>
                                 </label>
                                 <label class="priority-radio">
                                     <input type="radio" name="priority" value="alta">
-                                    <span class="priority-dot priority-alta"></span>
-                                    Crítico
+                                    <span class="priority-indicator priority-alta"></span>
+                                    <span class="priority-text">Crítico</span>
                                 </label>
                             </div>
                         </div>
-                        
+                    </div>
+
+                    <div class="form-section">
                         <div class="form-group">
-                            <label for="taskTitle">ID do Cliente</label>
-                            <input type="text" id="taskTitle" name="title" required>
+                            <label for="taskTitle" class="form-label">
+                                <i class="fas fa-user"></i>
+                                ID e Nome do Cliente
+                            </label>
+                            <input type="text" id="taskTitle" name="title" class="form-input" required>
                         </div>
                         
-                        <div class="form-row">
-                             <div class="form-group">
-                                <label for="taskDate">Data de Entrega:</label>
-                                <input type="date" id="taskDate" name="date">
-                            </div>
-                            <div class="form-group">
-                                <label for="taskAssignee">Defina o Colaborador:</label>
-                                <select id="taskAssignee" name="assignee">
-                                </select>
-                            </div>
+                        <div class="form-group">
+                                <label for="taskDate" class="form-label">
+                                    <i class="fas fa-calendar"></i>
+                                    Data e Hora de Entrega
+                                </label>
+                                <input type="datetime-local" id="taskDate" name="date" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user-tag"></i>
+                                Colaborador
+                            </label>
+                            <input type="hidden" id="taskAssignee" name="assignee">
+                            <div id="assignee-selector" class="assignee-selector-grid"></div>
                         </div>
 
                         <div id="new-task-description-group" class="form-group">
-                            <label for="taskNewDescription">Defina um Comentário: (Obrigatório)</label>
-                            <textarea id="taskNewDescription" name="description" placeholder="Descreva um comentário..."></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-solved" id="btn-solve">
-                                <i class="fas fa-check"></i> Solucionado
-                            </button>
-                            <button type="button" class="btn btn-unsolved" id="btn-unsolve">
-                                <i class="fas fa-times"></i> Não Solucionado
-                            </button>
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="modal-right">
-                    <div class="comments-section">
-                        <div class="comment-group">
-                            <div class="comment-header">
-                                <i class="fas fa-eye"></i>
-                                <span>Observações</span>
-                                <button type="button" class="add-comment-btn" onclick="addComment('observacoes')">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <div class="comments-list" id="observacoes-comments"></div>
-                        </div>
-
-                        <div class="comment-group">
-                            <div class="comment-header">
-                                <i class="fas fa-phone"></i>
-                                <span>Tentativas de Contato</span>
-                                <button type="button" class="add-comment-btn" onclick="addComment('tentativas')">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <div class="comments-list" id="tentativas-comments"></div>
-                        </div>
-
-                        <div class="comment-group">
-                            <div class="comment-header">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Resolução (desfecho)</span>
-                                <button type="button" class="add-comment-btn" onclick="addComment('resolucao')">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <div class="comments-list" id="resolucao-comments"></div>
+                            <label for="taskNewDescription" class="form-label">
+                                <i class="fas fa-comment"></i>
+                                Comentário Inicial
+                                <span class="required">*</span>
+                            </label>
+                            <textarea id="taskNewDescription" name="description" class="form-textarea" 
+                                placeholder="Descreva um comentário inicial..." rows="4"></textarea>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
+
+<div class="form-actions">
+    <div class="status-buttons">
+        <button type="button" class="btn btn-solved" id="btn-solve">
+            <i class="fas fa-check"></i>
+            <span>Solucionado</span>
+        </button>
+        <button type="button" class="btn btn-unsolved" id="btn-unsolve">
+            <i class="fas fa-times"></i>
+            <span>Não Solucionado</span>
+        </button>
+        
+        <button type="button" class="btn btn-secondary" id="btn-return-to-scale" style="display: none;">
+            <i class="fas fa-undo"></i>
+            <span>Retornar à Escala</span>
+        </button>
     </div>
-
-    <div id="commentModal" class="modal comment-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="commentModalTitle">Adicionar Comentário</h3>
-                <button class="modal-close" onclick="closeCommentModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="commentForm">
-                    <div class="form-group">
-                        <textarea id="commentText" placeholder="Digite seu comentário..." required></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Adicionar</button>
-                        <button type="button" class="btn btn-secondary" onclick="closeCommentModal()">Cancelar</button>
-                    </div>
+    <button type="submit" class="btn btn-primary" id="btn-confirm-task">
+        <i class="fas fa-check-circle"></i>
+        <span>Confirmar</span>
+    </button>
+</div>
                 </form>
             </div>
+
+            <div class="modal-comments">
+                <div class="comments-header">
+                    <h3>
+                        <i class="fas fa-comments"></i>
+                        Acompanhamento
+                    </h3>
+                </div>
+
+                <div class="comments-container">
+                    <div class="comment-section">
+                        <div class="comment-header">
+                            <div class="comment-title">
+                                <i class="fas fa-eye"></i>
+                                <span>Observações</span>
+                            </div>
+                            <button type="button" class="add-comment-btn" onclick="toggleCommentInput('observacoes')">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="comments-list" id="observacoes-comments"></div>
+                        <div class="comment-input-container" id="observacoes-input">
+                            <textarea placeholder="Adicionar observação..." rows="3"></textarea>
+                            <div class="comment-actions">
+                                <button type="button" class="btn-save" onclick="saveComment('observacoes')">
+                                    <i class="fas fa-check"></i>
+                                    Salvar
+                                </button>
+                                <button type="button" class="btn-cancel" onclick="cancelComment('observacoes')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comment-section">
+                        <div class="comment-header">
+                            <div class="comment-title">
+                                <i class="fas fa-phone"></i>
+                                <span>Tentativas de Contato</span>
+                            </div>
+                            <button type="button" class="add-comment-btn" onclick="toggleCommentInput('tentativas')">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="comments-list" id="tentativas-comments"></div>
+                        <div class="comment-input-container" id="tentativas-input">
+                            <textarea placeholder="Adicionar tentativa de contato..." rows="3"></textarea>
+                            <div class="comment-actions">
+                                <button type="button" class="btn-save" onclick="saveComment('tentativas')">
+                                    <i class="fas fa-check"></i>
+                                    Salvar
+                                </button>
+                                <button type="button" class="btn-cancel" onclick="cancelComment('tentativas')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comment-section">
+                        <div class="comment-header">
+                            <div class="comment-title">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Resolução</span>
+                            </div>
+                            <button type="button" class="add-comment-btn" onclick="toggleCommentInput('resolucao')">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="comments-list" id="resolucao-comments"></div>
+                        <div class="comment-input-container" id="resolucao-input">
+                            <textarea placeholder="Adicionar resolução..." rows="3"></textarea>
+                            <div class="comment-actions">
+                                <button type="button" class="btn-save" onclick="saveComment('resolucao')">
+                                    <i class="fas fa-check"></i>
+                                    Salvar
+                                </button>
+                                <button type="button" class="btn-cancel" onclick="cancelComment('resolucao')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
+<div id="statsModal" class="modal">
+    <div class="modal-content stats-modal">
+        <button class="modal-close" onclick="closeStatsModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="modal-header">
+            <h2 id="statsModalTitle"></h2>
+<div class="stats-filter-container">
+    <div class="filter-controls">
+        <i class="fas fa-filter"></i>
+        <label for="statsFilterUser">Filtrar:</label>
+        <select id="statsFilterUser" class="form-select"></select>
+    </div>
+    <div id="statsTotalCount" class="stats-total"></div>
+</div>
+        </div>
+        <div class="stats-body" id="statsModalBody">
+        </div>
+    </div>
+</div>
+
+<div id="columnModal" class="modal">
+    <div class="modal-content stats-modal"> <button class="modal-close" onclick="closeColumnModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="modal-header">
+            <h2 id="columnModalTitle">
+                <i class="fas fa-columns"></i>
+                <span>Nova Coluna</span>
+            </h2>
+        </div>
+        <div class="modal-body" style="padding: 2rem;">
+            <form id="columnForm">
+                <input type="hidden" id="columnId" name="id">
+                <div class="form-group">
+                    <label for="columnTitle" class="form-label"><i class="fas fa-heading"></i> Título da Coluna</label>
+                    <input type="text" id="columnTitle" name="title" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="columnColor" class="form-label"><i class="fas fa-palette"></i> Cor da Coluna</label>
+                    <input type="color" id="columnColor" name="color" class="form-input" value="#e4e6ea">
+                </div>
+                <div class="form-actions" style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeColumnModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-confirm-column">
+                        <i class="fas fa-check-circle"></i> <span>Salvar Coluna</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/script.js"></script>
 </body>
 </html>
