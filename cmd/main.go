@@ -788,7 +788,7 @@ func main() {
 	fiberApp.Use(logger.New(), recover.New())
 
 	fiberApp.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://nmkanban.onrender.com, http://localhost:8080",
+		AllowOrigins:     "https://nm-kanban-api.onrender.com, http://localhost:8080",
 		AllowCredentials: true,
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
