@@ -378,23 +378,60 @@ func (app *App) deleteColumn(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "deleted"})
 }
 
+// deleta um quadro se o usuário for o proprietário
+func (app *App) deleteBoard(c *fiber.Ctx) error {
+	boardID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de board inválido"})
+	}
+	userID := c.Locals("userID").(string)
+
+	var ownerID string
+	err = app.db.QueryRow(context.Background(), "SELECT owner_id FROM boards WHERE id = $1", boardID).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Quadro não encontrado"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao verificar o quadro"})
+	}
+	if ownerID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Acesso negado. Você não é o dono deste quadro."})
+	}
+
+	_, err = app.db.Exec(context.Background(), "DELETE FROM boards WHERE id = $1", boardID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao deletar o quadro"})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
 // endpoints API
 func (app *App) setupRoutes(fiberApp *fiber.App) {
 	api := fiberApp.Group("/api")
 	protected := api.Use(app.authMiddleware)
 
+	// rotas de Usuários
 	protected.Get("/users", app.getUsers)
-	protected.Get("/boards", app.getBoards)
+	protected.Post("/user/avatar", app.handleAvatarUpload)
+
+	// rotas de Boards
+	protected.Get("/boards/public", app.getPublicBoards)
+	protected.Get("/boards/private", app.getPrivateBoards)
 	protected.Post("/boards", app.createBoard)
+	protected.Delete("/boards/:id", app.deleteBoard)
+
+	// rotas de Colunas (com verificação de permissão)
 	protected.Get("/boards/:id/columns", app.getColumns)
 	protected.Post("/columns", app.createColumn)
 	protected.Delete("/columns/:id", app.deleteColumn)
+
+	// rotas de Cards (com verificação de permissão)
 	protected.Get("/columns/:id/cards", app.getCards)
 	protected.Post("/columns/:id/cards", app.createCard)
 	protected.Put("/cards/:id", app.updateCard)
 	protected.Delete("/cards/:id", app.deleteCard)
 	protected.Put("/cards/:id/move", app.moveCard)
-	protected.Post("/user/avatar", app.handleAvatarUpload)
 }
 
 // obtém todos os usuários
@@ -434,53 +471,16 @@ func (app *App) getUsers(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
-// cria um board padrão para um usuário
-func (app *App) createDefaultBoard(userID string) (Board, error) {
-	var board Board
-	board.OwnerID = userID
-	board.Title = "Kanban Principal"
-	board.Description = "Board de trabalho padrão"
-	board.IsPublic = true
-	board.Color = "#0079bf"
-
-	var boardID int
-	err := app.db.QueryRow(context.Background(), `
-		INSERT INTO boards (title, description, owner_id, is_public, color)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id`,
-		board.Title, board.Description, board.OwnerID, board.IsPublic, board.Color).Scan(&boardID)
-
-	if err != nil {
-		return board, fmt.Errorf("erro ao criar board padrão: %w", err)
-	}
-	board.ID = boardID
-
-	defaultColumns := []string{"Casos Suporte", "Upgrades/Retenção", "Escallo", "Solucionado", "Não Solucionado"}
-	for i, title := range defaultColumns {
-		_, err := app.db.Exec(context.Background(), `INSERT INTO columns (board_id, title, position) VALUES ($1, $2, $3)`, boardID, title, i)
-		if err != nil {
-		}
-	}
-	return board, nil
-}
-
-// obtém os boards de um usuário
-func (app *App) getBoards(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(string)
-	conn, err := app.db.Acquire(context.Background())
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "erro de conexão"})
-	}
-	defer conn.Release()
-
+// obtém apenas os boards públicos
+func (app *App) getPublicBoards(c *fiber.Ctx) error {
 	query := `SELECT id, title, description, owner_id, created_at, updated_at, color, is_public
 			  FROM boards
-			  WHERE owner_id = $1 OR is_public = true
-			  ORDER BY created_at DESC`
+			  WHERE is_public = true
+			  ORDER BY created_at DESC LIMIT 1`
 
-	rows, err := conn.Query(context.Background(), query, userID)
+	rows, err := app.db.Query(context.Background(), query)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "erro ao buscar boards"})
+		return c.Status(500).JSON(fiber.Map{"error": "erro ao buscar boards públicos"})
 	}
 	defer rows.Close()
 
@@ -495,12 +495,32 @@ func (app *App) getBoards(c *fiber.Ctx) error {
 		boards = append(boards, board)
 	}
 
-	if len(boards) == 0 {
-		newBoard, err := app.createDefaultBoard(userID)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "falha ao criar board padrão", "details": err.Error()})
+	return c.JSON(boards)
+}
+
+// obtém os boards privados do usuário logado
+func (app *App) getPrivateBoards(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	query := `SELECT id, title, description, owner_id, created_at, updated_at, color, is_public
+			  FROM boards
+			  WHERE owner_id = $1 AND is_public = false
+			  ORDER BY created_at DESC`
+
+	rows, err := app.db.Query(context.Background(), query, userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "erro ao buscar seus boards privados"})
+	}
+	defer rows.Close()
+
+	boards := make([]Board, 0)
+	for rows.Next() {
+		var board Board
+		if err := rows.Scan(&board.ID, &board.Title, &board.Description,
+			&board.OwnerID, &board.CreatedAt, &board.UpdatedAt,
+			&board.Color, &board.IsPublic); err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "erro ao ler board privado"})
 		}
-		boards = append(boards, newBoard)
+		boards = append(boards, board)
 	}
 
 	return c.JSON(boards)
@@ -510,33 +530,46 @@ func (app *App) getBoards(c *fiber.Ctx) error {
 func (app *App) createBoard(c *fiber.Ctx) error {
 	var reqBoard Board
 	if err := c.BodyParser(&reqBoard); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "dados invalidos"})
+		return c.Status(400).JSON(fiber.Map{"error": "dados inválidos"})
 	}
 	userID := c.Locals("userID").(string)
 
-	newBoard, err := app.createDefaultBoard(userID)
+	if reqBoard.Title == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "O título do quadro é obrigatório"})
+	}
+
+	query := `INSERT INTO boards (title, description, owner_id, is_public, color)
+			  VALUES ($1, $2, $3, $4, $5)
+			  RETURNING id, created_at, updated_at`
+
+	err := app.db.QueryRow(context.Background(), query,
+		reqBoard.Title, reqBoard.Description, userID, reqBoard.IsPublic, reqBoard.Color).Scan(&reqBoard.ID, &reqBoard.CreatedAt, &reqBoard.UpdatedAt)
+
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "erro ao criar board"})
 	}
+	reqBoard.OwnerID = userID
 
-	return c.Status(201).JSON(newBoard)
+	return c.Status(201).JSON(reqBoard)
 }
 
 // obtém as colunas de um board
 func (app *App) getColumns(c *fiber.Ctx) error {
-	boardID := c.Params("id")
-	conn, err := app.db.Acquire(context.Background())
+	boardID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "erro de conexão"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de board inválido"})
 	}
-	defer conn.Release()
+	userID := c.Locals("userID").(string)
+
+	hasPermission, err := app.checkBoardPermission(userID, boardID)
+	if err != nil || !hasPermission {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Acesso negado a este quadro."})
+	}
 
 	query := `SELECT id, board_id, title, position, COALESCE(color, '#e4e6ea') as color
-			  FROM columns
-			  WHERE board_id = $1
-			  ORDER BY position`
+			  FROM columns WHERE board_id = $1 ORDER BY position`
 
-	rows, err := conn.Query(context.Background(), query, boardID)
+	rows, err := app.db.Query(context.Background(), query, boardID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "erro ao buscar colunas"})
 	}
@@ -556,23 +589,26 @@ func (app *App) getColumns(c *fiber.Ctx) error {
 
 // obtém os cards de uma coluna
 func (app *App) getCards(c *fiber.Ctx) error {
-	columnID := c.Params("id")
-	conn, err := app.db.Acquire(context.Background())
+	columnID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "erro de conexão"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de coluna inválido"})
 	}
-	defer conn.Release()
+	userID := c.Locals("userID").(string)
 
-	rows, err := conn.Query(context.Background(), `
-		SELECT
-			id, column_id, title,
-			COALESCE(description, '') as description,
-			COALESCE(assigned_to, '') as assigned_to,
-			COALESCE(priority, 'media') as priority,
-			due_date, position, created_at, updated_at
-		FROM cards
-		WHERE column_id = $1
-		ORDER BY position`, columnID)
+	boardID, err := app.getBoardIDFromColumn(columnID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Coluna não encontrada."})
+	}
+	hasPermission, err := app.checkBoardPermission(userID, boardID)
+	if err != nil || !hasPermission {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Acesso negado a este quadro."})
+	}
+
+	rows, err := app.db.Query(context.Background(), `
+		SELECT id, column_id, title, COALESCE(description, '') as description,
+			   COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority,
+			   due_date, position, created_at, updated_at
+		FROM cards WHERE column_id = $1 ORDER BY position`, columnID)
 
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "erro ao buscar cards"})
@@ -582,11 +618,9 @@ func (app *App) getCards(c *fiber.Ctx) error {
 	cards := make([]Card, 0)
 	for rows.Next() {
 		var card Card
-		if err := rows.Scan(
-			&card.ID, &card.ColumnID, &card.Title, &card.Description,
+		if err := rows.Scan(&card.ID, &card.ColumnID, &card.Title, &card.Description,
 			&card.AssignedTo, &card.Priority, &card.DueDate, &card.Position,
-			&card.CreatedAt, &card.UpdatedAt,
-		); err != nil {
+			&card.CreatedAt, &card.UpdatedAt); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "erro ao ler dados do card"})
 		}
 		cards = append(cards, card)
@@ -597,14 +631,24 @@ func (app *App) getCards(c *fiber.Ctx) error {
 
 // criar um novo card
 func (app *App) createCard(c *fiber.Ctx) error {
-	var card Card
-	if err := c.BodyParser(&card); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "dados de card inválidos"})
-	}
-
 	columnID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID da coluna inválido"})
+	}
+	userID := c.Locals("userID").(string)
+
+	boardID, err := app.getBoardIDFromColumn(columnID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Coluna não encontrada."})
+	}
+	hasPermission, err := app.checkBoardPermission(userID, boardID)
+	if err != nil || !hasPermission {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Acesso negado a este quadro."})
+	}
+
+	var card Card
+	if err := c.BodyParser(&card); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "dados de card inválidos"})
 	}
 	card.ColumnID = columnID
 
@@ -629,12 +673,7 @@ func (app *App) createCard(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "erro ao criar card"})
 	}
 
-	var boardID int
-	err = app.db.QueryRow(context.Background(),
-		"SELECT board_id FROM columns WHERE id = $1", columnID).Scan(&boardID)
-	if err == nil {
-		app.broadcast(boardID, WsMessage{Type: "CARD_CREATED", Payload: card})
-	}
+	app.broadcast(boardID, WsMessage{Type: "CARD_CREATED", Payload: card})
 
 	return c.Status(201).JSON(card)
 }
@@ -684,6 +723,38 @@ func (app *App) updateCard(c *fiber.Ctx) error {
 	}
 
 	return c.Status(200).JSON(fiber.Map{"status": "updated"})
+}
+
+func (app *App) checkBoardPermission(userID string, boardID int) (bool, error) {
+	var ownerID string
+	var isPublic bool
+
+	query := `SELECT owner_id, is_public FROM boards WHERE id = $1`
+	err := app.db.QueryRow(context.Background(), query, boardID).Scan(&ownerID, &isPublic)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if isPublic || ownerID == userID {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// obtém o ID do board a partir de um ID de coluna
+func (app *App) getBoardIDFromColumn(columnID int) (int, error) {
+	var boardID int
+	query := `SELECT board_id FROM columns WHERE id = $1`
+	err := app.db.QueryRow(context.Background(), query, columnID).Scan(&boardID)
+	if err != nil {
+		return 0, err
+	}
+	return boardID, nil
 }
 
 // deletar um card

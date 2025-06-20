@@ -58,6 +58,12 @@
                         <span>Suporte</span>
                     </a>
                 </li>
+            <li class="nav-item" data-section="private-boards">
+                 <a href="#" class="nav-link">
+                     <i class="fas fa-user-lock"></i>
+                        <span>Quadros Privados</span>
+                </a>
+            </li>
                 <li class="nav-item" data-section="ligacoes">
                     <a href="ativos.html" class="nav-link">
                         <i class="fas fa-phone-volume"></i>
@@ -74,12 +80,6 @@
                     <a href="#" class="nav-link">
                         <i class="fas fa-th-large"></i>
                         <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item" data-section="monitoramento">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span>NMT Monitoramento</span>
                     </a>
                 </li>
                 <li class="nav-item" data-section="agenda">
@@ -121,6 +121,12 @@
     <div id="kanbanSection" style="display: none;">
         <div class="header">
             <div class="header-main">
+                <div class="header-main">
+    <button id="btnBackToBoards" class="btn btn-secondary" style="display: none; margin-right: 1.5rem;">
+        <i class="fas fa-arrow-left"></i>
+        <span>Voltar</span>
+    </button>
+</div>
                 <h2><i class="fas fa-headset"></i> Suporte </h2>
             </div>
             <div class="header-actions">
@@ -145,24 +151,38 @@
             </div>
     </div>
 
-<div id="suporteSection" class="content-section" style="display: none;">
+<div id="dashboardSection" class="content-section" style="display: none;">
     <div class="content-header">
-        <h2><i class="fas fa-headset"></i> Dashboard</h2>
-        <p>Dashboard suporte</p>
+        <h2><i class="fas fa-th-large"></i> Dashboard</h2>
+        <p>Gráficos do Suporte</p>
     </div>
     <div class="content-body">
         <div class="placeholder-content">
-            <i class="fas fa-headset placeholder-icon"></i>
-            <h3>Seção de Suporte</h3>
+            <i class="fas fa-th-large placeholder-icon"></i>
+            <h3>Dashboard</h3>
             <p>Esta seção será implementada em breve</p>
         </div>
+    </div>
+</div>
+
+<div id="privateBoardsSection" class="content-section" style="display: none;">
+    <div class="content-header">
+        <h2><i class="fas fa-user-lock"></i> Meus Quadros Privados</h2>
+        <p>Estes quadros são visíveis apenas para você.</p>
+    </div>
+    <div class="content-body">
+        <div class="private-boards-actions" style="margin-bottom: 2rem;">
+            <button id="btnCreatePrivateBoard" class="btn btn-primary"><i class="fas fa-plus"></i> Criar Novo Quadro</button>
+        </div>
+        <div id="privateBoardsList" class="private-boards-container">
+            </div>
     </div>
 </div>
 
 <div id="ligacoesSection" class="content-section" style="display: none;">
     <div class="content-header">
         <h2><i class="fas fa-phone-volume"></i> Ligações Ativas</h2>
-        <p>Monitore ligações em andamento</p>
+        <p>Ligações ativas para condomínios ou bairros</p>
     </div>
     <div class="content-body">
         <div class="placeholder-content">
@@ -176,7 +196,7 @@
 <div id="avaliacoesSection" class="content-section" style="display: none;">
     <div class="content-header">
         <h2><i class="fas fa-star-half-alt"></i> Avaliações Negativas</h2>
-        <p>Acompanhe avaliações que precisam de atenção</p>
+        <p>Avaliações que precisam de atenção e retorno</p>
     </div>
     <div class="content-body">
         <div class="placeholder-content">
@@ -187,24 +207,11 @@
     </div>
 </div>
 
-<div id="monitoramentoSection" class="content-section" style="display: none;">
-    <div class="content-header">
-        <h2><i class="fas fa-chart-line"></i> NMT Monitoramento</h2>
-        <p>Dashboard de monitoramento do sistema</p>
-    </div>
-    <div class="content-body">
-        <div class="placeholder-content">
-            <i class="fas fa-chart-line placeholder-icon"></i>
-            <h3>NMT Monitoramento</h3>
-            <p>Esta seção será implementada em breve</p>
-        </div>
-    </div>
-</div>
 
 <div id="agendaSection" class="content-section" style="display: none;">
     <div class="content-header">
         <h2><i class="fas fa-calendar-day"></i> Agenda Diária</h2>
-        <p>Organize suas tarefas e compromissos</p>
+        <p>Escala do Suporte</p>
     </div>
     <div class="content-body">
         <div class="placeholder-content">
@@ -453,6 +460,39 @@
                     <button type="button" class="btn btn-secondary" onclick="closeColumnModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btn-confirm-column">
                         <i class="fas fa-check-circle"></i> <span>Salvar Coluna</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="privateBoardModal" class="modal">
+    <div class="modal-content stats-modal">
+        <button class="modal-close" onclick="closePrivateBoardModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="modal-header">
+            <h2 id="privateBoardModalTitle">
+                <i class="fas fa-user-lock"></i>
+                <span>Novo Quadro Privado</span>
+            </h2>
+        </div>
+        <div class="modal-body" style="padding: 2rem;">
+            <form id="privateBoardForm">
+                <div class="form-group">
+                    <label for="boardTitle" class="form-label"><i class="fas fa-heading"></i> Título do Quadro</label>
+                    <input type="text" id="boardTitle" name="title" class="form-input" required placeholder="Ex: Projetos Pessoais">
+                </div>
+                <div class="form-group">
+                    <label for="boardDescription" class="form-label"><i class="fas fa-align-left"></i> Descrição (Opcional)</label>
+                    <textarea id="boardDescription" name="description" class="form-textarea" 
+                              placeholder="Descreva o objetivo deste quadro..." rows="4"></textarea>
+                </div>
+                <div class="form-actions" style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closePrivateBoardModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-confirm-board">
+                        <i class="fas fa-check-circle"></i> <span>Salvar Quadro</span>
                     </button>
                 </div>
             </form>

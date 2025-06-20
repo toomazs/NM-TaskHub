@@ -17,6 +17,8 @@ const state = {
     solucionadoId: null,
     naoSolucionadoId: null,
     isModalDirty: false,
+    privateBoards: [],
+    activeSection: 'suporte',
 };
 
 // mapeamento global de nomes de usuário
@@ -138,6 +140,38 @@ function addEventListeners() {
     elements.btnReturnToScale?.addEventListener('click', returnCardToBoard);
     elements.statsFilterUser?.addEventListener('change', updateStatsView);
 
+    document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        const section = item.dataset.section;
+        
+        if (section === 'suporte') {
+            location.reload(); 
+        } else if (section === 'private-boards') {
+            loadAndShowPrivateBoards();
+        } else {
+            showSection(`${section}Section`);
+        }
+    });
+});
+
+    document.getElementById('btnCreatePrivateBoard').addEventListener('click', openPrivateBoardModal);
+
+    document.getElementById('privateBoardForm').addEventListener('submit', handlePrivateBoardSubmit);
+
+    document.getElementById('btnBackToBoards').addEventListener('click', () => {
+    state.ws?.close();
+    
+    loadAndShowPrivateBoards();
+
+    document.getElementById('btnBackToBoards').style.display = 'none';
+    document.querySelector('.header-main h2').innerHTML = '<i class="fas fa-headset"></i> Suporte';
+});
+
     window.addEventListener('click', e => {
         if (e.target.classList.contains('modal')) {
             closeModal();
@@ -238,6 +272,8 @@ function updateSidebarUser() {
 async function initApp() {
     elements.loader.style.display = 'flex';
     document.body.classList.remove('login-page');
+    document.getElementById('btnBackToBoards').style.display = 'none';
+    document.querySelector('.header-main h2').innerHTML = '<i class="fas fa-headset"></i> Suporte'; 
 
     elements.kanbanSection.style.opacity = 0;
     elements.loginSection.style.display = 'none';
@@ -245,7 +281,7 @@ async function initApp() {
     elements.sidebar.style.display = 'flex';
 
     try {
-        const boardsResponse = await api('/boards');
+        const boardsResponse = await api('/boards/public'); 
         if (boardsResponse?.ok) {
             const boards = await boardsResponse.json();
             if (boards.length > 0) {
@@ -311,6 +347,137 @@ async function loadUsers() {
         state.users = response?.ok ? await response.json() : [];
     } catch (error) {
         state.users = [];
+    }
+}
+
+// função para controlar a visibilidade das seções
+function showSection(sectionId) {
+    document.querySelectorAll('.content-section, #kanbanSection').forEach(section => {
+        section.style.display = 'none';
+    });
+    const sectionElement = document.getElementById(sectionId);
+    if (sectionElement) {
+        sectionElement.style.display = 'block';
+    }
+    state.activeSection = sectionId;
+}
+
+// carrega e exibe os quadros privados
+async function loadAndShowPrivateBoards() {
+    showSection('privateBoardsSection');
+    try {
+        const response = await api('/boards/private');
+        if (response?.ok) {
+            state.privateBoards = await response.json();
+            renderPrivateBoardsList();
+        } else {
+            showError("Não foi possível carregar seus quadros privados.");
+        }
+    } catch (error) {
+        showError("Erro de conexão ao buscar quadros privados.");
+    }
+}
+
+// renderiza a lista de quadros privados
+function renderPrivateBoardsList() {
+    const container = document.getElementById('privateBoardsList');
+    container.innerHTML = ''; 
+    
+    if (state.privateBoards.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted);">Você ainda não tem quadros privados. Crie um!</p>`;
+        return;
+    }
+
+    state.privateBoards.forEach(board => {
+        const card = document.createElement('div');
+        card.className = 'private-board-card';
+        card.dataset.boardId = board.id;
+        
+        card.innerHTML = `
+            <button class="delete-board-btn" title="Excluir quadro">
+                <i class="fas fa-times"></i>
+            </button>
+            <div>
+                <h3><i class="fas fa-user-lock" style="color:${board.color || '#3498db'}"></i>   ${board.title}</h3>
+                <p>${board.description || 'Sem descrição.'}</p>
+            </div>
+            <div class="board-footer">
+                Criado em: ${new Date(board.created_at).toLocaleDateString()}
+            </div>
+        `;
+        
+        card.addEventListener('click', () => selectPrivateBoard(board.id));
+        
+        const deleteBtn = card.querySelector('.delete-board-btn');
+        deleteBtn.addEventListener('click', (event) => handleDeleteBoard(board.id, event));
+
+        container.appendChild(card);
+    });
+}
+
+async function selectPrivateBoard(boardId) {
+    const selectedBoard = state.privateBoards.find(b => b.id === boardId);
+    if (!selectedBoard) return;
+
+    document.getElementById('btnBackToBoards').style.display = 'inline-flex';
+    elements.loader.style.display = 'none';
+    elements.loader.style.display = 'flex';
+    state.board = selectedBoard; 
+    
+    await loadData(); 
+    
+    renderColumns();
+    renderCards();
+    updateStats(); 
+    connectWS();
+    
+    showSection('kanbanSection'); 
+    document.querySelector('.header-main h2').innerHTML = `<i class="fas fa-user-lock"></i> ${state.board.title}`;
+    
+    elements.loader.style.display = 'none';
+}
+
+// lida com a criação de um novo quadro privado
+async function handlePrivateBoardSubmit(e) {
+    e.preventDefault(); 
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const title = formData.get('title');
+    if (!title || title.trim() === '') {
+        showError("O título do quadro é obrigatório.");
+        return;
+    }
+
+    const boardData = {
+        title: title.trim(),
+        description: formData.get('description').trim(),
+        is_public: false,
+        color: '#3498db' 
+    };
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+    try {
+        const response = await api('/boards', {
+            method: 'POST',
+            body: JSON.stringify(boardData)
+        });
+
+        if (response?.ok) {
+            closePrivateBoardModal();
+            await loadAndShowPrivateBoards();
+        } else {
+            const errorData = await response.json();
+            showError(errorData.error || 'Erro ao criar o quadro privado.');
+        }
+    } catch (error) {
+        showError('Erro de conexão ao criar o quadro.');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-check-circle"></i> <span>Salvar Quadro</span>';
     }
 }
 
@@ -588,6 +755,25 @@ async function openModal(columnName, columnId) {
     document.getElementById('taskTitle').focus();
 }
 
+function openPrivateBoardModal() {
+    const form = document.getElementById('privateBoardForm');
+    if (form) {
+        form.reset(); // Limpa o formulário antes de abrir
+    }
+    const modal = document.getElementById('privateBoardModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('boardTitle').focus(); // Foca no campo de título
+    }
+}
+
+function closePrivateBoardModal() {
+    const modal = document.getElementById('privateBoardModal');
+    if (modal) {
+        _performCloseAnimation(modal); // Reutiliza a animação de fechamento
+    }
+}
+
 // abre o modal para editar um card existente
 async function editCard(cardId) {
     const card = state.cards.find(c => c.id === cardId);
@@ -769,6 +955,36 @@ async function handleColumnSubmit(e) {
     }
 }
 
+// função para deletar um quadro
+async function handleDeleteBoard(boardId, event) {
+    event.stopPropagation();
+
+    const boardTitle = state.privateBoards.find(b => b.id === boardId)?.title || "este quadro";
+    if (!confirm(`Tem certeza que deseja excluir "${boardTitle}"?\n\nATENÇÃO: Todas as colunas e tarefas dentro deste quadro serão permanentemente excluídas.`)) {
+        return;
+    }
+
+    try {
+        const response = await api(`/boards/${boardId}`, {
+            method: 'DELETE',
+        });
+
+        if (response?.ok) {
+            const boardCardElement = document.querySelector(`.private-board-card[data-board-id="${boardId}"]`);
+            if (boardCardElement) {
+                boardCardElement.remove();
+            }
+            state.privateBoards = state.privateBoards.filter(b => b.id !== boardId);
+
+        } else {
+            const errorData = await response.json();
+            showError(errorData.error || "Falha ao excluir o quadro.");
+        }
+    } catch (error) {
+        showError("Erro de conexão ao tentar excluir o quadro.");
+    }
+}
+
 // deleta um card
 async function deleteCard(cardId) {
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
@@ -893,7 +1109,9 @@ function handleDrop(e) {
 
 // conecta ao WebSocket para atualizações em tempo real
 function connectWS() {
-    if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) return;
+   
+    state.ws?.close(); 
+    
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
     state.ws = new WebSocket(`${protocol}://${location.host}/ws/board/${state.board.id}`);
     
@@ -925,7 +1143,7 @@ function connectWS() {
                     state.columns.push(payload);
                     state.columns.sort((a,b) => a.position - b.position);
                     renderColumns();
-                    needsFullRender = true;
+                
                  }
                 break;
         }
@@ -936,8 +1154,13 @@ function connectWS() {
         }
     };
     
-    state.ws.onclose = () => setTimeout(connectWS, 5000);
+    state.ws.onclose = () => {
+        // Não tenta reconectar automaticamente para evitar loops indesejados
+        console.log(`WebSocket para o board ${state.board.id} fechado.`);
+    };
+
     state.ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
         state.ws.close();
     };
 }
@@ -1244,6 +1467,9 @@ window.saveComment = section => {
         handleFormInput();
     }
 };
+
+window.openPrivateBoardModal = openPrivateBoardModal;
+window.closePrivateBoardModal = closePrivateBoardModal;
 
 // função global para cancelar a adição de um comentário
 window.cancelComment = section => {
