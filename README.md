@@ -83,14 +83,14 @@ Para rodar este projeto em sua máquina local, siga os passos abaixo.
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/toomazs/NM-Kanban-API.git](https://github.com/toomazs/NM-Kanban-API.git)
-    cd seu-repositorio
+    git clone https://github.com/toomazs/NM-Kanban-API.git
+    cd NM-Kanban-API
     ```
 
 2.  **Crie o arquivo de ambiente:**
     Crie um arquivo chamado `.env` na raiz do projeto e adicione as seguintes variáveis, substituindo pelos valores do seu projeto Supabase:
     ```env
-    # Encontrado em Project Settings > Database > Connection string
+    # Encontrado em Project Settings > Database > Connection String
     DATABASE_URL="postgres://..."
 
     # Encontrado em Project Settings > API > Project API keys
@@ -109,7 +109,7 @@ Para rodar este projeto em sua máquina local, siga os passos abaixo.
     go run main.go
     ```
 
-    O servidor será iniciado localmente na porta `8080` e uma aba do navegador será aberta automaticamente.
+    O servidor será iniciado localmente na porta `8080`.
 
 ---
 
