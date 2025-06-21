@@ -2032,3 +2032,376 @@ body.sidebar-collapsed {
     width: 100%;
     word-break: break-word; /* Adicione esta linha */
 }
+
+/* ============================================= */
+/* ===== 10. ESTILOS PARA NOVAS FEATURES   ===== */
+/* ============================================= */
+
+/* --- Estilos para Convites de Quadro --- */
+.invitations-bell-container {
+    position: relative;
+    margin-top: 1rem;
+    padding: 0 20px;
+}
+
+.invitations-bell {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    position: relative;
+}
+
+.invitations-bell:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.invitations-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--accent-red);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--sidebar-bg);
+}
+
+.invitations-dropdown {
+    display: none;
+    position: absolute;
+    top: 50px;
+    left: 20px;
+    background-color: var(--bg-modal);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-modal);
+    z-index: 1002;
+}
+
+.invitation-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.invitation-item:last-child {
+    border-bottom: none;
+}
+
+.invitation-item p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem 0;
+}
+.invitation-item p strong {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.invitation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+.invitation-actions .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    flex: 1;
+}
+
+/* --- Modal de Convite de Usuário --- */
+.invitable-users-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.invitable-user-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.invitable-user-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.invitable-user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.invitable-user-info .user-avatar {
+    width: 40px;
+    height: 40px;
+}
+
+.invitable-user-details .user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+.invitable-user-details .user-email {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.btn-invite {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+.btn-invite:hover {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+    color: white;
+}
+.btn-invite.invited {
+    background: var(--accent-green);
+    color: white;
+    cursor: not-allowed;
+}
+
+/* --- Membros do Quadro no Header --- */
+.board-members-container {
+    display: flex;
+    align-items: center;
+    padding-left: 1rem; /* Espaço para não colar no título */
+}
+
+.board-member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid var(--bg-secondary);
+    margin-left: -12px;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.board-member-avatar:hover {
+    transform: scale(1.1);
+    z-index: 5;
+}
+
+/* --- Cartão de Quadro Privado Atualizado --- */
+.private-board-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.private-board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.private-board-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+.private-board-header h3 i {
+    margin-right: 0.5rem;
+}
+
+.board-owner-tag {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 0.25rem;
+}
+
+.private-board-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.private-board-actions .btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.private-board-card p {
+    flex-grow: 1;
+    margin-bottom: 1rem;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--sidebar-bg);
+    flex-shrink: 0;
+}
+
+/* --- Estilos para Grade de Convite de Usuário --- */
+.invitable-users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.invitable-user-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: var(--bg-tertiary);
+    text-align: center;
+}
+
+.invitable-user-item .user-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.8rem;
+}
+
+.invitable-user-item .user-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Diminui o texto e o ícone do botão de convite na grade */
+.invitable-user-item .btn-invite {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.invitable-user-item .btn-invite i {
+    margin-right: 0.3rem;
+}
+
+/* --- Estilos para Modal de Gerenciamento de Membros --- */
+.member-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.member-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.member-list-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.member-info .user-avatar {
+    width: 40px;
+    height: 40px;
+}
+
+.member-details .user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.member-details .user-role-tag {
+    font-size: 0.75rem;
+    background-color: var(--accent-blue);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+.btn-remove-member {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.btn-remove-member:hover {
+    background-color: var(--accent-red);
+    border-color: var(--accent-red);
+    color: white;
+}
+
+/* --- Estilos para Seção de Notificações Lidas --- */
+.read-notifications-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-top: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.read-notifications-toggle:hover {
+    background-color: var(--sidebar-hover);
+    color: var(--text-primary);
+}
+
+.read-notifications-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.read-notifications-toggle.active i {
+    transform: rotate(180deg);
+}
+
+.collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.collapsible-content.active {
+    max-height: 300px; /* Altura máxima para a lista de lidas */
+    overflow-y: auto;
+}
+
+/* Estilo para item de notificação já lido */
+.invitation-item.read {
+    opacity: 0.6;
+    background-image: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.02));
+}
+
+.invitation-item.read:hover {
+    opacity: 1;
+}

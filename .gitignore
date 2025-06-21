@@ -1,3 +1,5 @@
 kanban.db
 avatars/
 .env
+Dockerfile
+.dockerignore
