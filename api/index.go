@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/adapter"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -51,9 +51,15 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	app := fiber.New()
 	mainApp := &App{db: getDB()}
 	mainApp.setupRoutes(app)
-	adapter.FiberApp(app)(w, r)
+	// Chamada da função com o pacote corrigido
+	adaptor.FiberApp(app)(w, r)
 }
 
+// =========================================================================================
+// O RESTANTE DO CÓDIGO PERMANECE IGUAL
+// =========================================================================================
+
+// estrutura User
 type User struct {
 	ID        string    `json:"id" db:"id"`
 	Username  string    `json:"username" db:"username"`
@@ -63,6 +69,7 @@ type User struct {
 	Role      string    `json:"role" db:"role"`
 }
 
+// estrutura Board
 type Board struct {
 	ID          int       `json:"id" db:"id"`
 	Title       string    `json:"title" db:"title"`
@@ -74,6 +81,7 @@ type Board struct {
 	IsPublic    bool      `json:"is_public" db:"is_public"`
 }
 
+// estrutura Column
 type Column struct {
 	ID       int    `json:"id" db:"id"`
 	BoardID  int    `json:"board_id" db:"board_id"`
@@ -82,6 +90,7 @@ type Column struct {
 	Color    string `json:"color" db:"color"`
 }
 
+// estrutura Card
 type Card struct {
 	ID          int        `json:"id" db:"id"`
 	ColumnID    int        `json:"column_id" db:"column_id"`
