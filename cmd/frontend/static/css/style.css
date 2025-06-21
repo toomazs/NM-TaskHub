@@ -114,7 +114,7 @@ body.login-page {
    justify-content: center;
    align-items: center;
    min-height: 100vh;
-   background-image: url('/static/fundologin.png'); 
+   background-image: url('../img/fundologin.png'); 
    background-size: cover;
    background-position: center;
    background-repeat: no-repeat;
@@ -2162,7 +2162,7 @@ body.sidebar-collapsed {
 }
 
 .btn-invite {
-    background: var(--bg-card);
+    background: var(--gradient-primary);
     border: 1px solid var(--border-color);
 }
 .btn-invite:hover {
@@ -2404,4 +2404,16 @@ body.sidebar-collapsed {
 
 .invitation-item.read:hover {
     opacity: 1;
+}
+
+/* Em style.css, adicione junto com os outros estilos de botão */
+
+.btn-danger {
+    background: var(--gradient-danger);
+    color: white;
+    box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3);
+}
+
+.btn-danger:hover {
+    box-shadow: 0 6px 20px rgba(248, 81, 73, 0.4);
 }

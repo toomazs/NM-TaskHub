@@ -37,6 +37,7 @@ var templates embed.FS
 //go:embed frontend/static/*
 var static embed.FS
 
+// estrutura user
 type User struct {
 	ID        string    `json:"id" db:"id"`
 	Username  string    `json:"username" db:"username"`
@@ -46,6 +47,7 @@ type User struct {
 	Role      string    `json:"role" db:"role"`
 }
 
+// estrutura board
 type Board struct {
 	ID          int       `json:"id" db:"id"`
 	Title       string    `json:"title" db:"title"`
@@ -58,6 +60,7 @@ type Board struct {
 	OwnerName   string    `json:"owner_name,omitempty" db:"owner_name"`
 }
 
+// estrutura column
 type Column struct {
 	ID       int    `json:"id" db:"id"`
 	BoardID  int    `json:"board_id" db:"board_id"`
@@ -66,6 +69,7 @@ type Column struct {
 	Color    string `json:"color" db:"color"`
 }
 
+// estrutura card
 type Card struct {
 	ID          int        `json:"id" db:"id"`
 	ColumnID    int        `json:"column_id" db:"column_id"`
@@ -79,6 +83,7 @@ type Card struct {
 	Position    int        `json:"position" db:"position"`
 }
 
+// estrutura notification
 type Notification struct {
 	ID             int       `json:"id"`
 	UserID         string    `json:"user_id"`
@@ -91,6 +96,7 @@ type Notification struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
+// estrutura boardinvitation
 type BoardInvitation struct {
 	ID          int       `json:"id" db:"id"`
 	BoardID     int       `json:"board_id" db:"board_id"`
@@ -101,16 +107,19 @@ type BoardInvitation struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 }
 
+// estrutura wsmessage
 type WsMessage struct {
 	Type    string      `json:"type"`
 	Payload interface{} `json:"payload"`
 }
 
+// estrutura reorderpayload
 type ReorderPayload struct {
 	ColumnID       int   `json:"column_id"`
 	OrderedCardIDs []int `json:"ordered_card_ids"`
 }
 
+// estrutura App
 type App struct {
 	db       *pgxpool.Pool
 	clients  map[int]map[*websocket.Conn]bool
@@ -120,6 +129,50 @@ type App struct {
 	}
 }
 
+// mapeamento global
+var userDisplayNameMap = map[string]string{
+	"eduardo@kanban.local": "Eduardo Tomaz",
+	"alison@kanban.local":  "Alison Silva",
+	"marques@kanban.local": "Gabriel Marques",
+	"rosa@kanban.local":    "Gabriel Rosa",
+	"miyake@kanban.local":  "João Miyake",
+	"gomes@kanban.local":   "João Gomes",
+	"rodrigo@kanban.local": "Rodrigo Akira",
+	"rubens@kanban.local":  "Rubens Leite",
+	"kaiky@kanban.local":   "Kaiky Leandro",
+	"pedro@kanban.local":   "Pedro Santos",
+}
+
+// pegar mapeamento
+func (app *App) getDisplayName(ctx context.Context, tx pgx.Tx, userID string) string {
+	var email string
+	var username sql.NullString
+
+	var querier interface {
+		QueryRow(context.Context, string, ...interface{}) pgx.Row
+	}
+	if tx != nil {
+		querier = tx
+	} else {
+		querier = app.db
+	}
+
+	err := querier.QueryRow(ctx, "SELECT email, raw_user_meta_data->>'username' FROM auth.users WHERE id = $1", userID).Scan(&email, &username)
+	if err != nil {
+		log.Printf("Aviso: não foi possível encontrar o nome para o userID %s: %v", userID, err)
+		return "Um usuário"
+	}
+
+	if name, ok := userDisplayNameMap[email]; ok {
+		return name
+	}
+	if username.Valid && username.String != "" {
+		return username.String
+	}
+	return email
+}
+
+// mutex
 func (app *App) getColumnLock(columnID int) *sync.Mutex {
 	app.colLocks.mu.Lock()
 	defer app.colLocks.mu.Unlock()
@@ -132,11 +185,13 @@ func (app *App) getColumnLock(columnID int) *sync.Mutex {
 	return lock
 }
 
+// claims Supabase JWT
 type SupabaseClaims struct {
 	UserID string `json:"sub"`
 	jwt.RegisteredClaims
 }
 
+// conexão com database
 func (app *App) connectDB() error {
 	config, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -154,6 +209,7 @@ func (app *App) connectDB() error {
 	return nil
 }
 
+// middleware auth
 func (app *App) authMiddleware(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -191,6 +247,7 @@ func (app *App) authMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// websocket
 func (app *App) handleWebSocket(c *websocket.Conn) {
 	boardID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -215,6 +272,7 @@ func (app *App) handleWebSocket(c *websocket.Conn) {
 	}
 }
 
+// broadcast
 func (app *App) broadcast(boardID int, message WsMessage) {
 	if clients, ok := app.clients[boardID]; ok {
 		payloadBytes, _ := json.Marshal(message)
@@ -227,6 +285,7 @@ func (app *App) broadcast(boardID int, message WsMessage) {
 	}
 }
 
+// avatar users
 func (app *App) handleAvatarUpload(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 	file, err := c.FormFile("avatar")
@@ -285,6 +344,7 @@ func (app *App) handleAvatarUpload(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"avatar_url": publicURL})
 }
 
+// board por id de card
 func (app *App) getBoardIDFromCard(cardID int) (int, error) {
 	var boardID int
 	query := `SELECT c.board_id FROM columns c
@@ -297,6 +357,7 @@ func (app *App) getBoardIDFromCard(cardID int) (int, error) {
 	return boardID, nil
 }
 
+// endpoint criar coluna
 func (app *App) createColumn(c *fiber.Ctx) error {
 	var col Column
 	if err := c.BodyParser(&col); err != nil {
@@ -326,6 +387,7 @@ func (app *App) createColumn(c *fiber.Ctx) error {
 	return c.Status(201).JSON(col)
 }
 
+// endpoint deletar coluna
 func (app *App) deleteColumn(c *fiber.Ctx) error {
 	columnID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -364,6 +426,7 @@ func (app *App) deleteColumn(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "deleted"})
 }
 
+// endpoint deletar board
 func (app *App) deleteBoard(c *fiber.Ctx) error {
 	boardID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -388,6 +451,7 @@ func (app *App) deleteBoard(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+// endpoints rotas API
 func (app *App) setupRoutes(fiberApp *fiber.App) {
 	api := fiberApp.Group("/api")
 	protected := api.Use(app.authMiddleware)
@@ -415,12 +479,16 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 
 	// Rota para remover membros
 	protected.Delete("/boards/:boardId/members/:memberId", app.removeBoardMember)
+	protected.Post("/boards/:id/leave", app.leaveBoard)
 
 	// Rotas de Notificação
 	protected.Get("/notifications", app.getNotifications)
 	protected.Post("/notifications/:id/read", app.markNotificationRead)
+	protected.Post("/notifications/mark-all-as-read", app.markAllNotificationsRead)
+
 }
 
+// endpoint users
 func (app *App) getUsers(c *fiber.Ctx) error {
 	conn, err := app.db.Acquire(context.Background())
 	if err != nil {
@@ -453,6 +521,7 @@ func (app *App) getUsers(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
+// endpoint boards publicos
 func (app *App) getPublicBoards(c *fiber.Ctx) error {
 	query := `SELECT id, title, description, owner_id, created_at, updated_at, color, is_public
 			  FROM boards
@@ -476,6 +545,7 @@ func (app *App) getPublicBoards(c *fiber.Ctx) error {
 	return c.JSON(boards)
 }
 
+// endpoint boards privados
 func (app *App) getPrivateBoards(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 
@@ -531,6 +601,7 @@ func (app *App) getPrivateBoards(c *fiber.Ctx) error {
 	return c.JSON(boards)
 }
 
+// endpoint criar board
 func (app *App) createBoard(c *fiber.Ctx) error {
 	var reqBoard Board
 	if err := c.BodyParser(&reqBoard); err != nil {
@@ -575,6 +646,7 @@ func (app *App) createBoard(c *fiber.Ctx) error {
 	return c.Status(201).JSON(reqBoard)
 }
 
+// endpoint colunas
 func (app *App) getColumns(c *fiber.Ctx) error {
 	boardID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -611,6 +683,7 @@ func (app *App) getColumns(c *fiber.Ctx) error {
 	return c.JSON(columns)
 }
 
+// pegar boards publicos
 func (app *App) getPublicBoardColumns(c *fiber.Ctx, boardID int) error {
 	tx, err := app.db.Begin(context.Background())
 	if err != nil {
@@ -685,6 +758,7 @@ func (app *App) getPublicBoardColumns(c *fiber.Ctx, boardID int) error {
 	return c.JSON(columns)
 }
 
+// endpoint cards
 func (app *App) getCards(c *fiber.Ctx) error {
 	columnID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -721,6 +795,7 @@ func (app *App) getCards(c *fiber.Ctx) error {
 	return c.JSON(cards)
 }
 
+// pegar user por id auth
 func (app *App) getUserIDByUsername(username string) (string, error) {
 	var userID string
 	query := `SELECT id FROM auth.users WHERE raw_user_meta_data->>'username' = $1 OR email = $1 LIMIT 1`
@@ -734,6 +809,7 @@ func (app *App) getUserIDByUsername(username string) (string, error) {
 	return userID, nil
 }
 
+// endpoint notificacao
 func (app *App) createNotification(tx pgx.Tx, n Notification) error {
 	query := `INSERT INTO notifications 
               (user_id, type, message, related_board_id, related_card_id, invitation_id) 
@@ -795,6 +871,7 @@ func (app *App) createCard(c *fiber.Ctx) error {
 	return c.Status(201).JSON(card)
 }
 
+// endpoint att card
 func (app *App) updateCard(c *fiber.Ctx) error {
 	cardID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -848,6 +925,7 @@ func (app *App) updateCard(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "updated"})
 }
 
+// permissao dos boards
 func (app *App) checkBoardPermission(userID string, boardID int) (bool, error) {
 	var isPublic bool
 	err := app.db.QueryRow(context.Background(), "SELECT is_public FROM boards WHERE id = $1", boardID).Scan(&isPublic)
@@ -886,6 +964,7 @@ func (app *App) checkBoardPermission(userID string, boardID int) (bool, error) {
 	return false, nil
 }
 
+// pegar id do board por coluna
 func (app *App) getBoardIDFromColumn(columnID int) (int, error) {
 	var boardID int
 	query := `SELECT board_id FROM columns WHERE id = $1`
@@ -896,6 +975,7 @@ func (app *App) getBoardIDFromColumn(columnID int) (int, error) {
 	return boardID, nil
 }
 
+// endpoint deletar card
 func (app *App) deleteCard(c *fiber.Ctx) error {
 	cardID, _ := strconv.Atoi(c.Params("id"))
 	boardID, err := app.getBoardIDFromCard(cardID)
@@ -911,6 +991,7 @@ func (app *App) deleteCard(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "deleted"})
 }
 
+// endpoint reordenar card
 func (app *App) reorderCards(c *fiber.Ctx) error {
 	var payload ReorderPayload
 	if err := c.BodyParser(&payload); err != nil {
@@ -952,6 +1033,37 @@ func (app *App) reorderCards(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(fiber.Map{"status": "reordered"})
 }
+
+// endpoint sair do board
+func (app *App) leaveBoard(c *fiber.Ctx) error {
+	boardID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID do quadro inválido"})
+	}
+	userID := c.Locals("userID").(string)
+
+	var ownerID string
+	err = app.db.QueryRow(context.Background(), "SELECT owner_id FROM boards WHERE id = $1", boardID).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Quadro não encontrado"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao verificar o quadro"})
+	}
+
+	if ownerID == userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "O dono do quadro não pode sair. Use a opção de excluir o quadro."})
+	}
+
+	_, err = app.db.Exec(context.Background(), "DELETE FROM board_memberships WHERE board_id = $1 AND user_id = $2", boardID, userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Falha ao sair do quadro."})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// pegar users convidados
 func (app *App) getInvitableUsers(c *fiber.Ctx) error {
 	boardID, _ := strconv.Atoi(c.Params("id"))
 	currentUserID := c.Locals("userID").(string)
@@ -1004,6 +1116,7 @@ func (app *App) getInvitableUsers(c *fiber.Ctx) error {
 	return c.JSON(invitableUsers)
 }
 
+// convidar user
 func (app *App) inviteUserToBoard(c *fiber.Ctx) error {
 	boardID, _ := strconv.Atoi(c.Params("id"))
 	inviterID := c.Locals("userID").(string)
@@ -1048,9 +1161,10 @@ func (app *App) inviteUserToBoard(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao criar o novo convite"})
 	}
 
-	var boardTitle, inviterName string
+	var boardTitle string
 	tx.QueryRow(context.Background(), "SELECT title FROM boards WHERE id = $1", boardID).Scan(&boardTitle)
-	tx.QueryRow(context.Background(), "SELECT COALESCE(raw_user_meta_data->>'username', email) FROM auth.users WHERE id = $1", inviterID).Scan(&inviterName)
+
+	inviterName := app.getDisplayName(context.Background(), tx, inviterID)
 
 	notification := Notification{
 		UserID:         payload.InviteeID,
@@ -1071,6 +1185,7 @@ func (app *App) inviteUserToBoard(c *fiber.Ctx) error {
 	return c.Status(201).JSON(fiber.Map{"status": "invited"})
 }
 
+// responder convite
 func (app *App) respondToInvitation(c *fiber.Ctx) error {
 	invitationID, _ := strconv.Atoi(c.Params("id"))
 	notificationID_str := c.Query("notification_id")
@@ -1111,8 +1226,9 @@ func (app *App) respondToInvitation(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "Erro ao adicionar membro ao quadro"})
 		}
-		var inviteeName string
-		tx.QueryRow(context.Background(), "SELECT COALESCE(raw_user_meta_data->>'username', email) FROM auth.users WHERE id = $1", userID).Scan(&inviteeName)
+
+		inviteeName := app.getDisplayName(context.Background(), tx, userID)
+
 		tx.QueryRow(context.Background(), "SELECT owner_id, title FROM boards WHERE id = $1", boardID).Scan(&ownerID, &boardTitle)
 
 		if ownerID != "" && inviteeName != "" {
@@ -1139,6 +1255,7 @@ func (app *App) respondToInvitation(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "responded"})
 }
 
+// pegar membros board
 func (app *App) getBoardMembers(c *fiber.Ctx) error {
 	boardID, _ := strconv.Atoi(c.Params("id"))
 	userID := c.Locals("userID").(string)
@@ -1166,6 +1283,7 @@ func (app *App) getBoardMembers(c *fiber.Ctx) error {
 	return c.JSON(members)
 }
 
+// pegar notificacoes
 func (app *App) getNotifications(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 	query := `
@@ -1191,6 +1309,7 @@ func (app *App) getNotifications(c *fiber.Ctx) error {
 	return c.JSON(notifications)
 }
 
+// func notificacao lida
 func (app *App) markNotificationRead(c *fiber.Ctx) error {
 	notificationID, _ := strconv.Atoi(c.Params("id"))
 	userID := c.Locals("userID").(string)
@@ -1201,6 +1320,26 @@ func (app *App) markNotificationRead(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func (app *App) markAllNotificationsRead(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "ID do usuário não pôde ser verificado"})
+	}
+
+	query := `UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE`
+
+	cmdTag, err := app.db.Exec(context.Background(), query, userID)
+	if err != nil {
+		log.Printf("❌ Erro ao marcar todas as notificações como lidas para o usuário %s: %v", userID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro interno ao atualizar as notificações"})
+	}
+
+	log.Printf("", cmdTag.RowsAffected(), userID)
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// remover membro board
 func (app *App) removeBoardMember(c *fiber.Ctx) error {
 	boardID, err := strconv.Atoi(c.Params("boardId"))
 	if err != nil {
@@ -1231,6 +1370,7 @@ func (app *App) removeBoardMember(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+// MAIN
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Arquivo .env não encontrado, usando variáveis de ambiente do sistema.")

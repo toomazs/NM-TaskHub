@@ -1,0 +1,26 @@
+<div id="privateTaskModal" class="modal">
+    <div class="modal-content priority-media">
+        <button class="modal-close" onclick="closePrivateTaskModal()"><i class="fas fa-times"></i></button>
+        <div class="modal-header"><h2 id="privateModalTitle"><i class="fas fa-edit"></i><span>Tarefa Privada</span></h2></div>
+        <div class="modal-body">
+            <div class="modal-main">
+                <form id="privateTaskForm">
+                    <div class="form-section"><div class="form-group priority-group"><label class="section-label"><i class="fas fa-flag"></i> Prioridade</label><div class="priority-options"><label class="priority-radio"><input type="radio" name="priority" value="baixa"><span class="priority-indicator priority-baixa"></span><span class="priority-text">Normal</span></label><label class="priority-radio"><input type="radio" name="priority" value="media" checked><span class="priority-indicator priority-media"></span><span class="priority-text">Importante</span></label><label class="priority-radio"><input type="radio" name="priority" value="alta"><span class="priority-indicator priority-alta"></span><span class="priority-text">Crítico</span></label></div></div></div>
+                    <div class="form-section">
+                        <div class="form-group"><label for="privateTaskTitle" class="form-label"><i class="fas fa-tasks"></i> Título da Tarefa</label><input type="text" id="privateTaskTitle" name="title" class="form-input" required></div>
+                        <div class="form-group"><label for="privateTaskDate" class="form-label"><i class="fas fa-calendar"></i> Prazo Final</label><input type="datetime-local" id="privateTaskDate" name="date" class="form-input"></div>
+                        <div class="form-group"><label class="form-label"><i class="fas fa-user-tag"></i> Responsável</label><input type="hidden" id="privateTaskAssignee" name="assignee"><div id="private-assignee-selector" class="assignee-selector-grid"></div></div>
+                        <div id="private-new-task-description-group" class="form-group"><label for="privateTaskNewDescription" class="form-label"><i class="fas fa-comment"></i> Comentário Inicial<span class="required">*</span></label><textarea id="privateTaskNewDescription" name="description" class="form-textarea" placeholder="Descreva um comentário inicial..." rows="4"></textarea></div>
+                    </div>
+                    <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="closePrivateTaskModal()">Cancelar</button><button type="submit" class="btn btn-primary" id="btn-confirm-private-task"><i class="fas fa-check-circle"></i><span>Confirmar</span></button></div>
+                </form>
+            </div>
+            <div class="modal-comments">
+                <div class="comments-header"><h3><i class="fas fa-comments"></i> Comentários</h3></div>
+                <div class="comments-container">
+                    <div class="comment-section"><div class="comment-header"><div class="comment-title"><i class="fas fa-comment-dots"></i><span>Discussão</span></div><button type="button" class="add-comment-btn" onclick="togglePrivateCommentInput()"><i class="fas fa-plus"></i></button></div><div class="comments-list" id="private-comments-list"></div><div class="comment-input-container" id="private-comment-input"><textarea placeholder="Adicionar comentário..." rows="3"></textarea><div class="comment-actions"><button type="button" class="btn-save" onclick="savePrivateComment()"><i class="fas fa-check"></i> Salvar</button><button type="button" class="btn-cancel" onclick="cancelPrivateComment()"><i class="fas fa-times"></i></button></div></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
