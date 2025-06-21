@@ -2000,3 +2000,35 @@ body.sidebar-collapsed {
     display: flex;
     align-items: center;
 }
+
+/* Em style.css, adicione ou modifique estas regras */
+
+.task-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+    word-break: break-word; /* Adicione esta linha */
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word; /* Adicione esta linha para segurança, embora o ellipsis deva cuidar disso */
+}
+
+.assignee-item-name {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    word-break: break-word; /* Adicione esta linha */
+}

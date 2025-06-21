@@ -2,24 +2,25 @@ const SUPABASE_URL = 'https://lzjunqtkldknjynsyhbi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6anVucXRrbGRrbmp5bnN5aGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMDQ0NjksImV4cCI6MjA2NTc4MDQ2OX0.wEN5Y4ls43fQOjHtLjTv85GuIEdFRR5mL5HD4ZTNBTc';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
- // escopo global de estado
 const state = {
     user: null,
     board: null,
     columns: [],
     cards: [],
+    solucionadoId: null,
+    naoSolucionadoId: null,
     users: [],
     editingCardId: null,
     editingColumnId: null,
     currentColumnId: null,
-    ws: null,
-    columnMapping: {},
-    solucionadoId: null,
-    naoSolucionadoId: null,
+    pollingInterval: null, // Para controlar o nosso polling
     isModalDirty: false,
     privateBoards: [],
     activeSection: 'suporte',
 };
+
+// ... (COLE AQUI O RESTANTE DO SEU SCRIPT.JS - Mapeamentos de usuário, etc.) ...
+// O CONTEÚDO ABAIXO É O RESTANTE DO ARQUIVO COM AS FUNÇÕES DE POLLING IMPLEMENTADAS
 
 // mapeamento global de nomes de usuário
 const userDisplayNameMap = {
@@ -123,11 +124,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         statsFilterUser: document.getElementById('statsFilterUser'),
         userName: document.getElementById('userName'),
         userAvatar: document.getElementById('userAvatar'),
+        assigneeSelector: document.getElementById('assignee-selector'),
     };
 
     addEventListeners();
     await checkAuth();
 });
+
+// lida com o clique na lista de responsáveis (delegação de eventos)
+function handleAssigneeClick(event) {
+    const item = event.target.closest('.assignee-item');
+    if (!item) return;
+
+    const container = elements.assigneeSelector;
+    const hiddenInput = document.getElementById('taskAssignee');
+
+    container.querySelectorAll('.assignee-item').forEach(el => el.classList.remove('selected'));
+    item.classList.add('selected');
+    hiddenInput.value = item.dataset.value;
+    handleFormInput();
+}
 
 // adiciona event listeners aos elementos
 function addEventListeners() {
@@ -139,6 +155,7 @@ function addEventListeners() {
     elements.btnUnsolve?.addEventListener('click', () => moveCardToSolved(false));
     elements.btnReturnToScale?.addEventListener('click', returnCardToBoard);
     elements.statsFilterUser?.addEventListener('change', updateStatsView);
+    elements.assigneeSelector?.addEventListener('click', handleAssigneeClick);
 
     document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
@@ -150,33 +167,33 @@ function addEventListeners() {
         const section = item.dataset.section;
         
         if (section === 'suporte') {
+            stopPolling();
             location.reload(); 
         } else if (section === 'private-boards') {
+            stopPolling();
             loadAndShowPrivateBoards();
         } else {
+            stopPolling();
             showSection(`${section}Section`);
         }
     });
 });
 
     document.getElementById('btnCreatePrivateBoard').addEventListener('click', openPrivateBoardModal);
-
     document.getElementById('privateBoardForm').addEventListener('submit', handlePrivateBoardSubmit);
-
     document.getElementById('btnBackToBoards').addEventListener('click', () => {
-    state.ws?.close();
-    
-    loadAndShowPrivateBoards();
-
-    document.getElementById('btnBackToBoards').style.display = 'none';
-    document.querySelector('.header-main h2').innerHTML = '<i class="fas fa-headset"></i> Suporte';
-});
+        stopPolling();
+        loadAndShowPrivateBoards();
+        document.getElementById('btnBackToBoards').style.display = 'none';
+        document.querySelector('.header-main h2').innerHTML = '<i class="fas fa-headset"></i> Suporte';
+    });
 
     window.addEventListener('click', e => {
         if (e.target.classList.contains('modal')) {
             closeModal();
             closeStatsModal();
             closeColumnModal();
+            closePrivateBoardModal();
         }
     });
     
@@ -185,13 +202,13 @@ function addEventListeners() {
             closeModal();
             closeStatsModal();
             closeColumnModal();
+            closePrivateBoardModal();
         }
     });
 
     document.getElementById('avatarUpload')?.addEventListener('change', handleAvatarUpload);
 }
 
-// verifica a autenticação do usuário
 async function checkAuth() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
@@ -202,19 +219,16 @@ async function checkAuth() {
     }
 }
 
-// exibe a tela de login
 function showLogin() {
     elements.kanbanSection.style.display = 'none';
     elements.sidebar.style.display = 'none';
     document.body.classList.add('login-page');
-
     elements.loginSection.style.opacity = 0;
     elements.loginSection.style.display = 'flex';
     elements.loginSection.classList.remove('fade-out');
     elements.loginSection.classList.add('fade-in');
 }
 
-// lida com o submit do formulário de login
 async function handleLogin(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -239,14 +253,12 @@ async function handleLogin(e) {
     }
 }
 
-// realiza o logout do usuário
 async function logout() {
-    state.ws?.close();
+    stopPolling();
     await supabaseClient.auth.signOut();
     location.reload();
 }
 
-// atualiza as informações do usuário na sidebar
 function updateSidebarUser() {
     if (!state.user || !state.users.length) return;
 
@@ -268,13 +280,11 @@ function updateSidebarUser() {
     }
 }
 
-// inicializa a aplicação principal
 async function initApp() {
     elements.loader.style.display = 'flex';
     document.body.classList.remove('login-page');
     document.getElementById('btnBackToBoards').style.display = 'none';
     document.querySelector('.header-main h2').innerHTML = '<i class="fas fa-headset"></i> Suporte'; 
-
     elements.kanbanSection.style.opacity = 0;
     elements.loginSection.style.display = 'none';
     elements.kanbanSection.style.display = 'block';
@@ -287,14 +297,13 @@ async function initApp() {
             if (boards.length > 0) {
                 state.board = boards[0];
                 await loadUsers();
-                await loadData();
-                
+                await loadData(); 
+
                 updateSidebarUser();
                 renderColumns();
                 renderCards();
-                updateStats();
-                connectWS();
-
+                updateStats(); 
+                startPolling(); // Inicia o polling no lugar do WebSocket
                 elements.loader.style.display = 'none';
                 elements.kanbanSection.classList.add('fade-in');
             } else {
@@ -311,36 +320,25 @@ async function initApp() {
     }
 }
 
-// carrega os dados do quadro (colunas e cards)
 async function loadData() {
     const columnsResponse = await api(`/boards/${state.board.id}/columns`);
     if (!columnsResponse?.ok) throw new Error('Erro ao carregar colunas');
     state.columns = await columnsResponse.json();
     state.columns.sort((a,b) => a.position - b.position);
     
-    state.columnMapping = {};
-    const titleMap = {
-        'casos suporte': 'casos-suporte',
-        'upgrades/retenção': 'upgrades-retencao',
-        'escallo': 'escallo',
-        'solucionado': 'solucionado',
-        'não solucionado': 'nao-solucionado'
-    };
-    
+    state.solucionadoId = null;
+    state.naoSolucionadoId = null;
+
     state.columns.forEach(col => {
-        const key = titleMap[col.title.trim().toLowerCase()];
-        if (key) {
-            state.columnMapping[key] = col.id;
-        }
-        if (col.title.trim().toLowerCase() === 'solucionado') state.solucionadoId = col.id;
-        if (col.title.trim().toLowerCase() === 'não solucionado') state.naoSolucionadoId = col.id;
+        const titleLower = col.title.trim().toLowerCase();
+        if (titleLower === 'solucionado') state.solucionadoId = col.id;
+        if (titleLower === 'não solucionado') state.naoSolucionadoId = col.id;
     });
 
     const cardPromises = state.columns.map(col => api(`/columns/${col.id}/cards`).then(res => res?.ok ? res.json() : []));
     state.cards = (await Promise.all(cardPromises)).flat();
 }
 
-// carrega a lista de usuários
 async function loadUsers() {
     try {
         const response = await api('/users');
@@ -350,19 +348,15 @@ async function loadUsers() {
     }
 }
 
-// função para controlar a visibilidade das seções
 function showSection(sectionId) {
     document.querySelectorAll('.content-section, #kanbanSection').forEach(section => {
         section.style.display = 'none';
     });
     const sectionElement = document.getElementById(sectionId);
-    if (sectionElement) {
-        sectionElement.style.display = 'block';
-    }
+    if (sectionElement) sectionElement.style.display = 'block';
     state.activeSection = sectionId;
 }
 
-// carrega e exibe os quadros privados
 async function loadAndShowPrivateBoards() {
     showSection('privateBoardsSection');
     try {
@@ -378,39 +372,26 @@ async function loadAndShowPrivateBoards() {
     }
 }
 
-// renderiza a lista de quadros privados
 function renderPrivateBoardsList() {
     const container = document.getElementById('privateBoardsList');
     container.innerHTML = ''; 
-    
     if (state.privateBoards.length === 0) {
         container.innerHTML = `<p style="color: var(--text-muted);">Você ainda não tem quadros privados. Crie um!</p>`;
         return;
     }
-
     state.privateBoards.forEach(board => {
         const card = document.createElement('div');
         card.className = 'private-board-card';
         card.dataset.boardId = board.id;
-        
         card.innerHTML = `
-            <button class="delete-board-btn" title="Excluir quadro">
-                <i class="fas fa-times"></i>
-            </button>
+            <button class="delete-board-btn" title="Excluir quadro"><i class="fas fa-times"></i></button>
             <div>
-                <h3><i class="fas fa-user-lock" style="color:${board.color || '#3498db'}"></i>   ${board.title}</h3>
+                <h3><i class="fas fa-user-lock" style="color:${board.color || '#3498db'}"></i> ${board.title}</h3>
                 <p>${board.description || 'Sem descrição.'}</p>
             </div>
-            <div class="board-footer">
-                Criado em: ${new Date(board.created_at).toLocaleDateString()}
-            </div>
-        `;
-        
+            <div class="board-footer">Criado em: ${new Date(board.created_at).toLocaleDateString()}</div>`;
         card.addEventListener('click', () => selectPrivateBoard(board.id));
-        
-        const deleteBtn = card.querySelector('.delete-board-btn');
-        deleteBtn.addEventListener('click', (event) => handleDeleteBoard(board.id, event));
-
+        card.querySelector('.delete-board-btn').addEventListener('click', (event) => handleDeleteBoard(board.id, event));
         container.appendChild(card);
     });
 }
@@ -420,52 +401,82 @@ async function selectPrivateBoard(boardId) {
     if (!selectedBoard) return;
 
     document.getElementById('btnBackToBoards').style.display = 'inline-flex';
-    elements.loader.style.display = 'none';
     elements.loader.style.display = 'flex';
     state.board = selectedBoard; 
-    
     await loadData(); 
-    
     renderColumns();
     renderCards();
-    updateStats(); 
-    connectWS();
-    
+    updateStats();
+    startPolling(); // Inicia o polling para o quadro privado
     showSection('kanbanSection'); 
     document.querySelector('.header-main h2').innerHTML = `<i class="fas fa-user-lock"></i> ${state.board.title}`;
-    
     elements.loader.style.display = 'none';
 }
 
-// lida com a criação de um novo quadro privado
+// ----- LÓGICA DE POLLING (Substituindo WebSockets) -----
+
+function stopPolling() {
+    if (state.pollingInterval) {
+        clearInterval(state.pollingInterval);
+        state.pollingInterval = null;
+    }
+}
+
+async function pollForUpdates() {
+    if (!state.board) {
+        stopPolling();
+        return;
+    }
+    // Salva o card que está sendo editado para não fechar o modal
+    const currentlyEditing = state.editingCardId;
+    
+    await loadData();
+    renderColumns();
+    renderCards();
+    updateStats();
+    
+    // Se um card estava sendo editado, reabre o modal com os dados atualizados
+    if (currentlyEditing) {
+        const updatedCard = state.cards.find(c => c.id === currentlyEditing);
+        if (updatedCard) {
+            editCard(currentlyEditing);
+        } else {
+            // O card foi deletado por outro usuário, então fecha o modal
+            closeModal();
+        }
+    }
+}
+
+function startPolling() {
+    stopPolling(); // Para qualquer polling anterior antes de iniciar um novo
+    // Busca atualizações a cada 15 segundos (15000 ms)
+    state.pollingInterval = setInterval(pollForUpdates, 15000);
+}
+
+
+// ... (O restante do arquivo JS continua aqui, sem a função `connectWS`)
+// ... (Copie e cole o resto do seu script.js a partir da função handlePrivateBoardSubmit)
+
 async function handlePrivateBoardSubmit(e) {
     e.preventDefault(); 
     const form = e.target;
     const formData = new FormData(form);
-
     const title = formData.get('title');
     if (!title || title.trim() === '') {
         showError("O título do quadro é obrigatório.");
         return;
     }
-
     const boardData = {
         title: title.trim(),
         description: formData.get('description').trim(),
         is_public: false,
         color: '#3498db' 
     };
-
     const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
-
     try {
-        const response = await api('/boards', {
-            method: 'POST',
-            body: JSON.stringify(boardData)
-        });
-
+        const response = await api('/boards', { method: 'POST', body: JSON.stringify(boardData) });
         if (response?.ok) {
             closePrivateBoardModal();
             await loadAndShowPrivateBoards();
@@ -481,43 +492,34 @@ async function handlePrivateBoardSubmit(e) {
     }
 }
 
-// renderiza as colunas no quadro
 function renderColumns() {
     const kanbanContainer = elements.kanbanContainer;
     kanbanContainer.innerHTML = '';
     
     state.columns.forEach(col => {
-        if (col.id === state.solucionadoId || col.id === state.naoSolucionadoId) {
-            return;
-        }
+        if (col.id === state.solucionadoId || col.id === state.naoSolucionadoId) return;
         kanbanContainer.appendChild(createColumnElement(col));
     });
     
     const addColumnPlaceholder = document.createElement('div');
     addColumnPlaceholder.className = 'add-column-placeholder';
-    addColumnPlaceholder.innerHTML = `
-        <button class="add-column-btn" onclick="openColumnModal()">
-            <i class="fas fa-plus"></i> Adicionar Coluna
-        </button>
-    `;
+    addColumnPlaceholder.innerHTML = `<button class="add-column-btn" onclick="openColumnModal()"><i class="fas fa-plus"></i> Adicionar Coluna</button>`;
     kanbanContainer.appendChild(addColumnPlaceholder);
-
     addDragAndDropListenersToColumns();
 }
 
-// cria o elemento HTML para uma coluna
 function createColumnElement(column) {
     const columnEl = document.createElement('div');
     columnEl.className = 'column';
     columnEl.dataset.columnId = column.id;
-
     const iconMap = {
         'casos suporte': 'fas fa-headset',
         'upgrades/retenção': 'fas fa-arrow-up',
         'escallo': 'fas fa-phone',
+        'a fazer': 'fas fa-list-alt',
+        'em andamento': 'fas fa-tasks'
     };
     const iconClass = iconMap[column.title.toLowerCase()] || "fas fa-columns";
-
     columnEl.innerHTML = `
         <div class="column-header">
             <div class="column-title" style="color: ${column.color};">
@@ -529,37 +531,32 @@ function createColumnElement(column) {
                 <button class="add-task-btn" onclick="openModal(null, ${column.id})"><i class="fas fa-plus"></i></button>
             </div>
         </div>
-        <div class="task-list" data-column-id="${column.id}"></div>
-    `;
+        <div class="task-list" data-column-id="${column.id}"></div>`;
     return columnEl;
 }
 
-// deleta uma coluna
 async function deleteColumn(columnId) {
     if (!confirm('Tem certeza que deseja excluir esta coluna?\n\nATENÇÃO: A coluna deve estar vazia.')) return;
-
     try {
         const response = await api(`/columns/${columnId}`, { method: 'DELETE' });
-
         if (!response.ok) {
             const errorData = await response.json();
             showError(errorData.error || 'Não foi possível excluir a coluna.');
+        } else {
+            pollForUpdates();
         }
     } catch (error) {
         showError('Erro de conexão ao excluir a coluna.');
     }
 }
 
-// adiciona listeners de arrastar e soltar às colunas
 function addDragAndDropListenersToColumns() {
     document.querySelectorAll('.task-list').forEach(taskList => {
         taskList.addEventListener('dragover', e => {
             e.preventDefault();
             e.currentTarget.classList.add('drag-over');
         });
-        taskList.addEventListener('dragleave', e => {
-            e.currentTarget.classList.remove('drag-over');
-        });
+        taskList.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
         taskList.addEventListener('drop', e => {
             e.currentTarget.classList.remove('drag-over');
             handleDrop(e);
@@ -567,13 +564,9 @@ function addDragAndDropListenersToColumns() {
     });
 }
 
-// renderiza os cards nas colunas
 function renderCards() {
     document.querySelectorAll('.task-list').forEach(list => list.innerHTML = '');
-    let activeCards = state.cards.filter(card => 
-        card.column_id !== state.solucionadoId && 
-        card.column_id !== state.naoSolucionadoId
-    );
+    let activeCards = state.cards.filter(c => c.column_id !== state.solucionadoId && c.column_id !== state.naoSolucionadoId);
     activeCards.sort((a, b) => a.position - b.position);
     activeCards.forEach(card => {
         const list = document.querySelector(`.task-list[data-column-id="${card.column_id}"]`);
@@ -581,7 +574,6 @@ function renderCards() {
     });
 }
 
-// cria o elemento de avatar do usuário
 function createUserAvatar(user) {
     const avatarElement = document.createElement('div');
     avatarElement.className = 'assignee-avatar';
@@ -595,64 +587,44 @@ function createUserAvatar(user) {
     return avatarElement;
 }
 
-// cria o elemento HTML para um card
 function createCardElement(card) {
     let isOverdue = false;
     let isDueToday = false;
     const isCompleted = card.column_id === state.solucionadoId || card.column_id === state.naoSolucionadoId;
-
     if (card.due_date && !isCompleted) {
         const now = new Date();
         const dueDate = new Date(card.due_date);
-        if (now > dueDate) {
-            isOverdue = true;
-        } else {
+        if (now > dueDate) isOverdue = true;
+        else {
             const warningTime = new Date(dueDate.getTime());
             warningTime.setHours(warningTime.getHours() - 1);
-            if (now >= warningTime) {
-                isDueToday = true;
-            }
+            if (now >= warningTime) isDueToday = true;
         }
     }
-
     const div = document.createElement('div');
     let taskClasses = `task priority-${card.priority || 'media'}`;
     if (isOverdue) taskClasses += ' overdue';
     if (isDueToday) taskClasses += ' due-today';
-
     div.className = taskClasses;
     div.draggable = true;
     div.dataset.cardId = card.id;
-
     const assignedUser = state.users.find(u => u.username === card.assigned_to || u.email === card.assigned_to);
     const assigneeDisplayName = assignedUser ? (userDisplayNameMap[assignedUser.email] || assignedUser.username) : 'N/A';
     const assigneeAvatarElement = createUserAvatar(assignedUser);
-    
     let statusIconHTML = '';
     if (isOverdue) statusIconHTML = '<i class="fas fa-exclamation-triangle overdue-icon"></i>';
     else if (isDueToday) statusIconHTML = '<i class="fas fa-clock due-today-icon"></i>';
     else if (card.due_date) statusIconHTML = '<i class="fas fa-calendar"></i>';
-    
     div.innerHTML = `
-        <div class="task-actions">
-            <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
-        </div>
-        <div class="task-header">
-            <div class="task-title">${card.title}</div>
-        </div>
+        <div class="task-actions"><button class="action-btn delete-btn"><i class="fas fa-trash"></i></button></div>
+        <div class="task-header"><div class="task-title" style="word-break: break-word;">${card.title}</div></div>
         <div class="task-meta">
-            <div class="task-assignee">
-                ${assigneeAvatarElement.outerHTML}
-                <span>${assigneeDisplayName}</span>
-            </div>
+            <div class="task-assignee">${assigneeAvatarElement.outerHTML}<span>${assigneeDisplayName}</span></div>
             <div class="task-due-info">
-                <span class="task-date-text">
-                    ${card.due_date ? new Date(card.due_date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
-                </span>
+                <span class="task-date-text">${card.due_date ? new Date(card.due_date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</span>
                 <div class="task-status-icons">${statusIconHTML}</div>
             </div>
-        </div>
-    `;
+        </div>`;
     div.addEventListener('click', () => editCard(card.id));
     div.addEventListener('dragstart', e => {
         e.target.classList.add('dragging');
@@ -666,7 +638,6 @@ function createCardElement(card) {
     return div;
 }
 
-// lida com a entrada de dados no formulário do modal
 function handleFormInput() {
     if (state.editingCardId) {
         state.isModalDirty = true;
@@ -674,72 +645,42 @@ function handleFormInput() {
     }
 }
 
-// preenche o seletor de responsáveis
 function populateAssigneeSelector(currentAssignee) {
-    const container = document.getElementById('assignee-selector');
+    const container = elements.assigneeSelector;
     const hiddenInput = document.getElementById('taskAssignee');
     if (!container || !hiddenInput) return;
 
-    container.innerHTML = '';
     hiddenInput.value = '';
 
-    state.users.forEach(user => {
+    const itemsHTML = state.users.map(user => {
         const userIdentifier = user.username || user.email;
         const displayName = userDisplayNameModalMap[user.email] || userDisplayNameMap[user.email] || userIdentifier;
+        const isSelected = userIdentifier === currentAssignee;
+        if (isSelected) hiddenInput.value = userIdentifier;
 
-        const item = document.createElement('div');
-        item.className = 'assignee-item';
-        item.dataset.value = userIdentifier;
+        const avatarHTML = user.avatar 
+            ? `<div class="assignee-item-avatar" style="background-image: url(${user.avatar})"></div>`
+            : `<div class="assignee-item-avatar">${displayName.charAt(0).toUpperCase()}</div>`;
 
-        const avatar = document.createElement('div');
-        avatar.className = 'assignee-item-avatar';
-        if (user.avatar) {
-            avatar.style.backgroundImage = `url(${user.avatar})`;
-        } else {
-            avatar.textContent = displayName.charAt(0).toUpperCase();
-        }
+        return `
+            <div class="assignee-item ${isSelected ? 'selected' : ''}" data-value="${userIdentifier}">
+                ${avatarHTML}
+                <span class="assignee-item-name">${displayName}</span>
+            </div>
+        `;
+    }).join('');
 
-        const name = document.createElement('span');
-        name.className = 'assignee-item-name';
-        name.textContent = displayName;
-
-        item.appendChild(avatar);
-        item.appendChild(name);
-
-        item.addEventListener('click', () => {
-            container.querySelectorAll('.assignee-item').forEach(el => el.classList.remove('selected'));
-            item.classList.add('selected');
-            hiddenInput.value = userIdentifier;
-            handleFormInput();
-        });
-
-        if (userIdentifier === currentAssignee) {
-            item.classList.add('selected');
-            hiddenInput.value = userIdentifier;
-        }
-
-        container.appendChild(item);
-    });
+    container.innerHTML = itemsHTML;
 }
 
-// abre o modal para criar ou editar uma tarefa
 async function openModal(columnName, columnId) {
-    const targetColumnId = columnId || state.columnMapping[columnName];
+    const targetColumnId = columnId;
     if (!targetColumnId) return;
     
     state.isModalDirty = false;
     state.editingCardId = null;
     state.currentColumnId = targetColumnId;
     elements.taskForm.reset();
-    
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('taskDate').value = now.toISOString().slice(0, 16);
-    document.querySelector('input[name="priority"][value="media"]').checked = true;
-    
-    const modalContent = elements.taskModal.querySelector('.modal-content');
-    modalContent.classList.remove('priority-baixa', 'priority-media', 'priority-alta');
-    modalContent.classList.add('priority-media');
     
     elements.modalTitle.querySelector('span').textContent = 'Nova Tarefa';
     document.getElementById('new-task-description-group').style.display = 'block';
@@ -748,33 +689,40 @@ async function openModal(columnName, columnId) {
     elements.btnUnsolve.style.display = 'none';
     elements.btnReturnToScale.style.display = 'none';
     elements.btnConfirm.style.display = 'inline-flex';
+    elements.assigneeSelector.innerHTML = '<div style="text-align:center; color: var(--text-muted);">Carregando...</div>';
+    clearComments();
     
-    populateAssigneeSelector(null);
-
     elements.taskModal.style.display = 'flex';
     document.getElementById('taskTitle').focus();
+
+    setTimeout(() => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('taskDate').value = now.toISOString().slice(0, 16);
+        document.querySelector('input[name="priority"][value="media"]').checked = true;
+        
+        const modalContent = elements.taskModal.querySelector('.modal-content');
+        modalContent.classList.remove('priority-baixa', 'priority-media', 'priority-alta');
+        modalContent.classList.add('priority-media');
+        
+        populateAssigneeSelector(null);
+    }, 10);
 }
 
 function openPrivateBoardModal() {
     const form = document.getElementById('privateBoardForm');
-    if (form) {
-        form.reset(); // Limpa o formulário antes de abrir
-    }
+    form?.reset();
     const modal = document.getElementById('privateBoardModal');
     if (modal) {
         modal.style.display = 'flex';
-        document.getElementById('boardTitle').focus(); // Foca no campo de título
+        document.getElementById('boardTitle').focus();
     }
 }
 
 function closePrivateBoardModal() {
-    const modal = document.getElementById('privateBoardModal');
-    if (modal) {
-        _performCloseAnimation(modal); // Reutiliza a animação de fechamento
-    }
+    _performCloseAnimation(document.getElementById('privateBoardModal'));
 }
 
-// abre o modal para editar um card existente
 async function editCard(cardId) {
     const card = state.cards.find(c => c.id === cardId);
     if (!card) return;
@@ -783,66 +731,68 @@ async function editCard(cardId) {
     state.editingCardId = cardId;
     elements.taskForm.reset();
     
-    const priority = card.priority || 'media';
-    document.querySelector(`input[name="priority"][value="${priority}"]`).checked = true;
-
-    const modalContent = elements.taskModal.querySelector('.modal-content');
-    modalContent.classList.remove('priority-baixa', 'priority-media', 'priority-alta');
-    modalContent.classList.add(`priority-${priority}`);
-
     elements.modalTitle.querySelector('span').textContent = 'Editar Tarefa';
+    document.getElementById('taskTitle').value = card.title;
     document.getElementById('new-task-description-group').style.display = 'none';
     document.querySelector('.modal-comments').style.display = 'flex';
     elements.btnConfirm.style.display = 'none';
     
-    const isArchived = card.column_id === state.solucionadoId || card.column_id === state.naoSolucionadoId;
-    elements.btnSolve.style.display = isArchived ? 'none' : 'inline-flex';
-    elements.btnUnsolve.style.display = isArchived ? 'none' : 'inline-flex';
-    elements.btnReturnToScale.style.display = isArchived ? 'inline-flex' : 'none';
-    
-    document.getElementById('taskTitle').value = card.title;
-    populateAssigneeSelector(card.assigned_to);
+    elements.assigneeSelector.innerHTML = '<div style="text-align:center; color: var(--text-muted);">Carregando...</div>';
+    clearComments();
 
-    if (card.due_date) {
-        const localDate = new Date(card.due_date);
-        localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-        document.getElementById('taskDate').value = localDate.toISOString().slice(0, 16);
-    } else {
-        document.getElementById('taskDate').value = '';
-    }
-    
-    renderComments(card.description);
-    
-    elements.taskForm.removeEventListener('input', handleFormInput);
-    elements.taskForm.addEventListener('input', handleFormInput);
-    document.querySelectorAll('input[name="priority"]').forEach(radio => {
-        radio.removeEventListener('change', handleFormInput);
-        radio.addEventListener('change', handleFormInput);
-    });
-    
     elements.taskModal.style.display = 'flex';
+
+    setTimeout(() => {
+        const priority = card.priority || 'media';
+        document.querySelector(`input[name="priority"][value="${priority}"]`).checked = true;
+
+        const modalContent = elements.taskModal.querySelector('.modal-content');
+        modalContent.classList.remove('priority-baixa', 'priority-media', 'priority-alta');
+        modalContent.classList.add(`priority-${priority}`);
+
+        const isArchived = card.column_id === state.solucionadoId || card.column_id === state.naoSolucionadoId;
+        elements.btnSolve.style.display = isArchived ? 'none' : 'inline-flex';
+        elements.btnUnsolve.style.display = isArchived ? 'none' : 'inline-flex';
+        elements.btnReturnToScale.style.display = isArchived ? 'inline-flex' : 'none';
+        
+        populateAssigneeSelector(card.assigned_to);
+
+        if (card.due_date) {
+            const localDate = new Date(card.due_date);
+            localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+            document.getElementById('taskDate').value = localDate.toISOString().slice(0, 16);
+        } else {
+            document.getElementById('taskDate').value = '';
+        }
+        
+        renderComments(card.description);
+        
+        elements.taskForm.removeEventListener('input', handleFormInput);
+        elements.taskForm.addEventListener('input', handleFormInput);
+        document.querySelectorAll('input[name="priority"]').forEach(radio => {
+            radio.removeEventListener('change', handleFormInput);
+            radio.addEventListener('change', handleFormInput);
+        });
+    }, 10);
 }
 
-// salva as alterações do card (usado no auto-save)
+
 async function saveCardChanges() {
     if (!state.editingCardId || !state.isModalDirty) return;
-
     try {
         await api(`/cards/${state.editingCardId}`, {
             method: 'PUT',
             body: JSON.stringify(getFormData())
         });
         state.isModalDirty = false;
-    } catch (error) {
-    }
+        pollForUpdates();
+    } catch (error) { /* possivel futuro log */ }
 }
 
-// função de auto-save com debounce
 const autoSave = debounce(saveCardChanges, 500);
 
-// realiza a animação de fechamento do modal
 function _performCloseAnimation(modalElement) {
-    if (modalElement.style.display === 'flex' && !modalElement.classList.contains('closing')) {
+    if (modalElement && modalElement.style.display === 'flex' && !modalElement.classList.contains('closing')) {
         modalElement.classList.add('closing');
         setTimeout(() => {
             modalElement.style.display = 'none';
@@ -851,7 +801,6 @@ function _performCloseAnimation(modalElement) {
     }
 }
 
-// fecha o modal da tarefa
 async function closeModal() {
     if (state.editingCardId && state.isModalDirty) {
         autoSave.cancel();
@@ -865,11 +814,9 @@ async function closeModal() {
     elements.taskForm.removeEventListener('input', handleFormInput);
 }
 
-// abre o modal da coluna
 function openColumnModal(columnId = null) {
     elements.columnForm.reset();
     state.editingColumnId = columnId;
-
     if (columnId) {
         const column = state.columns.find(c => c.id === columnId);
         if (column) {
@@ -887,23 +834,19 @@ function openColumnModal(columnId = null) {
     elements.columnModal.style.display = 'flex';
 }
 
-// fecha o modal da coluna
 function closeColumnModal() {
     _performCloseAnimation(elements.columnModal);
     state.editingColumnId = null;
 }
 
-// lida com o submit do formulário de criação/edição de tarefa
 async function handleSubmit(e) {
     e.preventDefault();
     if (state.editingCardId) return; 
-    
     const cardData = getFormData();
     if (!cardData.title) {
         showError('O ID e Nome do Cliente é obrigatório');
         return;
     }
-    
     try {
         const response = await api(`/columns/${state.currentColumnId}/cards`, {
             method: 'POST',
@@ -911,15 +854,11 @@ async function handleSubmit(e) {
         });
         if (response?.ok) {
             closeModal();
-        } else {
-            showError('Erro ao criar tarefa');
-        }
-    } catch (error) {
-        showError('Erro de conexão');
-    }
+            pollForUpdates();
+        } else showError('Erro ao criar tarefa');
+    } catch (error) { showError('Erro de conexão'); }
 }
 
-// lida com o submit do formulário de criação/edição de coluna
 async function handleColumnSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -928,25 +867,24 @@ async function handleColumnSubmit(e) {
         title: formData.get('title'),
         color: formData.get('color'),
     };
-
     if (!columnData.title) {
         showError("O título da coluna é obrigatório.");
         return;
     }
-
     try {
         let response;
-        if (state.editingColumnId) {
-        } else {
+        if (state.editingColumnId) { /* baianei */ }
+        else {
             response = await api('/columns', {
                 method: 'POST',
                 body: JSON.stringify(columnData)
             });
         }
-        
         if (response?.ok) {
             closeColumnModal();
-        } else {
+            pollForUpdates();
+        }
+        else {
             const err = await response.json();
             showError(err.error || 'Erro ao salvar coluna.');
         }
@@ -955,27 +893,16 @@ async function handleColumnSubmit(e) {
     }
 }
 
-// função para deletar um quadro
 async function handleDeleteBoard(boardId, event) {
     event.stopPropagation();
-
     const boardTitle = state.privateBoards.find(b => b.id === boardId)?.title || "este quadro";
-    if (!confirm(`Tem certeza que deseja excluir "${boardTitle}"?\n\nATENÇÃO: Todas as colunas e tarefas dentro deste quadro serão permanentemente excluídas.`)) {
-        return;
-    }
-
+    if (!confirm(`Tem certeza que deseja excluir "${boardTitle}"?\n\nATENÇÃO: Todas as colunas e tarefas dentro deste quadro serão permanentemente excluídas.`)) return;
     try {
-        const response = await api(`/boards/${boardId}`, {
-            method: 'DELETE',
-        });
-
+        const response = await api(`/boards/${boardId}`, { method: 'DELETE' });
         if (response?.ok) {
             const boardCardElement = document.querySelector(`.private-board-card[data-board-id="${boardId}"]`);
-            if (boardCardElement) {
-                boardCardElement.remove();
-            }
+            boardCardElement?.remove();
             state.privateBoards = state.privateBoards.filter(b => b.id !== boardId);
-
         } else {
             const errorData = await response.json();
             showError(errorData.error || "Falha ao excluir o quadro.");
@@ -985,191 +912,104 @@ async function handleDeleteBoard(boardId, event) {
     }
 }
 
-// deleta um card
 async function deleteCard(cardId) {
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
     try {
         await api(`/cards/${cardId}`, { method: 'DELETE' });
-    } catch (error) {
-        showError('Erro ao excluir a tarefa');
-    }
+        pollForUpdates();
+    } catch (error) { showError('Erro ao excluir a tarefa'); }
 }
 
-// move um card para outra coluna ou posição
 async function moveCard(cardId, columnId, position = 0) {
     try {
         await api(`/cards/${cardId}/move`, {
             method: 'PUT',
             body: JSON.stringify({ column_id: columnId, position })
         });
-    } catch (error) {
-        showError('Erro ao mover a tarefa');
-    }
+        pollForUpdates();
+    } catch (error) { showError('Erro ao mover a tarefa'); }
 }
 
-// move um card para a coluna de solucionado ou não solucionado
 async function moveCardToSolved(solved) {
     if (!state.editingCardId) return;
-    
     const targetId = solved ? state.solucionadoId : state.naoSolucionadoId;
     if (!targetId) {
         showError(`Coluna '${solved ? "Solucionado" : "Não Solucionado"}' não encontrada.`);
         return;
     }
-    
     if (state.isModalDirty) {
         autoSave.cancel();
         await saveCardChanges();
     }
-    
     await moveCard(state.editingCardId, targetId);
     closeModal();
 }
 
-// retorna um card arquivado para o quadro
 async function returnCardToBoard() {
     if (!state.editingCardId) return;
-
     const firstActiveColumn = state.columns.find(c => c.id !== state.solucionadoId && c.id !== state.naoSolucionadoId);
     if (!firstActiveColumn) {
         showError("Nenhuma coluna de trabalho ativa encontrada para retornar o card.");
         return;
     }
-
     if (state.isModalDirty) {
         autoSave.cancel();
         await saveCardChanges();
     }
-    
     const position = state.cards.filter(c => c.column_id === firstActiveColumn.id).length;
     await moveCard(state.editingCardId, firstActiveColumn.id, position);
     closeModal();
 }
 
-// obtém o elemento após o qual o card arrastado deve ser inserido
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.task:not(.dragging)')];
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
+        if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+        else return closest;
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// lida com o evento de soltar um card
 function handleDrop(e) {
     e.preventDefault();
     const targetList = e.target.closest('.task-list');
     if (!targetList) return;
     targetList.classList.remove('drag-over');
-
     const cardId = parseInt(e.dataTransfer.getData('text/plain'));
     const cardToMove = state.cards.find(c => c.id === cardId);
     if (!cardToMove) return;
-
     const newColumnId = parseInt(targetList.dataset.columnId);
     const oldColumnId = cardToMove.column_id;
     const oldPosition = cardToMove.position;
     const afterElement = getDragAfterElement(targetList, e.clientY);
     let newPosition;
-
     if (afterElement) {
         const afterCard = state.cards.find(c => c.id === parseInt(afterElement.dataset.cardId));
         newPosition = afterCard.position;
     } else {
         newPosition = state.cards.filter(c => c.column_id === newColumnId).length;
     }
-
     if (oldColumnId === newColumnId && oldPosition === newPosition) return;
-    if (oldColumnId === newColumnId && oldPosition < newPosition) {
-        newPosition--;
-    }
-
+    if (oldColumnId === newColumnId && oldPosition < newPosition) newPosition--;
     const cardIndex = state.cards.findIndex(c => c.id === cardId);
     const [movedCard] = state.cards.splice(cardIndex, 1);
-
     state.cards.forEach(c => {
         if (c.column_id === oldColumnId && c.position > oldPosition) c.position--;
     });
     state.cards.forEach(c => {
         if (c.column_id === newColumnId && c.position >= newPosition) c.position++;
     });
-
     movedCard.column_id = newColumnId;
     movedCard.position = newPosition;
     state.cards.push(movedCard);
     renderCards();
-    
     moveCard(cardId, newColumnId, newPosition);
 }
 
-// conecta ao WebSocket para atualizações em tempo real
-function connectWS() {
-   
-    state.ws?.close(); 
-    
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    state.ws = new WebSocket(`${protocol}://${location.host}/ws/board/${state.board.id}`);
-    
-    state.ws.onmessage = async (e) => {
-        const { type, payload } = JSON.parse(e.data);
-        let needsFullRender = false;
-
-        switch(type) {
-            case 'BOARD_STATE_UPDATED':
-                await loadData();
-                renderColumns(); 
-                needsFullRender = true;
-                break;
-            case 'CARD_CREATED':
-                if (!state.cards.some(c => c.id === payload.id)) state.cards.push(payload);
-                needsFullRender = true;
-                break;
-            case 'CARD_DELETED':
-                state.cards = state.cards.filter(c => c.id !== payload.card_id);
-                needsFullRender = true;
-                break;
-            case 'CARD_UPDATED':
-                const index = state.cards.findIndex(c => c.id === payload.id);
-                if (index > -1) state.cards[index] = { ...state.cards[index], ...payload };
-                needsFullRender = true;
-                break;
-            case 'COLUMN_CREATED':
-                 if (!state.columns.some(c => c.id === payload.id)) {
-                    state.columns.push(payload);
-                    state.columns.sort((a,b) => a.position - b.position);
-                    renderColumns();
-                
-                 }
-                break;
-        }
-        
-        if(needsFullRender) {
-            renderCards();
-            updateStats();
-        }
-    };
-    
-    state.ws.onclose = () => {
-        // Não tenta reconectar automaticamente para evitar loops indesejados
-        console.log(`WebSocket para o board ${state.board.id} fechado.`);
-    };
-
-    state.ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-        state.ws.close();
-    };
-}
-
-// obtém os dados do formulário da tarefa
 function getFormData() {
     const form = elements.taskForm;
     const formData = new FormData(form);
-    
     let description;
     if (state.editingCardId) {
         description = JSON.stringify({
@@ -1187,10 +1027,8 @@ function getFormData() {
             resolucao: []
         });
     }
-    
     const dateValue = formData.get('date');
     let dueDate = dateValue ? new Date(dateValue).toISOString() : null;
-    
     return {
         title: formData.get('title'),
         description,
@@ -1200,8 +1038,17 @@ function getFormData() {
     };
 }
 
-// atualiza as estatísticas gerais
 function updateStats() {
+    if (!state.cards) { 
+        return;
+    }
+    if (!state.solucionadoId || !state.naoSolucionadoId) {
+        document.getElementById('pendingTasks').textContent = state.cards.length;
+        document.getElementById('completedTasks').textContent = '0';
+        document.getElementById('failedTasks').textContent = '0';
+        return;
+    }
+
     const completed = state.cards.filter(c => c.column_id === state.solucionadoId).length;
     const failed = state.cards.filter(c => c.column_id === state.naoSolucionadoId).length;
     const total = state.cards.length;
@@ -1212,19 +1059,7 @@ function updateStats() {
     document.getElementById('failedTasks').textContent = failed;
 }
 
-// atualiza a contagem de cards em cada coluna
-function updateColumnCounts() {
-    state.columns.forEach(column => {
-        const colElement = document.querySelector(`.column[data-column-id="${column.id}"]`);
-        if (colElement) {
-            const count = state.cards.filter(c => c.column_id == column.id).length;
-            const countElement = colElement.querySelector('.column-count');
-            if(countElement) countElement.textContent = count;
-        }
-    });
-}
 
-// exibe uma mensagem de erro
 function showError(message) {
     const errorDiv = document.getElementById('loginError');
     if (errorDiv && elements.loginSection.style.display !== 'none') {
@@ -1235,7 +1070,6 @@ function showError(message) {
     }
 }
 
-// renderiza os comentários de um card
 function renderComments(descJson) {
     clearComments();
     if (!descJson) return;
@@ -1244,46 +1078,39 @@ function renderComments(descJson) {
         ['observacoes', 'tentativas', 'resolucao'].forEach(section => {
             const container = document.getElementById(`${section}-comments`);
             if (desc[section]?.length && container) {
+                const fragment = document.createDocumentFragment();
                 desc[section].forEach(comment => {
-                    container.appendChild(createCommentElement(comment));
+                    fragment.appendChild(createCommentElement(comment));
                 });
+                container.appendChild(fragment);
             }
         });
-    } catch (e) { }
+    } catch (e) {}
 }
 
-// cria um elemento HTML para um comentário
 function createCommentElement(comment) {
     const div = document.createElement('div');
     div.className = 'comment-item';
-    
     const text = typeof comment === 'object' ? (comment.text || '') : comment;
     const authorName = typeof comment === 'object' && comment.author ? comment.author : 'Desconhecido';
     const time = typeof comment === 'object' ? (comment.timestamp || new Date().toLocaleString('pt-BR')) : new Date().toLocaleString('pt-BR');
-    
     const authorUser = state.users.find(u => (userDisplayNameMap[u.email] || u.username) === authorName);
     const authorAvatarElement = createUserAvatar(authorUser);
     authorAvatarElement.classList.add('comment-avatar');
-    
     div.dataset.author = authorName;
     div.innerHTML = `
         <div class="comment-content">${text}</div>
         <div class="comment-meta">
-            <span class="comment-author">
-                ${authorAvatarElement.outerHTML}
-                ${authorName}
-            </span>
+            <span class="comment-author">${authorAvatarElement.outerHTML}${authorName}</span>
             <span class="comment-timestamp">${time}</span>
         </div>
         <div class="comment-item-actions">
             <button class="edit-comment-btn" onclick="editComment(this)"><i class="fas fa-pencil-alt"></i></button>
             <button class="delete-comment-btn" onclick="deleteComment(this)"><i class="fas fa-trash"></i></button>
-        </div>
-    `;
+        </div>`;
     return div;
 }
 
-// obtém os comentários de uma seção específica
 function getComments(sectionId) {
     const section = document.getElementById(sectionId);
     return Array.from(section?.querySelectorAll('.comment-item') || []).map(item => ({
@@ -1293,7 +1120,6 @@ function getComments(sectionId) {
     }));
 }
 
-// limpa a área de comentários no modal
 function clearComments() {
     ['observacoes', 'tentativas', 'resolucao'].forEach(section => {
         const container = document.getElementById(`${section}-comments`);
@@ -1306,14 +1132,11 @@ function clearComments() {
     });
 }
 
-// preenche o filtro de usuário no modal de estatísticas
 function populateStatsUserFilter() {
     const select = elements.statsFilterUser;
     if (!select) return;
-
     const currentValue = select.value;
     select.innerHTML = '<option value="all">Todos os Colaboradores</option>';
-
     state.users.forEach(user => {
         const userIdentifier = user.username || user.email;
         if (!userIdentifier) return;
@@ -1326,23 +1149,22 @@ function populateStatsUserFilter() {
     select.value = currentValue || 'all';
 }
 
-// atualiza a visualização no modal de estatísticas
 function updateStatsView() {
     const status = elements.statsModal.dataset.status;
     const selectedUser = elements.statsFilterUser.value;
     const body = document.getElementById('statsModalBody');
     const totalElement = document.getElementById('statsTotalCount');
-
-    const isSolucionado = status === 'solucionado';
-    const isPendente = status === 'pendente';
-    const isNaoSolucionado = status === 'nao-solucionado';
+    
+    const cardsToFilter = state.cards;
+    const currentSolucionadoId = state.solucionadoId;
+    const currentNaoSolucionadoId = state.naoSolucionadoId;
 
     let cards;
-    if (isPendente) {
-        cards = state.cards.filter(c => c.column_id !== state.solucionadoId && c.column_id !== state.naoSolucionadoId);
+    if (status === 'pendente') {
+        cards = cardsToFilter.filter(c => c.column_id !== currentSolucionadoId && c.column_id !== currentNaoSolucionadoId);
     } else {
-        const targetColId = isSolucionado ? state.solucionadoId : state.naoSolucionadoId;
-        cards = state.cards.filter(c => c.column_id === targetColId);
+        const targetColumnId = status === 'solucionado' ? currentSolucionadoId : currentNaoSolucionadoId;
+        cards = cardsToFilter.filter(c => c.column_id === targetColumnId);
     }
     
     if (selectedUser !== 'all') {
@@ -1350,7 +1172,6 @@ function updateStatsView() {
     }
 
     if (totalElement) totalElement.textContent = `Total: ${cards.length}`;
-
     body.innerHTML = cards.length === 0 
         ? '<p style="text-align: center; color: var(--text-muted);">Nenhuma tarefa encontrada.</p>'
         : cards.map(card => {
@@ -1360,57 +1181,39 @@ function updateStatsView() {
             return `
                 <div class="stats-list-item" onclick="closeStatsModal(); editCard(${card.id})">
                     <div class="task-title">${card.title}</div>
-                    <div class="task-meta">
-                        <div class="task-assignee">${avatarHTML} ${assigneeDisplayName}</div>
-                    </div>
-                </div>
-            `;
+                    <div class="task-meta"><div class="task-assignee">${avatarHTML} ${assigneeDisplayName}</div></div>
+                </div>`;
         }).join('');
 }
 
-// abre o modal de estatísticas
+
 function openStatsModal(status) {
     const title = document.getElementById('statsModalTitle');
     elements.statsModal.dataset.status = status;
-    const isSolucionado = status === 'solucionado';
-    const isNaoSolucionado = status === 'nao-solucionado';
-    title.innerHTML = isSolucionado
-        ? '<i class="fas fa-check-circle"></i> Tarefas Solucionadas'
-        : isNaoSolucionado
-            ? '<i class="fas fa-times-circle"></i> Tarefas Não Solucionadas'
-            : '<i class="fa-solid fa-spinner"></i> Tarefas Pendentes';
-    
+    title.innerHTML = status === 'solucionado' ? '<i class="fas fa-check-circle"></i> Tarefas Solucionadas'
+        : status === 'nao-solucionado' ? '<i class="fas fa-times-circle"></i> Tarefas Não Solucionadas'
+        : '<i class="fa-solid fa-spinner"></i> Tarefas Pendentes';
     populateStatsUserFilter();
     updateStatsView();
     elements.statsModal.style.display = 'flex';
 }
 
-// fecha o modal de estatísticas
 function closeStatsModal() {
     _performCloseAnimation(elements.statsModal);
 }
 
-// lida com o upload de avatar do usuário
 async function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     elements.loader.style.display = 'flex';
     const formData = new FormData();
     formData.append('avatar', file);
-
     try {
-        const response = await api('/user/avatar', {
-            method: 'POST',
-            body: formData,
-        });
-
+        const response = await api('/user/avatar', { method: 'POST', body: formData });
         if (response?.ok) {
             const result = await response.json();
             const userIndex = state.users.findIndex(u => u.id === state.user.id);
-            if(userIndex > -1) {
-                state.users[userIndex].avatar = result.avatar_url;
-            }
+            if(userIndex > -1) state.users[userIndex].avatar = result.avatar_url;
             updateSidebarUser();
             renderCards();
         } else {
@@ -1425,8 +1228,7 @@ async function handleAvatarUpload(event) {
     }
 }
 
-
-// funções globais para serem chamadas pelo HTML
+// Funções globais
 window.openModal = openModal;
 window.openStatsModal = openStatsModal;
 window.closeModal = closeModal;
@@ -1434,22 +1236,16 @@ window.closeStatsModal = closeStatsModal;
 window.openColumnModal = openColumnModal;
 window.closeColumnModal = closeColumnModal;
 window.deleteColumn = deleteColumn; 
-
-// função global para alternar a visibilidade do input de comentário
 window.toggleCommentInput = section => {
     const allInputs = document.querySelectorAll('.comment-input-container');
     const targetInput = document.getElementById(`${section}-input`);
     const isVisible = targetInput.style.display === 'block';
-
     allInputs.forEach(c => c.style.display = 'none');
-    
     if (!isVisible) {
         targetInput.style.display = 'block';
         targetInput.querySelector('textarea').focus();
     }
 };
-
-// função global para salvar um novo comentário
 window.saveComment = section => {
     const inputContainer = document.getElementById(`${section}-input`);
     const textarea = inputContainer.querySelector('textarea');
@@ -1458,35 +1254,26 @@ window.saveComment = section => {
         const container = document.getElementById(`${section}-comments`);
         const loggedInUser = state.users.find(u => u.id === state.user.id);
         const authorName = loggedInUser ? (userDisplayNameMap[loggedInUser.email] || loggedInUser.username) : 'Desconhecido';
-        
         const newComment = { text: text, author: authorName, timestamp: new Date().toLocaleString('pt-BR') };
         container.appendChild(createCommentElement(newComment));
-        
         inputContainer.style.display = 'none';
         textarea.value = '';
         handleFormInput();
     }
 };
-
 window.openPrivateBoardModal = openPrivateBoardModal;
 window.closePrivateBoardModal = closePrivateBoardModal;
-
-// função global para cancelar a adição de um comentário
 window.cancelComment = section => {
     const input = document.getElementById(`${section}-input`);
     input.style.display = 'none';
     input.querySelector('textarea').value = '';
 };
-
-// função global para deletar um comentário
 window.deleteComment = button => {
     if (confirm('Excluir este comentário?')) {
         button.closest('.comment-item').remove();
         handleFormInput();
     }
 };
-
-// função global para editar um comentário existente
 window.editComment = button => {
     const commentItem = button.closest('.comment-item');
     const commentContent = commentItem.querySelector('.comment-content');
@@ -1498,13 +1285,10 @@ window.editComment = button => {
         <div class="comment-actions">
             <button type="button" class="btn-save"><i class="fas fa-check"></i> Salvar</button>
             <button type="button" class="btn-cancel"><i class="fas fa-times"></i></button>
-        </div>
-    `;
-
+        </div>`;
     commentItem.style.display = 'none';
     commentItem.after(editContainer);
     editContainer.querySelector('textarea').focus();
-
     editContainer.querySelector('.btn-save').onclick = () => {
         const newText = editContainer.querySelector('.comment-edit-textarea').value.trim();
         if (newText) {
@@ -1514,7 +1298,6 @@ window.editComment = button => {
         editContainer.remove();
         commentItem.style.display = 'block';
     };
-
     editContainer.querySelector('.btn-cancel').onclick = () => {
         editContainer.remove();
         commentItem.style.display = 'block';
