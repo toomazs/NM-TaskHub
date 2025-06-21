@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://lzjunqtkldknjynsyhbi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6anVucXRrbGRrbmp5bnN5aGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMDQ0NjksImV4cCI6MjA2NTc4MDQ2OX0.wEN5Y4ls43fQOjHtLjTv85GuIEdFRR5mL5HD4ZTNBTc';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+ // Estado global simplificado: sempre reflete o quadro atual
 const state = {
     user: null,
     board: null,
@@ -13,14 +14,12 @@ const state = {
     editingCardId: null,
     editingColumnId: null,
     currentColumnId: null,
-    pollingInterval: null, // Para controlar o nosso polling
+    ws: null,
+    columnMapping: {},
     isModalDirty: false,
     privateBoards: [],
     activeSection: 'suporte',
 };
-
-// ... (COLE AQUI O RESTANTE DO SEU SCRIPT.JS - Mapeamentos de usuário, etc.) ...
-// O CONTEÚDO ABAIXO É O RESTANTE DO ARQUIVO COM AS FUNÇÕES DE POLLING IMPLEMENTADAS
 
 // mapeamento global de nomes de usuário
 const userDisplayNameMap = {
@@ -167,13 +166,10 @@ function addEventListeners() {
         const section = item.dataset.section;
         
         if (section === 'suporte') {
-            stopPolling();
             location.reload(); 
         } else if (section === 'private-boards') {
-            stopPolling();
             loadAndShowPrivateBoards();
         } else {
-            stopPolling();
             showSection(`${section}Section`);
         }
     });
@@ -182,7 +178,7 @@ function addEventListeners() {
     document.getElementById('btnCreatePrivateBoard').addEventListener('click', openPrivateBoardModal);
     document.getElementById('privateBoardForm').addEventListener('submit', handlePrivateBoardSubmit);
     document.getElementById('btnBackToBoards').addEventListener('click', () => {
-        stopPolling();
+        state.ws?.close();
         loadAndShowPrivateBoards();
         document.getElementById('btnBackToBoards').style.display = 'none';
         document.querySelector('.header-main h2').innerHTML = '<i class="fas fa-headset"></i> Suporte';
@@ -209,6 +205,7 @@ function addEventListeners() {
     document.getElementById('avatarUpload')?.addEventListener('change', handleAvatarUpload);
 }
 
+// verifica a autenticação do usuário
 async function checkAuth() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
@@ -219,6 +216,7 @@ async function checkAuth() {
     }
 }
 
+// exibe a tela de login
 function showLogin() {
     elements.kanbanSection.style.display = 'none';
     elements.sidebar.style.display = 'none';
@@ -229,6 +227,7 @@ function showLogin() {
     elements.loginSection.classList.add('fade-in');
 }
 
+// lida com o submit do formulário de login
 async function handleLogin(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -253,12 +252,14 @@ async function handleLogin(e) {
     }
 }
 
+// realiza o logout do usuário
 async function logout() {
-    stopPolling();
+    state.ws?.close();
     await supabaseClient.auth.signOut();
     location.reload();
 }
 
+// atualiza as informações do usuário na sidebar
 function updateSidebarUser() {
     if (!state.user || !state.users.length) return;
 
@@ -280,6 +281,7 @@ function updateSidebarUser() {
     }
 }
 
+// inicializa a aplicação principal
 async function initApp() {
     elements.loader.style.display = 'flex';
     document.body.classList.remove('login-page');
@@ -303,7 +305,7 @@ async function initApp() {
                 renderColumns();
                 renderCards();
                 updateStats(); 
-                startPolling(); // Inicia o polling no lugar do WebSocket
+                connectWS();
                 elements.loader.style.display = 'none';
                 elements.kanbanSection.classList.add('fade-in');
             } else {
@@ -320,12 +322,14 @@ async function initApp() {
     }
 }
 
+// carrega os dados do quadro (colunas e cards)
 async function loadData() {
     const columnsResponse = await api(`/boards/${state.board.id}/columns`);
     if (!columnsResponse?.ok) throw new Error('Erro ao carregar colunas');
     state.columns = await columnsResponse.json();
     state.columns.sort((a,b) => a.position - b.position);
     
+    // Reseta os IDs antes de redefinir para o quadro atual
     state.solucionadoId = null;
     state.naoSolucionadoId = null;
 
@@ -339,6 +343,7 @@ async function loadData() {
     state.cards = (await Promise.all(cardPromises)).flat();
 }
 
+// carrega a lista de usuários
 async function loadUsers() {
     try {
         const response = await api('/users');
@@ -348,6 +353,7 @@ async function loadUsers() {
     }
 }
 
+// função para controlar a visibilidade das seções
 function showSection(sectionId) {
     document.querySelectorAll('.content-section, #kanbanSection').forEach(section => {
         section.style.display = 'none';
@@ -357,6 +363,7 @@ function showSection(sectionId) {
     state.activeSection = sectionId;
 }
 
+// carrega e exibe os quadros privados
 async function loadAndShowPrivateBoards() {
     showSection('privateBoardsSection');
     try {
@@ -372,6 +379,7 @@ async function loadAndShowPrivateBoards() {
     }
 }
 
+// renderiza a lista de quadros privados
 function renderPrivateBoardsList() {
     const container = document.getElementById('privateBoardsList');
     container.innerHTML = ''; 
@@ -396,6 +404,7 @@ function renderPrivateBoardsList() {
     });
 }
 
+// seleciona e carrega um quadro privado
 async function selectPrivateBoard(boardId) {
     const selectedBoard = state.privateBoards.find(b => b.id === boardId);
     if (!selectedBoard) return;
@@ -406,57 +415,14 @@ async function selectPrivateBoard(boardId) {
     await loadData(); 
     renderColumns();
     renderCards();
-    updateStats();
-    startPolling(); // Inicia o polling para o quadro privado
+    updateStats(); // Atualiza as estatísticas no header para o quadro privado
+    connectWS();
     showSection('kanbanSection'); 
     document.querySelector('.header-main h2').innerHTML = `<i class="fas fa-user-lock"></i> ${state.board.title}`;
     elements.loader.style.display = 'none';
 }
 
-// ----- LÓGICA DE POLLING (Substituindo WebSockets) -----
-
-function stopPolling() {
-    if (state.pollingInterval) {
-        clearInterval(state.pollingInterval);
-        state.pollingInterval = null;
-    }
-}
-
-async function pollForUpdates() {
-    if (!state.board) {
-        stopPolling();
-        return;
-    }
-    // Salva o card que está sendo editado para não fechar o modal
-    const currentlyEditing = state.editingCardId;
-    
-    await loadData();
-    renderColumns();
-    renderCards();
-    updateStats();
-    
-    // Se um card estava sendo editado, reabre o modal com os dados atualizados
-    if (currentlyEditing) {
-        const updatedCard = state.cards.find(c => c.id === currentlyEditing);
-        if (updatedCard) {
-            editCard(currentlyEditing);
-        } else {
-            // O card foi deletado por outro usuário, então fecha o modal
-            closeModal();
-        }
-    }
-}
-
-function startPolling() {
-    stopPolling(); // Para qualquer polling anterior antes de iniciar um novo
-    // Busca atualizações a cada 15 segundos (15000 ms)
-    state.pollingInterval = setInterval(pollForUpdates, 15000);
-}
-
-
-// ... (O restante do arquivo JS continua aqui, sem a função `connectWS`)
-// ... (Copie e cole o resto do seu script.js a partir da função handlePrivateBoardSubmit)
-
+// lida com a criação de um novo quadro privado
 async function handlePrivateBoardSubmit(e) {
     e.preventDefault(); 
     const form = e.target;
@@ -492,11 +458,13 @@ async function handlePrivateBoardSubmit(e) {
     }
 }
 
+// renderiza as colunas no quadro
 function renderColumns() {
     const kanbanContainer = elements.kanbanContainer;
     kanbanContainer.innerHTML = '';
     
     state.columns.forEach(col => {
+        // Não renderiza as colunas de "solucionado" e "não solucionado" na visão principal
         if (col.id === state.solucionadoId || col.id === state.naoSolucionadoId) return;
         kanbanContainer.appendChild(createColumnElement(col));
     });
@@ -508,6 +476,7 @@ function renderColumns() {
     addDragAndDropListenersToColumns();
 }
 
+// cria o elemento HTML para uma coluna
 function createColumnElement(column) {
     const columnEl = document.createElement('div');
     columnEl.className = 'column';
@@ -535,6 +504,7 @@ function createColumnElement(column) {
     return columnEl;
 }
 
+// deleta uma coluna
 async function deleteColumn(columnId) {
     if (!confirm('Tem certeza que deseja excluir esta coluna?\n\nATENÇÃO: A coluna deve estar vazia.')) return;
     try {
@@ -542,14 +512,13 @@ async function deleteColumn(columnId) {
         if (!response.ok) {
             const errorData = await response.json();
             showError(errorData.error || 'Não foi possível excluir a coluna.');
-        } else {
-            pollForUpdates();
         }
     } catch (error) {
         showError('Erro de conexão ao excluir a coluna.');
     }
 }
 
+// adiciona listeners de arrastar e soltar às colunas
 function addDragAndDropListenersToColumns() {
     document.querySelectorAll('.task-list').forEach(taskList => {
         taskList.addEventListener('dragover', e => {
@@ -564,6 +533,7 @@ function addDragAndDropListenersToColumns() {
     });
 }
 
+// renderiza os cards nas colunas
 function renderCards() {
     document.querySelectorAll('.task-list').forEach(list => list.innerHTML = '');
     let activeCards = state.cards.filter(c => c.column_id !== state.solucionadoId && c.column_id !== state.naoSolucionadoId);
@@ -574,6 +544,7 @@ function renderCards() {
     });
 }
 
+// cria o elemento de avatar do usuário
 function createUserAvatar(user) {
     const avatarElement = document.createElement('div');
     avatarElement.className = 'assignee-avatar';
@@ -587,6 +558,7 @@ function createUserAvatar(user) {
     return avatarElement;
 }
 
+// cria o elemento HTML para um card
 function createCardElement(card) {
     let isOverdue = false;
     let isDueToday = false;
@@ -638,6 +610,7 @@ function createCardElement(card) {
     return div;
 }
 
+// lida com a entrada de dados no formulário do modal
 function handleFormInput() {
     if (state.editingCardId) {
         state.isModalDirty = true;
@@ -645,6 +618,7 @@ function handleFormInput() {
     }
 }
 
+// preenche o seletor de responsáveis
 function populateAssigneeSelector(currentAssignee) {
     const container = elements.assigneeSelector;
     const hiddenInput = document.getElementById('taskAssignee');
@@ -673,6 +647,7 @@ function populateAssigneeSelector(currentAssignee) {
     container.innerHTML = itemsHTML;
 }
 
+// abre o modal para criar ou editar uma tarefa
 async function openModal(columnName, columnId) {
     const targetColumnId = columnId;
     if (!targetColumnId) return;
@@ -723,6 +698,7 @@ function closePrivateBoardModal() {
     _performCloseAnimation(document.getElementById('privateBoardModal'));
 }
 
+// abre o modal para editar um card existente
 async function editCard(cardId) {
     const card = state.cards.find(c => c.id === cardId);
     if (!card) return;
@@ -777,6 +753,7 @@ async function editCard(cardId) {
 }
 
 
+// salva as alterações do card (usado no auto-save)
 async function saveCardChanges() {
     if (!state.editingCardId || !state.isModalDirty) return;
     try {
@@ -785,12 +762,13 @@ async function saveCardChanges() {
             body: JSON.stringify(getFormData())
         });
         state.isModalDirty = false;
-        pollForUpdates();
     } catch (error) { /* possivel futuro log */ }
 }
 
+// função de auto-save com debounce
 const autoSave = debounce(saveCardChanges, 500);
 
+// realiza a animação de fechamento do modal
 function _performCloseAnimation(modalElement) {
     if (modalElement && modalElement.style.display === 'flex' && !modalElement.classList.contains('closing')) {
         modalElement.classList.add('closing');
@@ -801,6 +779,7 @@ function _performCloseAnimation(modalElement) {
     }
 }
 
+// fecha o modal da tarefa
 async function closeModal() {
     if (state.editingCardId && state.isModalDirty) {
         autoSave.cancel();
@@ -814,6 +793,7 @@ async function closeModal() {
     elements.taskForm.removeEventListener('input', handleFormInput);
 }
 
+// abre o modal da coluna
 function openColumnModal(columnId = null) {
     elements.columnForm.reset();
     state.editingColumnId = columnId;
@@ -834,11 +814,13 @@ function openColumnModal(columnId = null) {
     elements.columnModal.style.display = 'flex';
 }
 
+// fecha o modal da coluna
 function closeColumnModal() {
     _performCloseAnimation(elements.columnModal);
     state.editingColumnId = null;
 }
 
+// lida com o submit do formulário de criação/edição de tarefa
 async function handleSubmit(e) {
     e.preventDefault();
     if (state.editingCardId) return; 
@@ -852,13 +834,12 @@ async function handleSubmit(e) {
             method: 'POST',
             body: JSON.stringify(cardData)
         });
-        if (response?.ok) {
-            closeModal();
-            pollForUpdates();
-        } else showError('Erro ao criar tarefa');
+        if (response?.ok) closeModal();
+        else showError('Erro ao criar tarefa');
     } catch (error) { showError('Erro de conexão'); }
 }
 
+// lida com o submit do formulário de criação/edição de coluna
 async function handleColumnSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -880,10 +861,7 @@ async function handleColumnSubmit(e) {
                 body: JSON.stringify(columnData)
             });
         }
-        if (response?.ok) {
-            closeColumnModal();
-            pollForUpdates();
-        }
+        if (response?.ok) closeColumnModal();
         else {
             const err = await response.json();
             showError(err.error || 'Erro ao salvar coluna.');
@@ -893,6 +871,7 @@ async function handleColumnSubmit(e) {
     }
 }
 
+// função para deletar um quadro
 async function handleDeleteBoard(boardId, event) {
     event.stopPropagation();
     const boardTitle = state.privateBoards.find(b => b.id === boardId)?.title || "este quadro";
@@ -912,24 +891,25 @@ async function handleDeleteBoard(boardId, event) {
     }
 }
 
+// deleta um card
 async function deleteCard(cardId) {
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
     try {
         await api(`/cards/${cardId}`, { method: 'DELETE' });
-        pollForUpdates();
     } catch (error) { showError('Erro ao excluir a tarefa'); }
 }
 
+// move um card para outra coluna ou posição
 async function moveCard(cardId, columnId, position = 0) {
     try {
         await api(`/cards/${cardId}/move`, {
             method: 'PUT',
             body: JSON.stringify({ column_id: columnId, position })
         });
-        pollForUpdates();
     } catch (error) { showError('Erro ao mover a tarefa'); }
 }
 
+// move um card para a coluna de solucionado ou não solucionado
 async function moveCardToSolved(solved) {
     if (!state.editingCardId) return;
     const targetId = solved ? state.solucionadoId : state.naoSolucionadoId;
@@ -945,6 +925,7 @@ async function moveCardToSolved(solved) {
     closeModal();
 }
 
+// retorna um card arquivado para o quadro
 async function returnCardToBoard() {
     if (!state.editingCardId) return;
     const firstActiveColumn = state.columns.find(c => c.id !== state.solucionadoId && c.id !== state.naoSolucionadoId);
@@ -961,6 +942,7 @@ async function returnCardToBoard() {
     closeModal();
 }
 
+// obtém o elemento após o qual o card arrastado deve ser inserido
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.task:not(.dragging)')];
     return draggableElements.reduce((closest, child) => {
@@ -971,6 +953,7 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
+// lida com o evento de soltar um card
 function handleDrop(e) {
     e.preventDefault();
     const targetList = e.target.closest('.task-list');
@@ -1007,6 +990,55 @@ function handleDrop(e) {
     moveCard(cardId, newColumnId, newPosition);
 }
 
+// conecta ao WebSocket para atualizações em tempo real
+function connectWS() {
+    state.ws?.close(); 
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    state.ws = new WebSocket(`${protocol}://${location.host}/ws/board/${state.board.id}`);
+    state.ws.onmessage = async (e) => {
+        const { type, payload } = JSON.parse(e.data);
+        let needsFullRender = false;
+
+        switch(type) {
+            case 'BOARD_STATE_UPDATED':
+                await loadData();
+                renderColumns(); 
+                needsFullRender = true;
+                break;
+            case 'CARD_CREATED':
+                if (!state.cards.some(c => c.id === payload.id)) state.cards.push(payload);
+                needsFullRender = true;
+                break;
+            case 'CARD_DELETED':
+                state.cards = state.cards.filter(c => c.id !== payload.card_id);
+                needsFullRender = true;
+                break;
+            case 'CARD_UPDATED':
+                const index = state.cards.findIndex(c => c.id === payload.id);
+                if (index > -1) state.cards[index] = { ...state.cards[index], ...payload };
+                needsFullRender = true;
+                break;
+            case 'COLUMN_CREATED':
+                 if (!state.columns.some(c => c.id === payload.id)) {
+                    state.columns.push(payload);
+                    state.columns.sort((a,b) => a.position - b.position);
+                    renderColumns();
+                 }
+                break;
+        }
+        if(needsFullRender) {
+            renderCards();
+            updateStats();
+        }
+    };
+    state.ws.onclose = () => console.log(`WebSocket para o board ${state.board.id} fechado.`);
+    state.ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+        state.ws.close();
+    };
+}
+
+// obtém os dados do formulário da tarefa
 function getFormData() {
     const form = elements.taskForm;
     const formData = new FormData(form);
@@ -1038,10 +1070,12 @@ function getFormData() {
     };
 }
 
+// Atualiza as estatísticas com base no ESTADO ATUAL (seja público ou privado)
 function updateStats() {
-    if (!state.cards) { 
+    if (!state.cards) { // Verificação básica se os cards estão carregados
         return;
     }
+    // Se as colunas de "solucionado" ou "não solucionado" não existirem no quadro atual, zera os contadores.
     if (!state.solucionadoId || !state.naoSolucionadoId) {
         document.getElementById('pendingTasks').textContent = state.cards.length;
         document.getElementById('completedTasks').textContent = '0';
@@ -1052,6 +1086,7 @@ function updateStats() {
     const completed = state.cards.filter(c => c.column_id === state.solucionadoId).length;
     const failed = state.cards.filter(c => c.column_id === state.naoSolucionadoId).length;
     const total = state.cards.length;
+    // Tarefas pendentes são todas que não estão em "solucionado" ou "não solucionado"
     const pending = total - completed - failed;
 
     document.getElementById('pendingTasks').textContent = pending;
@@ -1060,6 +1095,7 @@ function updateStats() {
 }
 
 
+// exibe uma mensagem de erro
 function showError(message) {
     const errorDiv = document.getElementById('loginError');
     if (errorDiv && elements.loginSection.style.display !== 'none') {
@@ -1070,6 +1106,7 @@ function showError(message) {
     }
 }
 
+// renderiza os comentários de um card usando DocumentFragment
 function renderComments(descJson) {
     clearComments();
     if (!descJson) return;
@@ -1088,6 +1125,7 @@ function renderComments(descJson) {
     } catch (e) {}
 }
 
+// cria um elemento HTML para um comentário
 function createCommentElement(comment) {
     const div = document.createElement('div');
     div.className = 'comment-item';
@@ -1111,6 +1149,7 @@ function createCommentElement(comment) {
     return div;
 }
 
+// obtém os comentários de uma seção específica
 function getComments(sectionId) {
     const section = document.getElementById(sectionId);
     return Array.from(section?.querySelectorAll('.comment-item') || []).map(item => ({
@@ -1120,6 +1159,7 @@ function getComments(sectionId) {
     }));
 }
 
+// limpa a área de comentários no modal
 function clearComments() {
     ['observacoes', 'tentativas', 'resolucao'].forEach(section => {
         const container = document.getElementById(`${section}-comments`);
@@ -1132,6 +1172,7 @@ function clearComments() {
     });
 }
 
+// preenche o filtro de usuário no modal de estatísticas
 function populateStatsUserFilter() {
     const select = elements.statsFilterUser;
     if (!select) return;
@@ -1149,12 +1190,14 @@ function populateStatsUserFilter() {
     select.value = currentValue || 'all';
 }
 
+// atualiza a visualização no modal de estatísticas
 function updateStatsView() {
     const status = elements.statsModal.dataset.status;
     const selectedUser = elements.statsFilterUser.value;
     const body = document.getElementById('statsModalBody');
     const totalElement = document.getElementById('statsTotalCount');
     
+    // Usa sempre o estado atual, que reflete o quadro visível
     const cardsToFilter = state.cards;
     const currentSolucionadoId = state.solucionadoId;
     const currentNaoSolucionadoId = state.naoSolucionadoId;
@@ -1187,6 +1230,7 @@ function updateStatsView() {
 }
 
 
+// abre o modal de estatísticas
 function openStatsModal(status) {
     const title = document.getElementById('statsModalTitle');
     elements.statsModal.dataset.status = status;
@@ -1198,10 +1242,12 @@ function openStatsModal(status) {
     elements.statsModal.style.display = 'flex';
 }
 
+// fecha o modal de estatísticas
 function closeStatsModal() {
     _performCloseAnimation(elements.statsModal);
 }
 
+// lida com o upload de avatar do usuário
 async function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1228,7 +1274,7 @@ async function handleAvatarUpload(event) {
     }
 }
 
-// Funções globais
+// funções globais para serem chamadas pelo HTML
 window.openModal = openModal;
 window.openStatsModal = openStatsModal;
 window.closeModal = closeModal;
