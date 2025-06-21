@@ -114,7 +114,7 @@ body.login-page {
    justify-content: center;
    align-items: center;
    min-height: 100vh;
-   background-image: url('/static/fundologin.png'); 
+   background-image: url('static/fundologin.png'); 
    background-size: cover;
    background-position: center;
    background-repeat: no-repeat;
