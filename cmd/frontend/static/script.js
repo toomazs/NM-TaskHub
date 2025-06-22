@@ -389,6 +389,10 @@ async function selectPrivateBoard(boardId) {
   if (!selectedBoard) return;
   elements.loader.style.display = "flex";
   state.board = selectedBoard;
+
+  await loadBoardMembers(); 
+  updateUIForPrivateBoard(); 
+
   await loadBoardData();
   showSection("kanbanSection");
   elements.loader.style.display = "none";
