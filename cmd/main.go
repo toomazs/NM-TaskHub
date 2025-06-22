@@ -109,8 +109,9 @@ type BoardInvitation struct {
 
 // estrutura wsmessage
 type WsMessage struct {
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"`
+	SenderID string      `json:"sender_id,omitempty"`
+	Type     string      `json:"type"`
+	Payload  interface{} `json:"payload"`
 }
 
 // estrutura reorderpayload
@@ -469,7 +470,7 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Post("/columns/:id/cards", app.createCard)
 	protected.Put("/cards/:id", app.updateCard)
 	protected.Delete("/cards/:id", app.deleteCard)
-	protected.Post("/cards/reorder", app.reorderCards)
+	protected.Post("/cards/move", app.moveCard)
 
 	// Rotas de Membros e Convites
 	protected.Get("/boards/:id/members", app.getBoardMembers)
@@ -993,6 +994,7 @@ func (app *App) deleteCard(c *fiber.Ctx) error {
 
 // endpoint reordenar card
 func (app *App) reorderCards(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
 	var payload ReorderPayload
 	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Payload inválido"})
@@ -1027,11 +1029,86 @@ func (app *App) reorderCards(c *fiber.Ctx) error {
 	go func() {
 		boardID, boardIDErr := app.getBoardIDFromColumn(payload.ColumnID)
 		if boardIDErr == nil && boardID != 0 {
-			app.broadcast(boardID, WsMessage{Type: "BOARD_STATE_UPDATED", Payload: nil})
+			app.broadcast(boardID, WsMessage{Type: "BOARD_STATE_UPDATED", Payload: nil, SenderID: userID})
 		}
 	}()
 
 	return c.Status(200).JSON(fiber.Map{"status": "reordered"})
+}
+
+// endpoint mover cards
+func (app *App) moveCard(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var payload struct {
+		CardID      int `json:"card_id"`
+		NewColumnID int `json:"new_column_id"`
+		NewPosition int `json:"new_position"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Payload inválido"})
+	}
+
+	tx, err := app.db.Begin(context.Background())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao iniciar transação"})
+	}
+	defer tx.Rollback(context.Background())
+
+	var oldColumnID, oldPosition int
+	err = tx.QueryRow(context.Background(),
+		"SELECT column_id, position FROM cards WHERE id = $1", payload.CardID,
+	).Scan(&oldColumnID, &oldPosition)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Card não encontrado"})
+	}
+
+	_, err = tx.Exec(context.Background(),
+		"UPDATE cards SET position = position - 1 WHERE column_id = $1 AND position > $2",
+		oldColumnID, oldPosition,
+	)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao reordenar coluna antiga"})
+	}
+
+	_, err = tx.Exec(context.Background(),
+		"UPDATE cards SET position = position + 1 WHERE column_id = $1 AND position >= $2",
+		payload.NewColumnID, payload.NewPosition,
+	)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao reordenar nova coluna"})
+	}
+
+	_, err = tx.Exec(context.Background(),
+		"UPDATE cards SET column_id = $1, position = $2, updated_at = NOW() WHERE id = $3",
+		payload.NewColumnID, payload.NewPosition, payload.CardID,
+	)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao mover o card"})
+	}
+
+	if err := tx.Commit(context.Background()); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao confirmar a movimentação"})
+	}
+
+	go func() {
+		boardID, boardIDErr := app.getBoardIDFromColumn(payload.NewColumnID)
+		if boardIDErr == nil && boardID != 0 {
+			app.broadcast(boardID, WsMessage{
+				SenderID: userID,
+				Type:     "CARD_MOVED",
+				Payload: fiber.Map{
+					"card_id":       payload.CardID,
+					"old_column_id": oldColumnID,
+					"new_column_id": payload.NewColumnID,
+					"new_position":  payload.NewPosition,
+				},
+			})
+		}
+	}()
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 // endpoint sair do board
@@ -1213,10 +1290,10 @@ func (app *App) respondToInvitation(c *fiber.Ctx) error {
 		status = "accepted"
 	}
 
-	err = tx.QueryRow(context.Background(), "UPDATE board_invitations SET status = $1, updated_at = now() WHERE id = $2 AND invitee_id = $3 RETURNING board_id", status, invitationID, userID).Scan(&boardID)
+	err = tx.QueryRow(context.Background(), "UPDATE board_invitations SET status = $1, updated_at = now() WHERE id = $2 AND invitee_id = $3 AND status = 'pending' RETURNING board_id", status, invitationID, userID).Scan(&boardID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return c.Status(404).JSON(fiber.Map{"error": "Convite não encontrado ou não pertence a você"})
+			return c.Status(404).JSON(fiber.Map{"error": "Convite inválido, expirado ou já respondido."})
 		}
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao atualizar convite"})
 	}

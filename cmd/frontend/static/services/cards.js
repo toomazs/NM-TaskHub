@@ -33,3 +33,14 @@ export async function reorderCardsInColumn(columnId, orderedCardIds) {
         })
     });
 }
+
+export async function moveCard(cardId, newColumnId, newPosition) {
+    return await api('/cards/move', {
+        method: 'POST',
+        body: JSON.stringify({
+            card_id: cardId,
+            new_column_id: newColumnId,
+            new_position: newPosition
+        })
+    });
+}

@@ -28,7 +28,6 @@ const state = {
 };
 
 let elements = {};
-const columnReorderDebouncers = {};
 
 // --- FUNÇÕES HELPER ---
 
@@ -43,15 +42,7 @@ async function loadModalHTML(modalId) {
       .insertAdjacentHTML("beforeend", html);
   } catch (error) {
     console.error(`Falha ao carregar o modal: ${error}`);
-    showError(`Não foi possível carregar o componente ${modalId}.`);
-  }
-}
-
-async function reorderColumn(columnId, orderedCardIDs) {
-  try {
-    await cardService.reorderCardsInColumn(columnId, orderedCardIDs);
-  } catch (error) {
-    showError(`Falha ao salvar a ordem da coluna ${columnId}.`);
+    showToast({ message: `Não foi possível carregar o componente ${modalId}.`, type: 'error' });
   }
 }
 
@@ -258,10 +249,6 @@ async function loadBoardData() {
   renderCards();
   updateStats();
   connectWS();
-  if (!state.board.is_public) {
-    await loadBoardMembers();
-    updateUIForPrivateBoard();
-  }
 }
 async function loadData() {
   const columnsResponse = await columnService.getColumnsForBoard(
@@ -306,16 +293,18 @@ function showSection(sectionId) {
 
 // --- LÓGICA DE UI E RENDERIZAÇÃO ---
 function updateUIForPublicBoard() {
-  document.getElementById("btnBackToBoards").style.display = "none";
-  document.getElementById(
-    "boardTitleHeader"
-  ).innerHTML = `<i class="fas fa-headset"></i> Suporte`;
-  const btnInvite = document.getElementById("btnInviteUser");
-  const boardMembers = document.getElementById("boardMembers");
-  const publicStats = document.getElementById("publicBoardStats");
-  if (btnInvite) btnInvite.style.display = "none";
-  if (boardMembers) boardMembers.style.display = "none";
-  if (publicStats) publicStats.style.display = "flex";
+    document.getElementById("btnBackToBoards").style.display = "none";
+    document.getElementById(
+        "boardTitleHeader"
+    ).innerHTML = `<i class="fas fa-headset"></i> Suporte`;
+    const btnInvite = document.getElementById("btnInviteUser");
+    const boardMembers = document.getElementById("boardMembers");
+    const publicStats = document.getElementById("publicBoardStats");
+    if (btnInvite) btnInvite.style.display = "none";
+    if (boardMembers) boardMembers.style.display = "none";
+    if (publicStats) publicStats.style.display = "flex";
+    
+    document.getElementById("btnLeaveBoard").style.display = "none";
 }
 function updateUIForPrivateBoard() {
     document.getElementById("btnBackToBoards").style.display = "inline-flex";
@@ -471,21 +460,21 @@ function createColumnElement(column) {
   return columnEl;
 }
 async function deleteColumn(columnId) {
-  if (
-    !confirm(
-      "Tem certeza que deseja excluir esta coluna?\n\nATENÇÃO: A coluna deve estar vazia."
-    )
-  )
-    return;
-  try {
-    const response = await columnService.deleteColumn(columnId);
-    if (!response.ok) {
-      const errorData = await response.json();
-      showError(errorData.error || "Não foi possível excluir a coluna.");
-    }
-  } catch (error) {
-    showError("Erro de conexão ao excluir a coluna.");
-  }
+    showToast({
+        message: "Tem certeza que deseja excluir esta coluna? A coluna deve estar vazia.",
+        type: 'confirm',
+        onConfirm: async () => {
+            try {
+                const response = await columnService.deleteColumn(columnId);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showError(errorData.error || "Não foi possível excluir a coluna.");
+                }
+            } catch (error) {
+                showError("Erro de conexão ao excluir a coluna.");
+            }
+        }
+    });
 }
 function addDragAndDropListenersToColumns() {
   document.querySelectorAll(".task-list").forEach((taskList) => {
@@ -1105,34 +1094,40 @@ async function handlePrivateBoardSubmit(e) {
   }
 }
 async function handleDeleteBoard(boardId, event) {
-  event.stopPropagation();
-  const boardTitle =
-    state.privateBoards.find((b) => b.id === boardId)?.title || "este quadro";
-  if (
-    !confirm(
-      `Tem certeza que deseja excluir "${boardTitle}"?\n\nATENÇÃO: Todas as colunas e tarefas dentro deste quadro serão permanentemente excluídas.`
-    )
-  )
-    return;
-  try {
-    const response = await boardService.deleteBoard(boardId);
-    if (response?.ok) {
-      await loadAndShowPrivateBoards();
-    } else {
-      const errorData = await response.json();
-      showError(errorData.error || "Falha ao excluir o quadro.");
-    }
-  } catch (error) {
-    showError("Erro de conexão ao tentar excluir o quadro.");
-  }
+    event.stopPropagation();
+    const boardTitle = state.privateBoards.find((b) => b.id === boardId)?.title || "este quadro";
+    
+    showToast({
+        message: `Tem certeza que deseja excluir "${boardTitle}"? Todas as colunas e tarefas serão permanentemente excluídas.`,
+        type: 'confirm',
+        onConfirm: async () => {
+            try {
+                const response = await boardService.deleteBoard(boardId);
+                if (response?.ok) {
+                    await loadAndShowPrivateBoards();
+                    showToast({ message: `Quadro "${boardTitle}" excluído.`, type: 'success' });
+                } else {
+                    const errorData = await response.json();
+                    showError(errorData.error || "Falha ao excluir o quadro.");
+                }
+            } catch (error) {
+                showError("Erro de conexão ao tentar excluir o quadro.");
+            }
+        }
+    });
 }
 async function deleteCard(cardId) {
-  if (!confirm("Tem certeza que deseja excluir esta tarefa?")) return;
-  try {
-    await cardService.deleteCard(cardId);
-  } catch (error) {
-    showError("Erro ao excluir a tarefa");
-  }
+    showToast({
+        message: "Tem certeza que deseja excluir esta tarefa?",
+        type: 'confirm',
+        onConfirm: async () => {
+            try {
+                await cardService.deleteCard(cardId);
+            } catch (error) {
+                showError("Erro ao excluir a tarefa");
+            }
+        }
+    });
 }
 async function moveCardToSolved(solved) {
   if (!state.editingCardId) return;
@@ -1153,7 +1148,7 @@ async function moveCardToSolved(solved) {
   }
 
   try {
-    await reorderColumn(targetId, [state.editingCardId]);
+    await cardService.moveCard(state.editingCardId, targetId, 0); 
 
     const cardToMove = state.cards.find((c) => c.id === state.editingCardId);
     if (cardToMove) {
@@ -1187,7 +1182,7 @@ async function returnCardToBoard() {
   }
 
   try {
-    await reorderColumn(firstActiveColumn.id, [state.editingCardId]);
+    await cardService.moveCard(state.editingCardId, firstActiveColumn.id, 0); 
 
     const cardToMove = state.cards.find((c) => c.id === state.editingCardId);
     if (cardToMove) {
@@ -1219,81 +1214,107 @@ function getDragAfterElement(container, y) {
     { offset: Number.NEGATIVE_INFINITY }
   ).element;
 }
+
 function handleDrop(e) {
-  e.preventDefault();
-  const targetList = e.target.closest(".task-list");
-  if (!targetList) return;
-  targetList.classList.remove("drag-over");
-  const cardId = parseInt(e.dataTransfer.getData("text/plain"));
-  const cardToMove = state.cards.find((c) => c.id === cardId);
-  if (!cardToMove) return;
-  const oldColumnId = cardToMove.column_id;
-  const newColumnId = parseInt(targetList.dataset.columnId);
-  const cardElement = document.querySelector(`.task[data-card-id="${cardId}"]`);
-  const afterElement = getDragAfterElement(targetList, e.clientY);
-  if (afterElement) targetList.insertBefore(cardElement, afterElement);
-  else targetList.appendChild(cardElement);
-  const newColumnElements = Array.from(
-    document.querySelectorAll(
-      `.task-list[data-column-id="${newColumnId}"] .task`
-    )
-  );
-  const newColumnOrder = newColumnElements.map((el) =>
-    parseInt(el.dataset.cardId)
-  );
-  if (!columnReorderDebouncers[newColumnId]) {
-    columnReorderDebouncers[newColumnId] = debounce(reorderColumn, 400);
-  }
-  columnReorderDebouncers[newColumnId](newColumnId, newColumnOrder);
-  if (oldColumnId !== newColumnId) {
-    const oldColumnElements = Array.from(
-      document.querySelectorAll(
-        `.task-list[data-column-id="${oldColumnId}"] .task`
-      )
-    );
-    const oldColumnOrder = oldColumnElements.map((el) =>
-      parseInt(el.dataset.cardId)
-    );
-    if (!columnReorderDebouncers[oldColumnId]) {
-      columnReorderDebouncers[oldColumnId] = debounce(reorderColumn, 400);
+    e.preventDefault();
+    const targetList = e.target.closest(".task-list");
+    if (!targetList) return;
+    
+    targetList.classList.remove("drag-over");
+    
+    const cardId = parseInt(e.dataTransfer.getData("text/plain"));
+    const cardElement = document.querySelector(`.task[data-card-id="${cardId}"]`);
+    if (!cardElement) return;
+
+    const afterElement = getDragAfterElement(targetList, e.clientY);
+    if (afterElement) {
+        targetList.insertBefore(cardElement, afterElement);
+    } else {
+        targetList.appendChild(cardElement);
     }
-    columnReorderDebouncers[oldColumnId](oldColumnId, oldColumnOrder);
-  }
-  const allTaskElements = Array.from(
-    document.querySelectorAll(".kanban-container .task")
-  );
-  allTaskElements.forEach((el) => {
-    const id = parseInt(el.dataset.cardId);
-    const colId = parseInt(el.closest(".column").dataset.columnId);
-    const cardInState = state.cards.find((c) => c.id === id);
-    if (cardInState) cardInState.column_id = colId;
-  });
+    
+    const newColumnId = parseInt(targetList.dataset.columnId);
+    
+    const cardsInNewColumn = Array.from(targetList.querySelectorAll('.task'));
+    const newPosition = cardsInNewColumn.findIndex(card => card.dataset.cardId == cardId);
+
+    const movedCard = state.cards.find(c => c.id === cardId);
+    if (movedCard) {
+        movedCard.column_id = newColumnId;
+        movedCard.position = newPosition;
+    }
+
+    cardService.moveCard(cardId, newColumnId, newPosition).catch(err => {
+        showError("Falha ao sincronizar a ordem dos cards.");
+        loadData().then(() => {
+            renderColumns();
+            renderCards();
+        });
+    });
 }
+
 function connectWS() {
-  if (state.ws && state.ws.readyState < 2) state.ws.close();
-  const protocol = location.protocol === "https:" ? "wss" : "ws";
-  state.ws = new WebSocket(
-    `${protocol}://${location.host}/ws/board/${state.board.id}`
-  );
-  state.ws.onmessage = async (e) => {
-    const { type, payload } = JSON.parse(e.data);
-    if (
-      type === "BOARD_STATE_UPDATED" ||
-      type.includes("CARD") ||
-      type.includes("COLUMN")
-    ) {
-      await loadData();
-      renderColumns();
-      renderCards();
-      updateStats();
+    if (state.ws && state.ws.readyState < 2) {
+        state.ws.close();
     }
-  };
-  state.ws.onclose = () =>
-    console.log(`WebSocket para o board ${state.board.id} fechado.`);
-  state.ws.onerror = (err) => {
-    console.error("WebSocket error:", err);
-    state.ws.close();
-  };
+    
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const wsUrl = `${protocol}://${location.host}/ws/board/${state.board.id}`;
+    
+    console.log("Tentando conectar ao WebSocket em:", wsUrl);
+    
+    try {
+        state.ws = new WebSocket(wsUrl);
+    } catch (error) {
+        console.error("Falha ao criar o WebSocket. Verifique a URL:", error);
+        showError("Não foi possível conectar ao servidor para atualizações em tempo real.");
+        return;
+    }
+
+
+    state.ws.onmessage = async (e) => {
+        const { type, payload, sender_id } = JSON.parse(e.data);
+
+        if (sender_id && sender_id === state.user.id) {
+            return;
+        }
+
+        if (type === 'CARD_MOVED') {
+            const { card_id, new_column_id, new_position } = payload;
+            
+            const cardElement = document.querySelector(`.task[data-card-id="${card_id}"]`);
+            const newColumnElement = document.querySelector(`.task-list[data-column-id="${new_column_id}"]`);
+            
+            if (cardElement && newColumnElement) {
+                const cardsInNewColumn = Array.from(newColumnElement.querySelectorAll('.task'));
+                newColumnElement.insertBefore(cardElement, cardsInNewColumn[new_position] || null);
+                
+                const cardInState = state.cards.find(c => c.id === card_id);
+                if (cardInState) {
+                    cardInState.column_id = new_column_id;
+                    cardInState.position = new_position;
+                }
+            }
+        } else if (type === "BOARD_STATE_UPDATED" || type.includes("CARD") || type.includes("COLUMN")) {
+            await loadData();
+            renderColumns();
+            renderCards();
+            updateStats();
+        }
+    };
+
+    state.ws.onopen = () => {
+        console.log(`Conexão WebSocket para o board ${state.board.id} estabelecida com sucesso.`);
+    };
+
+    state.ws.onclose = () => {
+        console.log(`Conexão WebSocket para o board ${state.board.id} fechada.`);
+    };
+
+    state.ws.onerror = (err) => {
+        console.error("Erro no WebSocket:", err);
+        showError("A conexão para atualizações em tempo real falhou.");
+    };
 }
 function updateStats() {
   if (!state.cards || !state.board.is_public) return;
@@ -1608,23 +1629,27 @@ async function handleGenericNotificationClick(notification) {
 
 async function handleLeaveBoard() {
     const boardTitle = state.board.title;
-    if (!confirm(`Tem certeza que deseja sair do quadro "${boardTitle}"?\nVocê perderá o acesso a ele.`)) {
-        return;
-    }
-
-    elements.loader.style.display = "flex";
-    try {
-        const result = await boardService.leaveBoard(state.board.id);
-        if (result.ok) {
-            await loadAndShowPrivateBoards();
-        } else {
-            showError(result.data.error || "Não foi possível sair do quadro.");
+    showToast({
+        message: `Tem certeza que deseja sair do quadro "${boardTitle}"? Você perderá o acesso a ele.`,
+        type: 'confirm',
+        onConfirm: async () => {
+            elements.loader.style.display = "flex";
+            try {
+                const result = await boardService.leaveBoard(state.board.id);
+                if (result.ok) {
+                    await loadAndShowPrivateBoards();
+                    showToast({ message: "Você saiu do quadro.", type: 'success' });
+                } else {
+                    const errorData = await result.json();
+                    showError(errorData.error || "Não foi possível sair do quadro.");
+                }
+            } catch (error) {
+                showError("Erro de conexão ao tentar sair do quadro.");
+            } finally {
+                elements.loader.style.display = "none";
+            }
         }
-    } catch (error) {
-        showError("Erro de conexão ao tentar sair do quadro.");
-    } finally {
-        elements.loader.style.display = "none";
-    }
+    });
 }
 
 async function handleTaskNotificationClick(notification) {
@@ -1674,7 +1699,10 @@ async function respondToInvitation(
     );
     if (res?.ok) {
       await fetchNotifications();
-      if (accept) await loadAndShowPrivateBoards();
+      if (accept) {
+        showToast({ message: "Convite aceito! Bem-vindo ao novo quadro.", type: 'success' });
+        await loadAndShowPrivateBoards();
+      }
     } else {
       showError("Falha ao responder ao convite.");
     }
@@ -1684,7 +1712,6 @@ async function respondToInvitation(
 }
 async function handleMarkNotificationsAsRead() {
   if (state.notificationsNeedUpdate) {
-    console.log("Fechando dropdown, marcando notificações como lidas...");
     try {
       await notificationService.markAllNotificationsAsRead();
       state.notificationsNeedUpdate = false;
@@ -1876,36 +1903,98 @@ function renderManageMembersList() {
   });
 }
 async function removeMember(memberId) {
-  const member = state.boardMembers.find((m) => m.id === memberId);
-  if (!member) return;
-  const memberName = userDisplayNameMap[member.email] || member.username;
-  if (!confirm(`Tem certeza que deseja remover "${memberName}" do quadro?`))
-    return;
-  try {
-    const response = await boardService.removeMemberFromBoard(
-      state.board.id,
-      memberId
-    );
-    if (response.ok) {
-      state.boardMembers = state.boardMembers.filter((m) => m.id !== memberId);
-      renderManageMembersList();
-      renderBoardMembers();
-    } else {
-      const err = await response.json();
-      showError(err.error || "Falha ao remover o membro.");
-    }
-  } catch (error) {
-    showError("Erro de conexão ao remover membro.");
-  }
+    const member = state.boardMembers.find((m) => m.id === memberId);
+    if (!member) return;
+    const memberName = userDisplayNameMap[member.email] || member.username;
+
+    showToast({
+        message: `Tem certeza que deseja remover "${memberName}" do quadro?`,
+        type: 'confirm',
+        onConfirm: async () => {
+            try {
+                const response = await boardService.removeMemberFromBoard(state.board.id, memberId);
+                if (response.ok) {
+                    state.boardMembers = state.boardMembers.filter((m) => m.id !== memberId);
+                    renderManageMembersList();
+                    renderBoardMembers();
+                    showToast({ message: `${memberName} removido.`, type: 'success' });
+                } else {
+                    const err = await response.json();
+                    showError(err.error || "Falha ao remover o membro.");
+                }
+            } catch (error) {
+                showError("Erro de conexão ao remover membro.");
+            }
+        }
+    });
 }
 function showError(message) {
-  const errorDiv = document.getElementById("loginError");
-  if (errorDiv && elements.loginSection.style.display !== "none") {
-    errorDiv.textContent = message;
-    errorDiv.style.display = "block";
-  } else {
-    alert(`Erro: ${message}`);
-  }
+    showToast({ message: message, type: 'error' });
+}
+function showToast({
+    message,
+    type = 'info',
+    duration = 4000,
+    onConfirm = null,
+    onCancel = null
+}) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        info: 'fa-info-circle',
+        confirm: 'fa-question-circle',
+    };
+
+    let toastHTML = `
+        <div class="toast-icon"><i class="fas ${icons[type]}"></i></div>
+        <div class="toast-content">
+            <div class="toast-message">${message}</div>
+    `;
+
+    if (type === 'confirm') {
+        toastHTML += `
+            <div class="toast-actions">
+                <button class="btn btn-secondary btn-cancel-toast">Não</button>
+                <button class="btn btn-primary btn-confirm-toast">Sim</button>
+            </div>
+        `;
+    }
+
+    toastHTML += `</div>`;
+    toast.innerHTML = toastHTML;
+    container.appendChild(toast);
+
+    toast.getBoundingClientRect();
+    toast.classList.add('show');
+
+    const removeToast = () => {
+        toast.classList.remove('show');
+        toast.classList.add('hide');
+        toast.addEventListener('transitionend', () => toast.remove());
+    };
+
+    if (type === 'confirm') {
+        toast.querySelector('.btn-confirm-toast').onclick = () => {
+            if (onConfirm) onConfirm();
+            removeToast();
+        };
+        toast.querySelector('.btn-cancel-toast').onclick = () => {
+            if (onCancel) onCancel();
+            removeToast();
+        };
+    } else {
+        setTimeout(removeToast, duration);
+    }
 }
 window.openModal = openModal;
 window.editCard = editCard;
@@ -1997,12 +2086,16 @@ window.cancelPrivateComment = () => {
   input.querySelector("textarea").value = "";
 };
 window.deleteComment = (button) => {
-  if (confirm("Excluir este comentário?")) {
-    const isPrivate = !!button.closest("#privateTaskModal");
-    button.closest(".comment-item").remove();
-    if (isPrivate) handlePrivateFormInput();
-    else handleFormInput();
-  }
+    showToast({
+        message: "Excluir este comentário?",
+        type: 'confirm',
+        onConfirm: () => {
+            const isPrivate = !!button.closest("#privateTaskModal");
+            button.closest(".comment-item").remove();
+            if (isPrivate) handlePrivateFormInput();
+            else handleFormInput();
+        }
+    });
 };
 window.editComment = (button) => {
   const commentItem = button.closest(".comment-item");
