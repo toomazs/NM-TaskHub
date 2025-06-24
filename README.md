@@ -88,7 +88,7 @@ Para rodar este projeto em sua máquina local, siga os passos abaixo.
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/NM-Kanban-API.git](https://github.com/toomazs/NM-Kanban-API.git)
+    git clone https://github.com/toomazs/NM-Kanban-API.git
     cd NM-Kanban-API
     ```
 
