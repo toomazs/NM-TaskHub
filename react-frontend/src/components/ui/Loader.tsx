@@ -2,11 +2,10 @@ import React from 'react';
 
 interface LoaderProps {
   fullScreen?: boolean;
-  isVisible?: boolean; // Usaremos esta prop para controlar o fade
+  isVisible?: boolean; 
 }
 
 export function Loader({ fullScreen = true, isVisible = true }: LoaderProps) {
-  // Constrói as classes CSS para aplicar o estilo e a animação
   const loaderClasses = [
     'loader',
     fullScreen ? 'fullscreen' : '',

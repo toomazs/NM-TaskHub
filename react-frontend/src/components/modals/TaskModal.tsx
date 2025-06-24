@@ -7,7 +7,7 @@ import { useBoard } from '../../contexts/BoardContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Comment } from '../../types/kanban';
 import * as cardService from '../../services/cards';
-import { userDisplayNameModalMap } from '../../api/config';
+import { userDisplayNameMap } from '../../api/config';
 
 import { AssigneeSelector } from '../kanban/AssigneeSelector';
 import { CommentSection } from '../kanban/CommentSection';
@@ -82,7 +82,7 @@ export function TaskModal() {
         }
     }, [isSaving]);
     
-    const getAuthorName = useCallback(() => (currentUser && (userDisplayNameModalMap[currentUser.email!] || currentUser.email!)) || "Usuário", [currentUser]);
+    const getAuthorName = useCallback(() => (currentUser && (userDisplayNameMap[currentUser.email!] || currentUser.email!)) || "Usuário", [currentUser]);
 
     const saveChanges = useCallback(async () => {
         if (!isEditing || !editingCard || !board) return;
