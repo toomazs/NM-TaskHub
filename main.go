@@ -134,7 +134,8 @@ var userDisplayNameMap = map[string]string{
 	"rubens@kanban.local":  "Rubens Leite",
 	"kaiky@kanban.local":   "Kaiky Leandro",
 	"pedro@kanban.local":   "Pedro Santos",
-	"diego@kanban.local":   "Diego",
+	"diego@kanban.local":   "Diego Sousa",
+	"cesar@kanban.local":   "César Bragança",
 }
 
 // pegar mapeamento

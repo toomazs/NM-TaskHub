@@ -5,7 +5,7 @@ export const userDisplayNameMap: Record<string, string> = {
     'miyake@kanban.local': 'João Miyake', 'gomes@kanban.local': 'João Gomes',
     'rodrigo@kanban.local': 'Rodrigo Akira', 'rubens@kanban.local': 'Rubens Leite',
     'kaiky@kanban.local': 'Kaiky Leandro', 'pedro@kanban.local': 'Pedro Santos',
-    'diego@kanban.local': 'Diego',
+    'diego@kanban.local': 'Diego', 'cesar@kanban.local': 'César Bragança',
 };
 
 // Mapeamentos de nomes de usuário em Modal
@@ -15,7 +15,7 @@ export const userDisplayNameModalMap: Record<string, string> = {
     'miyake@kanban.local': 'Miyake', 'gomes@kanban.local': 'Gomes',
     'rodrigo@kanban.local': 'Rodrigo', 'rubens@kanban.local': 'Rubens',
     'kaiky@kanban.local': 'Kaiky', 'pedro@kanban.local': 'Pedro',
-    'diego@kanban.local': 'Diego',
+    'diego@kanban.local': 'Diego', 'cesar@kanban.local': 'César',
 };
 
 // Mapeamento de Cargos
@@ -31,4 +31,5 @@ export const userRoleMap: Record<string, string> = {
     'miyake@kanban.local': 'Assistente',
     'gomes@kanban.local': 'Assistente',
     'marques@kanban.local': 'Analista',
+    'cesar@kanban.local': 'Supervisor',
 };

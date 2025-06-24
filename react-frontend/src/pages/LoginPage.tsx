@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 
 import * as authService from '../services/auth';
 import { useAuth } from '../contexts/AuthContext';
-import logo from '/img/logo.png'; 
+import logo from '/img/nmlogo.png'; 
 
 export function LoginPage() {
   const { user, isLoading } = useAuth();
