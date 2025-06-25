@@ -5,7 +5,7 @@ export const userDisplayNameMap: Record<string, string> = {
     'miyake@kanban.local': 'João Miyake', 'gomes@kanban.local': 'João Gomes',
     'rodrigo@kanban.local': 'Rodrigo Akira', 'rubens@kanban.local': 'Rubens Leite',
     'kaiky@kanban.local': 'Kaiky Leandro', 'pedro@kanban.local': 'Pedro Santos',
-    'diego@kanban.local': 'Diego', 'cesar@kanban.local': 'César Bragança',
+    'diego@kanban.local': 'Diego Sousa', 'cesar@kanban.local': 'César Bragança',
 };
 
 // Mapeamentos de nomes de usuário em Modal

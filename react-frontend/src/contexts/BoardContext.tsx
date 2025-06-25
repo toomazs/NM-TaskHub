@@ -77,7 +77,13 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     switch (message.type) {
       case 'CARD_UPDATED': {
         const updatedCard = message.payload as Card;
-        setColumns(prev => prev.map(col => col.id === updatedCard.column_id ? { ...col, cards: col.cards.map(c => c.id === updatedCard.id ? updatedCard : c) } : col));
+        setColumns(prev => prev.map(col => {
+            // Lógica para atualizar um card dentro da mesma coluna
+            if (col.id === updatedCard.column_id) {
+                return { ...col, cards: col.cards.map(c => c.id === updatedCard.id ? updatedCard : c) };
+            }
+            return col;
+        }));
         break;
       }
       case 'CARD_CREATED': {
@@ -90,30 +96,40 @@ export function BoardProvider({ children }: { children: ReactNode }) {
         setColumns(prev => prev.map(col => ({...col, cards: col.cards.filter(c => c.id !== card_id)})));
         break;
       }
+      
+      // =========================================================================
+      // ===== CORREÇÃO PRINCIPAL AQUI ===========================================
+      // =========================================================================
       case 'CARD_MOVED': {
-        const { card_id, old_column_id, new_column_id, new_position } = message.payload;
-        if (old_column_id === new_column_id) break;
+        // Pré-requisito: O payload do backend DEVE conter o objeto 'card' atualizado
+        // e o 'old_column_id'. Ex: { card: Card, old_column_id: number }
+        const { card, old_column_id } = message.payload as { card: Card, old_column_id: number };
+        
+        // Se o card não mudou de coluna, o case CARD_UPDATED deve ser usado.
+        if (old_column_id === card.column_id) break;
 
         setColumns(prev => {
-            let cardToMove: Card | undefined;
+            // 1. Remove o card da coluna antiga (usando o old_column_id)
             const columnsWithoutCard = prev.map(col => {
                 if (col.id === old_column_id) {
-                    cardToMove = col.cards.find(c => c.id === card_id);
-                    return { ...col, cards: col.cards.filter(c => c.id !== card_id) };
+                    return { ...col, cards: col.cards.filter(c => c.id !== card.id) };
                 }
                 return col;
             });
 
-            if (!cardToMove) return prev; 
-
-            return columnsWithoutCard.map(col => {
-                if (col.id === new_column_id) {
+            // 2. Adiciona o card ATUALIZADO (do payload) na nova coluna
+            const finalColumns = columnsWithoutCard.map(col => {
+                if (col.id === card.column_id) {
                     const newCards = [...col.cards];
-                    newCards.splice(new_position, 0, cardToMove!);
+                    // Insere o card na posição correta (se a posição for enviada) ou no final.
+                    const position = message.payload.new_position ?? newCards.length;
+                    newCards.splice(position, 0, card);
                     return { ...col, cards: newCards };
                 }
                 return col;
             });
+
+            return finalColumns;
         });
         break;
       }

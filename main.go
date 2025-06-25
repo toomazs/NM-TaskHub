@@ -72,6 +72,7 @@ type Card struct {
 	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
 	Position    int        `json:"position" db:"position"`
+	CompletedAt *time.Time `json:"completed_at,omitempty" db:"completed_at"`
 }
 
 // estrutura notification
@@ -104,6 +105,49 @@ type WsMessage struct {
 	SenderID string      `json:"sender_id,omitempty"`
 	Type     string      `json:"type"`
 	Payload  interface{} `json:"payload"`
+}
+
+// estrutura ligacoes
+type Ligacao struct {
+	ID             int        `json:"id" db:"id"`
+	Name           string     `json:"name" db:"name"`
+	Type           string     `json:"type" db:"type"`
+	ImageURL       *string    `json:"image_url,omitempty" db:"image_url"`
+	Status         string     `json:"status" db:"status"`
+	SpreadsheetURL *string    `json:"spreadsheet_url,omitempty" db:"spreadsheet_url"`
+	Address        *string    `json:"address,omitempty" db:"address"`
+	EndDate        *time.Time `json:"end_date,omitempty" db:"end_date"` // Renomeado
+	Observations   *string    `json:"observations,omitempty" db:"observations"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+// estrutura ligacoes
+type AgendaEvent struct {
+	ID          int       `json:"id" db:"id"`
+	Title       string    `json:"title" db:"title"`
+	Description *string   `json:"description,omitempty" db:"description"`
+	EventDate   time.Time `json:"event_date" db:"event_date"`
+	Color       string    `json:"color" db:"color"`
+	UserID      *string   `json:"user_id,omitempty" db:"user_id"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// estrutura avaliacoes
+type Avaliacao struct {
+	ID              int       `json:"id" db:"id"`
+	Source          string    `json:"source" db:"source"`
+	CustomerName    string    `json:"customer_name" db:"customer_name"`
+	ReviewContent   string    `json:"review_content" db:"review_content"`
+	Rating          *int      `json:"rating,omitempty" db:"rating"`
+	Status          string    `json:"status" db:"status"`
+	ReviewDate      time.Time `json:"review_date" db:"review_date"`
+	ReviewURL       *string   `json:"review_url,omitempty" db:"review_url"`
+	AssignedTo      *string   `json:"assigned_to,omitempty" db:"assigned_to"`
+	ResolutionNotes *string   `json:"resolution_notes,omitempty" db:"resolution_notes"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // estrutura reorderpayload
@@ -488,21 +532,28 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Put("/cards/:id", app.updateCard)
 	protected.Delete("/cards/:id", app.deleteCard)
 	protected.Post("/cards/move", app.moveCard)
-
-	// Rotas de Membros e Convites
 	protected.Get("/boards/:id/members", app.getBoardMembers)
 	protected.Get("/boards/:id/invitable-users", app.getInvitableUsers)
 	protected.Post("/boards/:id/invite", app.inviteUserToBoard)
 	protected.Post("/invitations/:id/respond", app.respondToInvitation)
-
-	// Rota para remover membros
 	protected.Delete("/boards/:boardId/members/:memberId", app.removeBoardMember)
 	protected.Post("/boards/:id/leave", app.leaveBoard)
-
-	// Rotas de Notificação
 	protected.Get("/notifications", app.getNotifications)
 	protected.Post("/notifications/:id/read", app.markNotificationRead)
 	protected.Post("/notifications/mark-all-as-read", app.markAllNotificationsRead)
+	protected.Get("/ligacoes", app.getLigacoes)
+	protected.Post("/ligacoes", app.createLigacao)
+	protected.Put("/ligacoes/:id", app.updateLigacao)
+	protected.Delete("/ligacoes/:id", app.deleteLigacao)
+	protected.Post("/ligacoes/:id/image", app.handleLigacaoImageUpload)
+	protected.Get("/agenda/events", app.getAgendaEvents)
+	protected.Post("/agenda/events", app.createAgendaEvent)
+	protected.Put("/agenda/events/:id", app.updateAgendaEvent)
+	protected.Delete("/agenda/events/:id", app.deleteAgendaEvent)
+	protected.Get("/avaliacoes", app.getAvaliacoes)
+	protected.Post("/avaliacoes", app.createAvaliacao)
+	protected.Put("/avaliacoes/:id", app.updateAvaliacao)
+	protected.Delete("/avaliacoes/:id", app.deleteAvaliacao)
 
 }
 
@@ -853,7 +904,7 @@ func (app *App) getCards(c *fiber.Ctx) error {
 	rows, err := app.db.Query(context.Background(), `
 		SELECT id, column_id, title, COALESCE(description, '') as description,
 			   COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority,
-			   due_date, position, created_at, updated_at
+			   due_date, position, created_at, updated_at, completed_at
 		FROM cards WHERE column_id = $1 ORDER BY position`, columnID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "erro ao buscar cards"})
@@ -864,7 +915,7 @@ func (app *App) getCards(c *fiber.Ctx) error {
 		var card Card
 		if err := rows.Scan(&card.ID, &card.ColumnID, &card.Title, &card.Description,
 			&card.AssignedTo, &card.Priority, &card.DueDate, &card.Position,
-			&card.CreatedAt, &card.UpdatedAt); err != nil {
+			&card.CreatedAt, &card.UpdatedAt, &card.CompletedAt); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "erro ao ler dados do card"})
 		}
 		cards = append(cards, card)
@@ -995,8 +1046,8 @@ func (app *App) updateCard(c *fiber.Ctx) error {
 	boardID, err := app.getBoardIDFromCard(cardID)
 	if err == nil {
 		var updatedCard Card
-		selectQuery := `SELECT id, column_id, title, COALESCE(description, '') as description, COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority, due_date, position, created_at, updated_at FROM cards WHERE id = $1`
-		app.db.QueryRow(context.Background(), selectQuery, cardID).Scan(&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description, &updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position, &updatedCard.CreatedAt, &updatedCard.UpdatedAt)
+		selectQuery := `SELECT id, column_id, title, COALESCE(description, '') as description, COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority, due_date, position, created_at, updated_at, completed_at FROM cards WHERE id = $1`
+		app.db.QueryRow(context.Background(), selectQuery, cardID).Scan(&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description, &updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position, &updatedCard.CreatedAt, &updatedCard.UpdatedAt, &updatedCard.CompletedAt) // Adicionar &updatedCard.CompletedAt
 		app.broadcast(boardID, WsMessage{Type: "CARD_UPDATED", Payload: updatedCard})
 	}
 	return c.Status(200).JSON(fiber.Map{"status": "updated"})
@@ -1089,11 +1140,20 @@ func (app *App) moveCard(c *fiber.Ctx) error {
 	defer tx.Rollback(context.Background())
 
 	var oldColumnID, oldPosition int
+	var oldColumnTitle, newColumnTitle string
+
 	err = tx.QueryRow(context.Background(),
-		"SELECT column_id, position FROM cards WHERE id = $1", payload.CardID,
-	).Scan(&oldColumnID, &oldPosition)
+		`SELECT c.column_id, c.position, col.title FROM cards c
+		 JOIN columns col ON c.column_id = col.id
+		 WHERE c.id = $1`, payload.CardID,
+	).Scan(&oldColumnID, &oldPosition, &oldColumnTitle)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Card não encontrado"})
+	}
+
+	err = tx.QueryRow(context.Background(), "SELECT title FROM columns WHERE id = $1", payload.NewColumnID).Scan(&newColumnTitle)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Coluna de destino não encontrada"})
 	}
 
 	_, err = tx.Exec(context.Background(),
@@ -1112,10 +1172,21 @@ func (app *App) moveCard(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao reordenar nova coluna"})
 	}
 
-	_, err = tx.Exec(context.Background(),
-		"UPDATE cards SET column_id = $1, position = $2, updated_at = NOW() WHERE id = $3",
-		payload.NewColumnID, payload.NewPosition, payload.CardID,
+	isEnteringFinalColumn := strings.ToLower(newColumnTitle) == "solucionado" || strings.ToLower(newColumnTitle) == "não solucionado"
+	isLeavingFinalColumn := strings.ToLower(oldColumnTitle) == "solucionado" || strings.ToLower(oldColumnTitle) == "não solucionado"
+
+	completedAtUpdateQuery := ""
+	if isEnteringFinalColumn && !isLeavingFinalColumn {
+		completedAtUpdateQuery = ", completed_at = NOW()"
+	} else if isLeavingFinalColumn && !isEnteringFinalColumn {
+		completedAtUpdateQuery = ", completed_at = NULL"
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE cards SET column_id = $1, position = $2, updated_at = NOW() %s WHERE id = $3",
+		completedAtUpdateQuery,
 	)
+	_, err = tx.Exec(context.Background(), updateQuery, payload.NewColumnID, payload.NewPosition, payload.CardID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao mover o card"})
 	}
@@ -1125,16 +1196,32 @@ func (app *App) moveCard(c *fiber.Ctx) error {
 	}
 
 	go func() {
+		var updatedCard Card
+		selectQuery := `
+			SELECT id, column_id, title, COALESCE(description, '') as description,
+				   COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority,
+				   due_date, position, created_at, updated_at, completed_at
+			FROM cards WHERE id = $1`
+
+		err := app.db.QueryRow(context.Background(), selectQuery, payload.CardID).Scan(
+			&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description,
+			&updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position,
+			&updatedCard.CreatedAt, &updatedCard.UpdatedAt, &updatedCard.CompletedAt,
+		)
+
+		if err != nil {
+			log.Printf("Erro ao buscar card atualizado para broadcast: %v", err)
+			return
+		}
+
 		boardID, boardIDErr := app.getBoardIDFromColumn(payload.NewColumnID)
 		if boardIDErr == nil && boardID != 0 {
 			app.broadcast(boardID, WsMessage{
 				SenderID: userID,
 				Type:     "CARD_MOVED",
 				Payload: fiber.Map{
-					"card_id":       payload.CardID,
+					"card":          updatedCard,
 					"old_column_id": oldColumnID,
-					"new_column_id": payload.NewColumnID,
-					"new_position":  payload.NewPosition,
 				},
 			})
 		}
@@ -1353,6 +1440,97 @@ func (app *App) respondToInvitation(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "responded"})
 }
 
+func (app *App) getLigacoes(c *fiber.Ctx) error {
+	rows, err := app.db.Query(context.Background(), "SELECT id, name, type, image_url, status, spreadsheet_url, address, end_date, observations, created_at, updated_at FROM ligacoes ORDER BY name")
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao buscar ligações"})
+	}
+	defer rows.Close()
+	ligacoes := make([]Ligacao, 0)
+	for rows.Next() {
+		var l Ligacao
+		if err := rows.Scan(&l.ID, &l.Name, &l.Type, &l.ImageURL, &l.Status, &l.SpreadsheetURL, &l.Address, &l.EndDate, &l.Observations, &l.CreatedAt, &l.UpdatedAt); err == nil {
+			ligacoes = append(ligacoes, l)
+		}
+	}
+	return c.JSON(ligacoes)
+}
+
+func (app *App) createLigacao(c *fiber.Ctx) error {
+	var ligacao Ligacao
+	if err := c.BodyParser(&ligacao); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Dados inválidos"})
+	}
+	query := `INSERT INTO ligacoes (name, type, status, spreadsheet_url, address, end_date, observations) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`
+	err := app.db.QueryRow(context.Background(), query, ligacao.Name, ligacao.Type, ligacao.Status, ligacao.SpreadsheetURL, ligacao.Address, ligacao.EndDate, ligacao.Observations).Scan(&ligacao.ID, &ligacao.CreatedAt, &ligacao.UpdatedAt)
+	if err != nil {
+		log.Printf("Erro ao criar ligação no DB: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao criar ligação"})
+	}
+	return c.Status(201).JSON(ligacao)
+}
+
+func (app *App) updateLigacao(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	var ligacao Ligacao
+	if err := c.BodyParser(&ligacao); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Dados inválidos"})
+	}
+	query := `UPDATE ligacoes SET name=$1, type=$2, status=$3, spreadsheet_url=$4, address=$5, end_date=$6, observations=$7, updated_at=NOW() WHERE id=$8`
+	_, err := app.db.Exec(context.Background(), query, ligacao.Name, ligacao.Type, ligacao.Status, ligacao.SpreadsheetURL, ligacao.Address, ligacao.EndDate, ligacao.Observations, id)
+	if err != nil {
+		log.Printf("Erro ao atualizar ligação no DB: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao atualizar ligação"})
+	}
+	ligacao.ID = id
+	return c.JSON(ligacao)
+}
+
+func (app *App) deleteLigacao(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	_, err := app.db.Exec(context.Background(), "DELETE FROM ligacoes WHERE id=$1", id)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao deletar ligação"})
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (app *App) handleLigacaoImageUpload(c *fiber.Ctx) error {
+	ligacaoID, _ := strconv.Atoi(c.Params("id"))
+	file, err := c.FormFile("image")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Nenhum arquivo enviado"})
+	}
+
+	src, _ := file.Open()
+	defer src.Close()
+	fileBytes, _ := io.ReadAll(src)
+
+	fileName := fmt.Sprintf("ligacao-%d%s", ligacaoID, filepath.Ext(file.Filename))
+	supabaseURL := os.Getenv("SUPABASE_PROJECT_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
+
+	uploadURL := fmt.Sprintf("%s/storage/v1/object/ligacoes/%s", supabaseURL, fileName)
+	req, _ := http.NewRequest("POST", uploadURL, bytes.NewReader(fileBytes))
+	req.Header.Set("Authorization", "Bearer "+supabaseKey)
+	req.Header.Set("Content-Type", file.Header.Get("Content-Type"))
+	req.Header.Set("x-upsert", "true")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Falha ao armazenar o arquivo"})
+	}
+	defer resp.Body.Close()
+
+	publicURL := fmt.Sprintf("%s/storage/v1/object/public/ligacoes/%s", supabaseURL, fileName)
+	_, err = app.db.Exec(context.Background(), "UPDATE ligacoes SET image_url=$1 WHERE id=$2", publicURL, ligacaoID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao atualizar URL da imagem no banco"})
+	}
+	return c.JSON(fiber.Map{"image_url": publicURL})
+}
+
 // pegar membros board
 func (app *App) getBoardMembers(c *fiber.Ctx) error {
 	boardID, _ := strconv.Atoi(c.Params("id"))
@@ -1472,6 +1650,155 @@ func (app *App) removeBoardMember(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Falha ao remover o membro do banco de dados."})
 	}
 
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// endpoint evento
+func (app *App) getAgendaEvents(c *fiber.Ctx) error {
+	month, _ := strconv.Atoi(c.Query("month"))
+	year, _ := strconv.Atoi(c.Query("year"))
+
+	if month == 0 || year == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Mês e ano são obrigatórios"})
+	}
+
+	startDate := fmt.Sprintf("%d-%02d-01", year, month)
+	endDate := fmt.Sprintf("%d-%02d-01", year, month+1)
+	if month == 12 {
+		endDate = fmt.Sprintf("%d-01-01", year+1)
+	}
+
+	query := "SELECT id, title, description, event_date, color, user_id, created_at, updated_at FROM agenda_events WHERE event_date >= $1 AND event_date < $2"
+	rows, err := app.db.Query(context.Background(), query, startDate, endDate)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao buscar eventos da agenda"})
+	}
+	defer rows.Close()
+
+	events := make([]AgendaEvent, 0)
+	for rows.Next() {
+		var e AgendaEvent
+		if err := rows.Scan(&e.ID, &e.Title, &e.Description, &e.EventDate, &e.Color, &e.UserID, &e.CreatedAt, &e.UpdatedAt); err == nil {
+			events = append(events, e)
+		}
+	}
+	return c.JSON(events)
+}
+
+// endpoint criar evento
+func (app *App) createAgendaEvent(c *fiber.Ctx) error {
+	var event AgendaEvent
+	if err := c.BodyParser(&event); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Dados inválidos"})
+	}
+	userID := c.Locals("userID").(string)
+	event.UserID = &userID
+
+	query := `INSERT INTO agenda_events (title, description, event_date, color, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at`
+	err := app.db.QueryRow(context.Background(), query, event.Title, event.Description, event.EventDate, event.Color, event.UserID).Scan(&event.ID, &event.CreatedAt, &event.UpdatedAt)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao criar evento"})
+	}
+	return c.Status(201).JSON(event)
+}
+
+// endpoint atualizar evento
+func (app *App) updateAgendaEvent(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "ID de evento inválido"})
+	}
+
+	var event AgendaEvent
+	if err := c.BodyParser(&event); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Dados de evento inválidos"})
+	}
+
+	query := `UPDATE agenda_events SET title=$1, description=$2, event_date=$3, color=$4, updated_at=NOW() WHERE id=$5`
+	_, err = app.db.Exec(context.Background(), query, event.Title, event.Description, event.EventDate, event.Color, id)
+	if err != nil {
+		log.Printf("Erro ao atualizar evento: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao atualizar evento no banco de dados"})
+	}
+	event.ID = id
+	return c.JSON(event)
+}
+
+// endpoint deletar evento agenda
+func (app *App) deleteAgendaEvent(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "ID de evento inválido"})
+	}
+
+	_, err = app.db.Exec(context.Background(), "DELETE FROM agenda_events WHERE id=$1", id)
+	if err != nil {
+		log.Printf("Erro ao deletar evento: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao deletar evento"})
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// endpoint  avaliacao
+func (app *App) getAvaliacoes(c *fiber.Ctx) error {
+	query := `SELECT id, source, customer_name, review_content, rating, status, review_date, review_url, assigned_to, resolution_notes, created_at, updated_at FROM avaliacoes ORDER BY review_date DESC`
+	rows, err := app.db.Query(context.Background(), query)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao buscar avaliações"})
+	}
+	defer rows.Close()
+	avaliacoes := make([]Avaliacao, 0)
+	for rows.Next() {
+		var a Avaliacao
+		if err := rows.Scan(&a.ID, &a.Source, &a.CustomerName, &a.ReviewContent, &a.Rating, &a.Status, &a.ReviewDate, &a.ReviewURL, &a.AssignedTo, &a.ResolutionNotes, &a.CreatedAt, &a.UpdatedAt); err == nil {
+			avaliacoes = append(avaliacoes, a)
+		}
+	}
+	return c.JSON(avaliacoes)
+}
+
+// endpoint criar avaliacao
+func (app *App) createAvaliacao(c *fiber.Ctx) error {
+	var avaliacao Avaliacao
+	if err := c.BodyParser(&avaliacao); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Dados inválidos"})
+	}
+	query := `INSERT INTO avaliacoes (source, customer_name, review_content, rating, status, review_date, review_url, assigned_to, resolution_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at, updated_at`
+	err := app.db.QueryRow(context.Background(), query, avaliacao.Source, avaliacao.CustomerName, avaliacao.ReviewContent, avaliacao.Rating, avaliacao.Status, avaliacao.ReviewDate, avaliacao.ReviewURL, avaliacao.AssignedTo, avaliacao.ResolutionNotes).Scan(&avaliacao.ID, &avaliacao.CreatedAt, &avaliacao.UpdatedAt)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao criar avaliação"})
+	}
+	return c.Status(201).JSON(avaliacao)
+}
+
+// endpoint editar avaliacao
+func (app *App) updateAvaliacao(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	var avaliacao Avaliacao
+	if err := c.BodyParser(&avaliacao); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Dados inválidos"})
+	}
+	query := `UPDATE avaliacoes SET source=$1, customer_name=$2, review_content=$3, rating=$4, status=$5, review_date=$6, review_url=$7, assigned_to=$8, resolution_notes=$9, updated_at=NOW() WHERE id=$10`
+	_, err := app.db.Exec(context.Background(), query, avaliacao.Source, avaliacao.CustomerName, avaliacao.ReviewContent, avaliacao.Rating, avaliacao.Status, avaliacao.ReviewDate, avaliacao.ReviewURL, avaliacao.AssignedTo, avaliacao.ResolutionNotes, id)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao atualizar avaliação"})
+	}
+	avaliacao.ID = id
+	return c.JSON(avaliacao)
+}
+
+// endpoint deletar avaliacao
+func (app *App) deleteAvaliacao(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "ID de avaliação inválido"})
+	}
+
+	_, err = app.db.Exec(context.Background(), "DELETE FROM avaliacoes WHERE id=$1", id)
+	if err != nil {
+		log.Printf("Erro ao deletar avaliação: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao deletar avaliação"})
+	}
 	return c.SendStatus(fiber.StatusNoContent)
 }
 

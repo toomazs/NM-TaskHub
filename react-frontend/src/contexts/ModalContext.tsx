@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { Card } from '../types/kanban';
 
-type ModalType = 'task' | 'privateBoard' | 'inviteUser' | 'manageMembers' | 'stats' | 'column';
+type ModalType = 'task' | 'privateBoard' | 'inviteUser' | 'manageMembers' | 'stats' | 'column' | 'ligacao' | 'agendaEvent' | 'avaliacao';
 
 interface ModalContextType {
   isModalOpen: boolean;

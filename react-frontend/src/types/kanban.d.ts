@@ -40,6 +40,7 @@ export interface Card {
   position: number;
   created_at: string;
   updated_at: string;
+  completed_at: string | null; 
 }
 
 export interface Comment {
@@ -59,4 +60,47 @@ export interface Notification {
     invitation_id?: number;
     created_at: string;
     invitation_status?: 'pending' | 'accepted' | 'rejected' | '';
+}
+
+export interface Ligacao {
+  id: number;
+  name: string;
+  type: 'Condomínio' | 'Bairro' | 'Outros';
+  image_url?: string;
+  status: string;
+  spreadsheet_url?: string;
+  address?: string;
+  end_date?: string; 
+  observations?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgendaEvent {
+  id: number;
+  title: string;
+  description?: string;
+  event_date: string; 
+  color: string;
+  user_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ReviewSource = 'Google' | 'ReclameAqui' | 'Procon' | 'Anatel' | 'N-MultiFibra' | 'Outros';
+export type ReviewStatus = 'Pendente' | 'Em Tratamento' | 'Resolvido' | 'Ignorado';
+
+export interface Avaliacao {
+  id: number;
+  source: ReviewSource;
+  customer_name: string;
+  review_content: string;
+  rating?: number;
+  status: ReviewStatus;
+  review_date: string;
+  review_url?: string;
+  assigned_to?: string;
+  resolution_notes?: string;
+  created_at: string;
+  updated_at: string;
 }

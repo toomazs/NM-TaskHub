@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line
@@ -115,7 +115,6 @@ const MetricCard = ({
                     </p>
                 )}
             </div>
-            {/* O "style" deste div agora usa a nova prop */}
             <div className="metric-card-icon" style={iconBackgroundStyle}>
                 <i className={icon} style={{ color }}></i>
             </div>
@@ -177,7 +176,9 @@ export function DashboardPage() {
     const { filters, updateFilter } = useFilters();
 
     const stats = useMemo((): DashboardStats | null => {
-        if (!columns.length) return null;
+        if (isLoading || !columns.length || !solucionadoId || !naoSolucionadoId) {
+            return null;
+        }
 
         const allCards = columns.flatMap(col => col.cards);
         const filteredCards = filterCards(allCards, filters);
@@ -302,15 +303,21 @@ export function DashboardPage() {
             statusData, priorityData, colaboradorData, timelineData, total: filteredCards.length,
             metrics: { taxaSolucao, produtividade, pendentes: pending, tempoMedioResolucao, crescimentoSemanal }
         };
-    }, [columns, solucionadoId, naoSolucionadoId, filters]);
+    }, [columns, solucionadoId, naoSolucionadoId, filters, isLoading]);
 
     const colaboradores = useMemo(() => {
+        if (!columns.length) return [];
         const uniqueEmails = [...new Set(columns.flatMap(c => c.cards).map(card => card.assigned_to).filter(Boolean))];
         return uniqueEmails.map(email => ({ value: email as string, label: userDisplayNameMap[email as string] || email as string }));
     }, [columns]);
 
-    if (isLoading) return <Loader fullScreen={false} />;
-    if (!stats) return (<div className="content-section"><p>Não há dados para exibir.</p></div>);
+    if (isLoading || !solucionadoId || !naoSolucionadoId) {
+        return <Loader fullScreen={false} />;
+    }
+    
+    if (!stats) {
+        return (<div className="content-section"><p>Não há dados para exibir.</p></div>);
+    }
 
     return (
         <div className="content-section" style={{ display: 'block' }}>
@@ -322,8 +329,6 @@ export function DashboardPage() {
             <div className="content-body" style={{ padding: '1rem 0' }}>
                 <FilterSection filters={filters} updateFilter={updateFilter} colaboradores={colaboradores} />
 
-                {/* --- ALTERAÇÃO #2: Uso do MetricCard --- */}
-                {/* Adicionamos a prop "iconBackgroundStyle" em cada card */}
                 <div className="dashboard-metric-grid">
                     <MetricCard
                         label="Total de Tarefas"

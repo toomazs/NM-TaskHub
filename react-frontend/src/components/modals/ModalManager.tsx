@@ -5,6 +5,9 @@ import { InviteUserModal } from './InviteUserModal';
 import { ManageMembersModal } from './ManageMembersModal';
 import { StatsModal } from './StatsModal';
 import { ColumnModal } from './ColumnModal';
+import { LigacaoModal } from './LigacaoModal';
+import { AgendaEventModal } from './AgendaEventModal';
+import { AvaliacaoModal } from './AvaliacaoModal';
 
 const modalComponents = {
     task: TaskModal,
@@ -13,6 +16,9 @@ const modalComponents = {
     manageMembers: ManageMembersModal,
     stats: StatsModal,
     column: ColumnModal,
+    ligacao: LigacaoModal,
+    agendaEvent: AgendaEventModal,
+    avaliacao: AvaliacaoModal,
 };
 
 export function ModalManager() {
