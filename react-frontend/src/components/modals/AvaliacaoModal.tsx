@@ -40,8 +40,10 @@ export function AvaliacaoModal() {
         }
         
         if (dataToSend.review_date) {
-            const localDate = new Date(`${dataToSend.review_date}T00:00:00`);
-            dataToSend.review_date = localDate.toISOString();
+            if (!dataToSend.review_date.includes('T')) {
+                const localDate = new Date(`${dataToSend.review_date}T00:00:00`);
+                dataToSend.review_date = localDate.toISOString();
+            }
         } else {
             (dataToSend as any).review_date = null;
         }
@@ -56,6 +58,7 @@ export function AvaliacaoModal() {
             modalProps.onSave();
             closeModal();
         } catch (error) {
+            console.error("Falha ao salvar:", error); 
             toast.error('Falha ao salvar.', { id: toastId });
         }
     };
@@ -74,7 +77,7 @@ export function AvaliacaoModal() {
                                     <option>Google</option>
                                     <option>ReclameAqui</option>
                                     <option>Procon</option>
-                                    <option>Anatel</option>
+                                    <option>ANATEL</option>
                                     <option>Outros</option>
                                 </select>
                             </div>

@@ -1,6 +1,6 @@
-# 💙 NM Kanban v2.0 (React)
+# 💙 NM TaskHub v2.0 (React)
 
-NM Kanban é uma aplicação web full-stack de quadro Kanban, projetada para gerenciamento de tarefas e fluxos de trabalho de demandas da **N-MultiFibra**. A aplicação foi modernizada, utilizando uma API RESTful de alta performance em Go (Golang) e um frontend dinâmico e reativo construído com **React, TypeScript e Vite**, com atualizações em tempo real via WebSockets.
+NM TaskHub é uma aplicação web full-stack de quadro Kanban, projetada para gerenciamento de tarefas e fluxos de trabalho de demandas da **N-MultiFibra**. A aplicação foi modernizada, utilizando uma API RESTful de alta performance em Go (Golang) e um frontend dinâmico e reativo construído com **React, TypeScript e Vite**, com atualizações em tempo real via WebSockets.
 
 O sistema é modular, seguro, performático e pronto para deploy em plataformas de nuvem modernas.
 
@@ -38,7 +38,7 @@ O sistema é modular, seguro, performático e pronto para deploy em plataformas 
   <img src="https://i.imgur.com/c8weM22.png" width="600"/><br><br>
 
 - Avaliações Negativas <br> <br>
-  <img src="https://i.imgur.com/ua5I8sb.png" width="600"/><br><br>
+  <img src="https://i.imgur.com/ObxFttQ.jpeg" width="600"/><br><br>
 
 - Dashboard <br> <br>
   <img src="https://i.imgur.com/xDIlUmL.png" width="600"/><br><br>
@@ -98,8 +98,8 @@ Para rodar este projeto em sua máquina local, siga os passos abaixo.
 
 1.  **Clone o repositório:**
     ```bash
-    git clone https://github.com/toomazs/NM-Kanban-API.git
-    cd NM-Kanban-API
+    git clone https://github.com/toomazs/NM-TaskHub.git
+    cd NM-TaskHub
     ```
 
 2.  **Configure o Backend:**

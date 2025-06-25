@@ -172,8 +172,15 @@ const FilterSection = ({
 );
 
 export function DashboardPage() {
-    const { columns, solucionadoId, naoSolucionadoId, isLoading } = useBoard();
+    const { columns, solucionadoId, naoSolucionadoId, isLoading, fetchBoardData } = useBoard();
     const { filters, updateFilter } = useFilters();
+
+    useEffect(() => {
+        if (columns.length === 0 && !isLoading) {
+            const PUBLIC_BOARD_ID = 8;
+            fetchBoardData(PUBLIC_BOARD_ID, false);
+        }
+    }, [columns, isLoading, fetchBoardData]);
 
     const stats = useMemo((): DashboardStats | null => {
         if (isLoading || !columns.length || !solucionadoId || !naoSolucionadoId) {
@@ -183,8 +190,7 @@ export function DashboardPage() {
         const allCards = columns.flatMap(col => col.cards);
         const filteredCards = filterCards(allCards, filters);
         const days = parseInt(filters.periodo, 10);
-        const now = new Date();
-
+        
         const generateRealTimelineData = (cards: Card[], numDays: number) => {
             const timeline: Record<string, { Criados: number; Solucionados: number }> = {};
             const today = new Date();
@@ -198,24 +204,31 @@ export function DashboardPage() {
             }
 
             cards.forEach(card => {
-                if (!card.created_at) return;
-                const createdAt = new Date(card.created_at);
-                if ((today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24) < numDays) {
-                    const formattedCreationDate = createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                    if (timeline[formattedCreationDate]) timeline[formattedCreationDate].Criados++;
+                // Lógica de Criação
+                if (card.created_at) {
+                    const createdAt = new Date(card.created_at);
+                    if ((today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24) < numDays) {
+                        const formattedCreationDate = createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                        if (timeline[formattedCreationDate]) timeline[formattedCreationDate].Criados++;
+                    }
                 }
-
-                const isResolved = card.column_id === solucionadoId || card.column_id === naoSolucionadoId;
-                if (isResolved && card.updated_at) {
-                    const updatedAt = new Date(card.updated_at);
-                    if ((today.getTime() - updatedAt.getTime()) / (1000 * 3600 * 24) < numDays) {
-                        const formattedUpdateDate = updatedAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                        if (timeline[formattedUpdateDate]) timeline[formattedUpdateDate].Solucionados++;
+                
+                if (card.completed_at && card.column_id === solucionadoId) { 
+                    const completionDate = new Date(card.completed_at);
+                    if ((today.getTime() - completionDate.getTime()) / (1000 * 3600 * 24) < numDays) {
+                        const formattedCompletionDate = completionDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                        if (timeline[formattedCompletionDate]) {
+                            timeline[formattedCompletionDate].Solucionados++;
+                        }
                     }
                 }
             });
 
             let pendingCount = 0;
+            const cardTotal = columns.flatMap(c => c.cards).length;
+            const initialPending = cardTotal - Object.values(timeline).reduce((acc, val) => acc + val.Criados, 0);
+            pendingCount = Math.max(0, initialPending);
+
             return Object.entries(timeline).map(([date, values]) => {
                 pendingCount += values.Criados - values.Solucionados;
                 return { data: date, Criados: values.Criados, Solucionados: values.Solucionados, Pendentes: Math.max(0, pendingCount) };
@@ -322,8 +335,8 @@ export function DashboardPage() {
     return (
         <div className="content-section" style={{ display: 'block' }}>
             <div className="content-header">
-                <h2><i className="fas fa-chart-line"></i> Dashboard Analytics</h2>
-                <p>Métricas e insights do Suporte</p>
+                <h2><i className="fas fa-chart-line"></i> Dashboard </h2>
+                <p>Métricas e insights do Kanban.</p>
             </div>
 
             <div className="content-body" style={{ padding: '1rem 0' }}>

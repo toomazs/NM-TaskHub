@@ -87,7 +87,7 @@ export interface AgendaEvent {
   updated_at: string;
 }
 
-export type ReviewSource = 'Google' | 'ReclameAqui' | 'Procon' | 'Anatel' | 'N-MultiFibra' | 'Outros';
+export type ReviewSource = 'Google' | 'ReclameAqui' | 'Procon' | 'ANATEL' | 'Outros';
 export type ReviewStatus = 'Pendente' | 'Em Tratamento' | 'Resolvido' | 'Ignorado';
 
 export interface Avaliacao {

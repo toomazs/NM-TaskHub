@@ -517,39 +517,47 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected := api.Use(app.authMiddleware)
 
 	protected.Get("/users", app.getUsers)
+
 	protected.Post("/user/avatar", app.handleAvatarUpload)
 	protected.Get("/boards/public", app.getPublicBoards)
 	protected.Get("/boards/private", app.getPrivateBoards)
 	protected.Post("/boards", app.createBoard)
 	protected.Delete("/boards/:id", app.deleteBoard)
+
 	protected.Get("/boards/:id/columns", app.getColumns)
 	protected.Post("/boards/:id/columns/reorder", app.reorderColumns)
 	protected.Post("/columns", app.createColumn)
 	protected.Put("/columns/:id", app.updateColumn)
 	protected.Delete("/columns/:id", app.deleteColumn)
+
 	protected.Get("/columns/:id/cards", app.getCards)
 	protected.Post("/columns/:id/cards", app.createCard)
 	protected.Put("/cards/:id", app.updateCard)
 	protected.Delete("/cards/:id", app.deleteCard)
 	protected.Post("/cards/move", app.moveCard)
+
 	protected.Get("/boards/:id/members", app.getBoardMembers)
 	protected.Get("/boards/:id/invitable-users", app.getInvitableUsers)
 	protected.Post("/boards/:id/invite", app.inviteUserToBoard)
 	protected.Post("/invitations/:id/respond", app.respondToInvitation)
 	protected.Delete("/boards/:boardId/members/:memberId", app.removeBoardMember)
 	protected.Post("/boards/:id/leave", app.leaveBoard)
+
 	protected.Get("/notifications", app.getNotifications)
 	protected.Post("/notifications/:id/read", app.markNotificationRead)
 	protected.Post("/notifications/mark-all-as-read", app.markAllNotificationsRead)
+
 	protected.Get("/ligacoes", app.getLigacoes)
 	protected.Post("/ligacoes", app.createLigacao)
 	protected.Put("/ligacoes/:id", app.updateLigacao)
 	protected.Delete("/ligacoes/:id", app.deleteLigacao)
 	protected.Post("/ligacoes/:id/image", app.handleLigacaoImageUpload)
+
 	protected.Get("/agenda/events", app.getAgendaEvents)
 	protected.Post("/agenda/events", app.createAgendaEvent)
 	protected.Put("/agenda/events/:id", app.updateAgendaEvent)
 	protected.Delete("/agenda/events/:id", app.deleteAgendaEvent)
+
 	protected.Get("/avaliacoes", app.getAvaliacoes)
 	protected.Post("/avaliacoes", app.createAvaliacao)
 	protected.Put("/avaliacoes/:id", app.updateAvaliacao)
@@ -1047,7 +1055,7 @@ func (app *App) updateCard(c *fiber.Ctx) error {
 	if err == nil {
 		var updatedCard Card
 		selectQuery := `SELECT id, column_id, title, COALESCE(description, '') as description, COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority, due_date, position, created_at, updated_at, completed_at FROM cards WHERE id = $1`
-		app.db.QueryRow(context.Background(), selectQuery, cardID).Scan(&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description, &updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position, &updatedCard.CreatedAt, &updatedCard.UpdatedAt, &updatedCard.CompletedAt) // Adicionar &updatedCard.CompletedAt
+		app.db.QueryRow(context.Background(), selectQuery, cardID).Scan(&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description, &updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position, &updatedCard.CreatedAt, &updatedCard.UpdatedAt, &updatedCard.CompletedAt)
 		app.broadcast(boardID, WsMessage{Type: "CARD_UPDATED", Payload: updatedCard})
 	}
 	return c.Status(200).JSON(fiber.Map{"status": "updated"})
@@ -1761,13 +1769,18 @@ func (app *App) getAvaliacoes(c *fiber.Ctx) error {
 func (app *App) createAvaliacao(c *fiber.Ctx) error {
 	var avaliacao Avaliacao
 	if err := c.BodyParser(&avaliacao); err != nil {
+		log.Printf("❌ Erro ao fazer parse do corpo da requisição para Avaliacao: %v", err)
 		return c.Status(400).JSON(fiber.Map{"error": "Dados inválidos"})
 	}
+
 	query := `INSERT INTO avaliacoes (source, customer_name, review_content, rating, status, review_date, review_url, assigned_to, resolution_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at, updated_at`
+
 	err := app.db.QueryRow(context.Background(), query, avaliacao.Source, avaliacao.CustomerName, avaliacao.ReviewContent, avaliacao.Rating, avaliacao.Status, avaliacao.ReviewDate, avaliacao.ReviewURL, avaliacao.AssignedTo, avaliacao.ResolutionNotes).Scan(&avaliacao.ID, &avaliacao.CreatedAt, &avaliacao.UpdatedAt)
+
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao criar avaliação"})
 	}
+
 	return c.Status(201).JSON(avaliacao)
 }
 

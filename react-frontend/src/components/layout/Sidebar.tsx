@@ -112,10 +112,10 @@ export function Sidebar() {
         
         <nav className="sidebar-nav">
             <ul className="nav-list">
-                <li title="Suporte">
+                <li title="Kanban">
                     <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} >
                         <i className="fas fa-headset"></i>
-                        {!isSidebarCollapsed && <span>Suporte</span>}
+                        {!isSidebarCollapsed && <span>Kanban</span>}
                     </NavLink>
                 </li>
                 <li title="Quadros Privados">
@@ -150,7 +150,7 @@ export function Sidebar() {
                         to="/dashboard" 
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
-                        <i className="fas fa-th-large"></i>
+                        <i className="fas fa-chart-line"></i>
                         {!isSidebarCollapsed && <span>Dashboard</span>}
                     </NavLink>
                 </li>

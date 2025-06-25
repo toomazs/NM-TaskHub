@@ -166,8 +166,8 @@ export function AgendaPage() {
     return (
         <div className="content-section agenda-page" style={{ display: 'block' }}>
             <div className="content-header">
-                <h2><i className="fas fa-calendar"></i> Agenda Diária</h2>
-                <p>Escala diária do Suporte.</p>
+                <h2><i className="fas fa-calendar-day"></i> Agenda Diária</h2>
+                <p>Escala diária do setor.</p>
             </div>
             <div className="content-body" style={{ padding: 0 }}>
                 <div className="calendar-header">

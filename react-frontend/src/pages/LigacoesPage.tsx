@@ -75,7 +75,7 @@ export function LigacoesPage() {
                         <option value="Outros">Outros</option>
                     </select>
                     <button className="btn btn-primary" onClick={() => openModal('ligacao', { onSave: fetchLigacoes })}>
-                        <i className="fas fa-plus"></i> Nova Ligação
+                        <i className="fas fa-plus"></i> Nova Ligação Ativa
                     </button>
                 </div>
                 

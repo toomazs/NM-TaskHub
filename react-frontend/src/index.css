@@ -3181,15 +3181,13 @@ body.sidebar-collapsed {
     background-repeat: no-repeat;
     position: relative;
     
-    /* Placeholder quando não há imagem */
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Ícone placeholder quando não há imagem */
 .ligacao-card-image:empty::before {
-    content: '🏢';
+    content: '';
     font-size: 2.5rem;
     opacity: 0.3;
 }

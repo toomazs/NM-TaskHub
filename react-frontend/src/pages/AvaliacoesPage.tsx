@@ -24,6 +24,30 @@ const formatUTCDate = (isoDateString: string | null | undefined): string => {
     return `${pad(day)}/${pad(month)}/${year}`;
 }
 
+const sourceImageMap: { [key: string]: string } = {
+    'Google': '/img/google.png', 
+    'ReclameAqui': '/img/ra.png',
+    'Procon': '/img/procon.png',
+    'ANATEL': '/img/anatel.png',
+};
+
+const SourceLogo = ({ source }: { source: string }) => {
+    const imagePath = sourceImageMap[source];
+
+    if (imagePath) {
+        return (
+            <img 
+                src={imagePath} 
+                alt={`${source} logo`} 
+                title={source}
+                style={{ height: '24px', maxWidth: '80px', verticalAlign: 'middle' }} 
+            />
+        );
+    }
+
+    return <>{source}</>;
+};
+
 
 const StatusBadge = ({ status }: { status: Avaliacao['status'] }) => {
     const styleMap = {
@@ -103,7 +127,7 @@ export function AvaliacoesPage() {
                     <select className="form-select" value={filters.source} onChange={e => setFilters(f => ({...f, source: e.target.value}))}>
                         <option value="Todos">Todas as Fontes</option>
                         <option>Google</option><option>ReclameAqui</option><option>Procon</option>
-                        <option>Anatel</option><option>Outros</option>
+                        <option>ANATEL</option><option>Outros</option>
                     </select>
                     <button className="btn btn-primary" onClick={() => openModal('avaliacao', { onSave: fetchAvaliacoes })}>
                         <i className="fas fa-plus"></i> Registrar Avaliação
@@ -119,7 +143,9 @@ export function AvaliacoesPage() {
                         <tbody>
                             {filteredAvaliacoes.map(avaliacao => (
                                 <tr key={avaliacao.id} onClick={() => openModal('avaliacao', { avaliacao, onSave: fetchAvaliacoes })} style={{cursor: 'pointer'}}>
-                                    <td>{avaliacao.source}</td>
+                                    
+                                    <td><SourceLogo source={avaliacao.source} /></td>
+
                                     <td>{avaliacao.customer_name}</td>
                                     <td><RatingStars rating={avaliacao.rating} /></td>
                                     <td><StatusBadge status={avaliacao.status} /></td>

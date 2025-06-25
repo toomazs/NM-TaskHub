@@ -21,7 +21,9 @@ const priorityDisplayMap: Record<Priority, string> = {
 };
 
 const getRelevantDate = (card: Card, status: ModalStatus): Date | null => {
-    const dateString = (status === 'pendente' ? card.created_at : card.updated_at);
+    const dateString = (status === 'solucionado' || status === 'naoSolucionado') 
+        ? card.completed_at 
+        : card.created_at;
     return dateString ? new Date(dateString) : null;
 };
 
@@ -129,9 +131,7 @@ export function StatsModal(): React.ReactElement {
                     <h2><i className={`fas ${icon}`}></i> {title}</h2>
                     <div className="stats-filter-container">
                         <div className="filter-controls">
-                            <label>
-                                <i className="fas fa-filter"></i> Filtrar:
-                            </label>
+                            <label><i className="fas fa-filter"></i> Filtrar:</label>
                             <select ref={firstFilterRef} className="form-select" value={userFilter} onChange={e => setUserFilter(e.target.value)}>
                                 <option value="all">Todos Colaboradores</option>
                                 {users.map(u => (<option key={u.id} value={u.email}>{userDisplayNameMap[u.email] || u.username}</option>))}
@@ -143,9 +143,7 @@ export function StatsModal(): React.ReactElement {
                                 <option value="30">Últimos 30 dias</option>
                             </select>
                             
-                            <label>
-                                <i className="fas fa-sort"></i> Ordenar:
-                            </label>
+                            <label><i className="fas fa-sort"></i> Ordenar:</label>
                             <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value as SortByOption)}>
                                 <option value="newest">Mais Recentes</option>
                                 <option value="oldest">Mais Antigos</option>
@@ -166,7 +164,9 @@ export function StatsModal(): React.ReactElement {
                             const assigneeDisplayName = assignedUser ? (userDisplayNameMap[assignedUser.email] || assignedUser.username) : "Não Atribuído";
                             const avatarInitial = assigneeDisplayName.charAt(0).toUpperCase();
                             const relevantDate = getRelevantDate(card, status);
-                            const formattedDate = relevantDate ? relevantDate.toLocaleDateString('pt-BR') : 'N/D';
+                            
+                            const formattedDate = relevantDate ? relevantDate.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/D';
+                            
                             const priority = card.priority || 'media';
 
                             return (
