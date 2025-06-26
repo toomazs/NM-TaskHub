@@ -19,12 +19,16 @@ async function tryFetch(url: string): Promise<Response> {
   }
 }
 
-export async function getSinais(): Promise<ClienteSinalAlto[]> {
+export interface SinaisResponse {
+  data: ClienteSinalAlto[];
+}
+
+export async function getSinais(): Promise<SinaisResponse> {
   try {
     const response = await tryFetch(PRIMARY_SINAIS_API_URL);
     if (response.ok) {
       const data = await response.json();
-      return data;
+      return { data: data };
     }
   } catch (error) {
     console.warn("API primária indisponível, tentando fallback:", error);
@@ -36,15 +40,13 @@ export async function getSinais(): Promise<ClienteSinalAlto[]> {
       throw new Error(`A API de sinais retornou um erro: ${response.statusText}`);
     }
     const data = await response.json();
-    return data;
+    return { data: data };
   } catch (error) {
     console.error("Falha ao buscar dados de sinais da API (ambas as URLs):", error);
     toast.error("Não foi possível carregar os clientes. As APIs de sinais estão online?");
-    return []; 
+    return { data: [] }; 
   }
 }
-
-
 export async function getContatosStatus(): Promise<ContatoStatus[]> {  
     const response = await api('/contatos/status', { method: 'GET' });  
     if (!response.ok) {  
