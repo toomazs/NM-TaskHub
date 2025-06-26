@@ -1,3 +1,4 @@
+export type StatusKey = 'pendente' | 'Agendado O.S.' | 'Nao conseguido contato' | 'Nao solucionado';
 
 export interface ClienteSinalAlto {
   id: string;
@@ -7,21 +8,6 @@ export interface ClienteSinalAlto {
   mac: string;
   rx: number;
   tx: number;
-}
-
-export type StatusKey = 'pendente' | 'Agendado O.S.' | 'Nao conseguido contato' | 'Nao solucionado';
-
-export interface ClienteSinalAltoComStatus extends ClienteSinalAlto {
-  status: StatusKey;
-  anotacao?: string;
-}
-
-export interface ContatoStatus {
-    contato_id: string;
-    status: StatusKey;
-    anotacao: string;
-    updated_at: string;
-    updated_by: string;
 }
 
 export interface ClienteSinalAltoComStatus extends ClienteSinalAlto {
@@ -38,14 +24,7 @@ export interface ContatoStatus {
     anotacao: string;
     updated_at: string;
     updated_by: string;
-<<<<<<< HEAD
     assigned_to?: string;
+    assigned_to_avatar?: string; 
     assigned_to_name?: string;
-    assigned_to_avatar?: string;
-=======
-   assigned_to?: string;
-   assigned_to_name?: string;
-   assigned_to_avatar?: string;
->>>>>>> 0ddd6a14d88c784e828ed7afec1baf26d211e76c
 }
-

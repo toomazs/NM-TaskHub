@@ -2,20 +2,44 @@ import toast from 'react-hot-toast';
 import { api } from '../api/api';
 import { ClienteSinalAlto, ContatoStatus } from '../types/sinal';
 
-const SINAIS_API_URL = 'http://10.0.100.3:3000/api/sinais';
+const PRIMARY_SINAIS_API_URL = 'http://10.0.30.251:3000/api/sinais';
+const FALLBACK_SINAIS_API_URL = 'http://10.0.100.3:3000/api/sinais';
 
+async function tryFetch(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); 
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
 
 export async function getSinais(): Promise<ClienteSinalAlto[]> {
   try {
-    const response = await fetch(SINAIS_API_URL);
+    const response = await tryFetch(PRIMARY_SINAIS_API_URL);
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    }
+  } catch (error) {
+    console.warn("API primária indisponível, tentando fallback:", error);
+  }
+
+  try {
+    const response = await tryFetch(FALLBACK_SINAIS_API_URL);
     if (!response.ok) {
       throw new Error(`A API de sinais retornou um erro: ${response.statusText}`);
     }
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Falha ao buscar dados de sinais da API:", error);
-    toast.error("Não foi possível carregar os clientes. A API de sinais está online?");
+    console.error("Falha ao buscar dados de sinais da API (ambas as URLs):", error);
+    toast.error("Não foi possível carregar os clientes. As APIs de sinais estão online?");
     return []; 
   }
 }
