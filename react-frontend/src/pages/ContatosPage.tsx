@@ -38,13 +38,9 @@ export function ContatosPage() {
         
         const statusMap = new Map(statusData.map(s => [s.contato_id, s]));
 
-<<<<<<< HEAD
         console.log(sinaisData.data);
 
         const clientesComStatus = (sinaisData.data as ClienteSinalAlto[]).map(c => {
-=======
-        const clientesComStatus = (sinaisData as ClienteSinalAlto[]).map(c => {
->>>>>>> 0ddd6a14d88c784e828ed7afec1baf26d211e76c
             const statusInfo = statusMap.get(c.id);
             return {
                 ...c,
