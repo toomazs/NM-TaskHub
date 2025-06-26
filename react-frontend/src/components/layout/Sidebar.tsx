@@ -1,3 +1,5 @@
+// src/components/Sidebar.tsx
+
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -8,7 +10,7 @@ import { useNotifications } from '../../contexts/NotificationsContext';
 import { userDisplayNameMap, userRoleMap } from '../../api/config';
 import * as authService from '../../services/auth';
 import * as userService from '../../services/users';
-import logo from '/img/nmlogo.png'; 
+import logo from '/img/nmlogo.png';
 import { NotificationsDropdown } from './NotificationsDropdown';
 
 export function Sidebar() {
@@ -40,7 +42,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     await authService.signOut();
-    navigate('/login'); 
+    navigate('/login');
   };
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,14 +56,14 @@ export function Sidebar() {
     try {
         const result = await userService.uploadAvatar(formData);
         if (user) {
-            const updatedUser = { 
-                ...user, 
-                user_metadata: { 
-                    ...user.user_metadata, 
-                    avatar_url: `${result.avatar_url}?t=${new Date().getTime()}` 
-                } 
+            const updatedUser = {
+                ...user,
+                user_metadata: {
+                    ...user.user_metadata,
+                    avatar_url: `${result.avatar_url}?t=${new Date().getTime()}`
+                }
             };
-            updateUser(updatedUser); 
+            updateUser(updatedUser);
             toast.success("Avatar atualizado!");
         }
     } catch (error) {
@@ -80,36 +82,35 @@ export function Sidebar() {
     <div id="sidebar" className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
             <div className="sidebar-header-top">
-              <button 
-                id="toggleSidebar" 
-                className="toggle-sidebar-btn" 
-                onClick={toggleSidebar} 
-                title={isSidebarCollapsed ? "Expandir" : "Recolher"}
-              >
-                <i className={`fas fa-chevron-${isSidebarCollapsed ? 'right' : 'left'}`}></i>
-              </button>
-
                 {!isSidebarCollapsed && (
-                <div className="sidebar-logo">
-                  <img src={logo} alt="Logo N-Multifibra" />
-                </div>
-              )}
-              
+                    <div className="sidebar-logo">
+                        <img src={logo} alt="Logo N-Multifibra" />
+                    </div>
+                )}
             </div>
-
+            
             <div className="sidebar-header-actions">
-              <div className="invitations-bell-container" ref={notificationsRef}>
-                  <button id="invitationsBell" className="invitations-bell" onClick={() => setShowNotifications(s => !s)}>
-                      <i className="fas fa-bell"></i>
-                      {unreadCount > 0 && (
-                          <span className="invitations-count">{unreadCount}</span>
-                      )}
-                  </button>
-                  {showNotifications && <NotificationsDropdown />}
-              </div>
+                <div className="invitations-bell-container" ref={notificationsRef}>
+                    <button id="notificationsBell" className="sidebar-action-btn" onClick={() => setShowNotifications(s => !s)}>
+                        <i className="fas fa-bell"></i>
+                        {unreadCount > 0 && (
+                            <span className="invitations-count">{unreadCount}</span>
+                        )}
+                    </button>
+                    {showNotifications && <NotificationsDropdown />}
+                </div>
+
+                <button
+                    id="toggleSidebar"
+                    className="sidebar-action-btn"
+                    onClick={toggleSidebar}
+                    title={isSidebarCollapsed ? "Expandir" : "Recolher"}
+                >
+                    {isSidebarCollapsed ? <i className="fas fa-chevron-right"></i> : <i className="fas fa-chevron-left"></i>}
+                </button>
             </div>
         </div>
-        
+
         <nav className="sidebar-nav">
             <ul className="nav-list">
                 <li title="Kanban">
@@ -119,8 +120,8 @@ export function Sidebar() {
                     </NavLink>
                 </li>
                 <li title="Quadros Privados">
-                    <NavLink 
-                        to="/private-boards" 
+                    <NavLink
+                        to="/private-boards"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         <i className="fas fa-user-lock"></i>
@@ -128,8 +129,8 @@ export function Sidebar() {
                     </NavLink>
                 </li>
                 <li title="Ligações Ativas">
-                    <NavLink 
-                        to="/ligacoes" 
+                    <NavLink
+                        to="/ligacoes"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         <i className="fas fa-phone-volume"></i>
@@ -137,8 +138,8 @@ export function Sidebar() {
                     </NavLink>
                 </li>
                 <li title="Avaliações Negativas">
-                    <NavLink 
-                        to="/avaliacoes" 
+                    <NavLink
+                        to="/avaliacoes"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         <i className="fas fa-star-half-alt"></i>
@@ -146,8 +147,8 @@ export function Sidebar() {
                     </NavLink>
                 </li>
                 <li title="Dashboard">
-                    <NavLink 
-                        to="/dashboard" 
+                    <NavLink
+                        to="/dashboard"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         <i className="fas fa-chart-line"></i>
@@ -155,12 +156,21 @@ export function Sidebar() {
                     </NavLink>
                 </li>
                 <li title="Agenda Diária">
-                    <NavLink 
-                        to="/agenda" 
+                    <NavLink
+                        to="/agenda"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         <i className="fas fa-calendar-day"></i>
                         {!isSidebarCollapsed && <span>Agenda Diária</span>}
+                    </NavLink>
+                </li>
+                <li title="Sinais Atenuados">
+                    <NavLink
+                        to="/contatos-preventivos"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                    >
+                        <i className="fa-solid fa-house-signal"></i>
+                        {!isSidebarCollapsed && <span>Sinais Atenuados</span>}
                     </NavLink>
                 </li>
             </ul>

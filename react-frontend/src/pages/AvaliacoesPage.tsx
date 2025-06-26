@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { userDisplayNameMap } from '../api/config';
 
-
 const formatUTCDate = (isoDateString: string | null | undefined): string => {
     if (!isoDateString) {
         return 'N/A';
@@ -45,9 +44,8 @@ const SourceLogo = ({ source }: { source: string }) => {
         );
     }
 
-    return <>{source}</>;
+    return <span className="source-text">{source}</span>;
 };
-
 
 const StatusBadge = ({ status }: { status: Avaliacao['status'] }) => {
     const styleMap = {
@@ -56,12 +54,119 @@ const StatusBadge = ({ status }: { status: Avaliacao['status'] }) => {
         Resolvido: { background: 'var(--accent-green)', text: 'Resolvido' },
         Ignorado: { background: 'var(--text-muted)', text: 'Ignorado' },
     };
-    return <span className="status-badge" style={{backgroundColor: `${styleMap[status].background}30`, color: styleMap[status].background}}>{styleMap[status].text}</span>;
+    return (
+        <span 
+            className="status-badge" 
+            style={{
+                backgroundColor: `${styleMap[status].background}30`, 
+                color: styleMap[status].background
+            }}
+        >
+            {styleMap[status].text}
+        </span>
+    );
 };
 
 const RatingStars = ({ rating }: { rating?: number }) => {
     if (!rating) return <span style={{color: 'var(--text-muted)'}}>N/A</span>;
-    return <div className="rating-stars">{Array.from({length: 5}, (_, i) => <i key={i} className={`fas fa-star ${i < rating ? 'filled' : ''}`}></i>)}</div>;
+    return (
+        <div className="rating-stars">
+            {Array.from({length: 5}, (_, i) => 
+                <i key={i} className={`fas fa-star ${i < rating ? 'filled' : ''}`}></i>
+            )}
+        </div>
+    );
+};
+
+const FilterBar = ({ filters, setFilters, onAddNew }: {
+    filters: { status: string; source: string },
+    setFilters: (filters: any) => void,
+    onAddNew: () => void
+}) => (
+    <div className="filters-bar">
+        <div className="filters-group">
+            <select 
+                className="form-select filter-select" 
+                value={filters.status} 
+                onChange={e => setFilters((f: any) => ({...f, status: e.target.value}))}
+            >
+                <option value="Todos">Todos os Status</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Em Tratamento">Em Tratamento</option>
+                <option value="Resolvido">Resolvido</option>
+                <option value="Ignorado">Ignorado</option>
+            </select>
+            
+            <select 
+                className="form-select filter-select" 
+                value={filters.source} 
+                onChange={e => setFilters((f: any) => ({...f, source: e.target.value}))}
+            >
+                <option value="Todos">Todas as Fontes</option>
+                <option value="Google">Google</option>
+                <option value="ReclameAqui">ReclameAqui</option>
+                <option value="Procon">Procon</option>
+                <option value="ANATEL">ANATEL</option>
+                <option value="Outros">Outros</option>
+            </select>
+        </div>
+    
+    </div>
+);
+
+const StatsCards = ({ avaliacoes }: { avaliacoes: Avaliacao[] }) => {
+    const stats = useMemo(() => {
+        const total = avaliacoes.length;
+        const pendentes = avaliacoes.filter(a => a.status === 'Pendente').length;
+        const resolvidas = avaliacoes.filter(a => a.status === 'Resolvido').length;
+        const mediaNotas = avaliacoes.reduce((acc, a) => acc + (a.rating || 0), 0) / total || 0;
+        
+        return { total, pendentes, resolvidas, mediaNotas };
+    }, [avaliacoes]);
+
+    return (
+        <div className="stats-cards">
+            <div className="stat-card">
+                <div className="stat-icon">
+                    <i className="fas fa-chart-bar"></i>
+                </div>
+                <div className="stat-content">
+                    <div className="stat-value">{stats.total}</div>
+                    <div className="stat-label">Total</div>
+                </div>
+            </div>
+            
+            <div className="stat-card warning">
+                <div className="stat-icon">
+                    <i className="fas fa-clock"></i>
+                </div>
+                <div className="stat-content">
+                    <div className="stat-value">{stats.pendentes}</div>
+                    <div className="stat-label">Pendentes</div>
+                </div>
+            </div>
+            
+            <div className="stat-card success">
+                <div className="stat-icon">
+                    <i className="fas fa-check-circle"></i>
+                </div>
+                <div className="stat-content">
+                    <div className="stat-value">{stats.resolvidas}</div>
+                    <div className="stat-label">Resolvidas</div>
+                </div>
+            </div>
+            
+            <div className="stat-card info">
+                <div className="stat-icon">
+                    <i className="fas fa-star"></i>
+                </div>
+                <div className="stat-content">
+                    <div className="stat-value">{stats.mediaNotas.toFixed(1)}</div>
+                    <div className="stat-label">Média</div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export function AvaliacoesPage() {
@@ -101,6 +206,10 @@ export function AvaliacoesPage() {
         );
     };
 
+    const handleAddNew = () => {
+        openModal('avaliacao', { onSave: fetchAvaliacoes });
+    };
+
     const filteredAvaliacoes = useMemo(() => {
         return avaliacoes.filter(a => 
             (filters.status === 'Todos' || a.status === filters.status) &&
@@ -111,69 +220,111 @@ export function AvaliacoesPage() {
     if (isLoading) return <Loader fullScreen={false} />;
 
     return (
-        <div className="content-section" style={{display: 'block'}}>
-            <div className="content-header">
-                <h2><i className="fas fa-star-half-alt"></i> Avaliações Negativas</h2>
-                <p>Avaliações que necessitam de observação ou retorno.</p>
-            </div>
-            <div className="content-body">
-                <div className="dashboard-filters">
-                    <select className="form-select" value={filters.status} onChange={e => setFilters(f => ({...f, status: e.target.value}))}>
-                        <option value="Todos">Todos os Status</option>
-                        <option value="Pendente">Pendente</option>
-                        <option value="Em Tratamento">Em Tratamento</option>
-                        <option value="Resolvido">Resolvido</option>
-                    </select>
-                    <select className="form-select" value={filters.source} onChange={e => setFilters(f => ({...f, source: e.target.value}))}>
-                        <option value="Todos">Todas as Fontes</option>
-                        <option>Google</option><option>ReclameAqui</option><option>Procon</option>
-                        <option>ANATEL</option><option>Outros</option>
-                    </select>
-                    <button className="btn btn-primary" onClick={() => openModal('avaliacao', { onSave: fetchAvaliacoes })}>
-                        <i className="fas fa-plus"></i> Registrar Avaliação
+        <div className="avaliacoes-page">
+            <div className="page-header">
+                <div className="header-content">
+                    <div className="header-title">
+                        <h1>
+                            <i className="fas fa-star-half-alt"></i>
+                            Avaliações Negativas
+                        </h1>
+                        <p>Gerencie e acompanhe avaliações que necessitam de atenção</p>
+                    </div>
+                    <button className="btn btn-primary btn-create" onClick={handleAddNew}>
+                        <i className="fas fa-plus"></i>
+                        <span>Registrar Avaliação Negativa</span>
                     </button>
                 </div>
-                <div className="table-container" style={{marginTop: '2rem'}}>
-                    <table className="dashboard-table">
-                        <thead>
-                            <tr>
-                                <th>Fonte</th><th>Cliente</th><th>Nota</th><th>Status</th><th>Responsável</th><th>Data</th><th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredAvaliacoes.map(avaliacao => (
-                                <tr key={avaliacao.id} onClick={() => openModal('avaliacao', { avaliacao, onSave: fetchAvaliacoes })} style={{cursor: 'pointer'}}>
-                                    
-                                    <td><SourceLogo source={avaliacao.source} /></td>
+            </div>
 
-                                    <td>{avaliacao.customer_name}</td>
-                                    <td><RatingStars rating={avaliacao.rating} /></td>
-                                    <td><StatusBadge status={avaliacao.status} /></td>
-                                    <td>
-                                        {(() => {
-                                            const user = users.find(u => u.id === avaliacao.assigned_to);
-                                            return user ? (userDisplayNameMap[user.email] || user.username) : 'N/A';
-                                        })()}
-                                    </td>
-                                    
-                                    <td>{formatUTCDate(avaliacao.review_date)}</td>
-                                    
-                                    <td>
-                                        <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'center'}}>
-                                            <a href={avaliacao.review_url || '#'} target="_blank" rel="noopener noreferrer" className={`btn btn-secondary btn-sm ${!avaliacao.review_url ? 'disabled' : ''}`} onClick={e => e.stopPropagation()}>
-                                                <i className="fas fa-external-link-alt"></i>
-                                            </a>
-                                            <button className="btn btn-danger btn-sm" onClick={(e) => handleDelete(e, avaliacao.id)}>
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
+            <StatsCards avaliacoes={avaliacoes} />
+            
+            <FilterBar 
+                filters={filters} 
+                setFilters={setFilters} 
+                onAddNew={handleAddNew}
+            />
+
+            <div className="content-section">
+                <div className="table-container">
+                    {filteredAvaliacoes.length > 0 ? (
+                        <table className="avaliacoes-table">
+                            <thead>
+                                <tr>
+                                    <th>Fonte</th>
+                                    <th>Cliente</th>
+                                    <th>Avaliação</th>
+                                    <th>Status</th>
+                                    <th>Responsável</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredAvaliacoes.map(avaliacao => (
+                                    <tr 
+                                        key={avaliacao.id} 
+                                        onClick={() => openModal('avaliacao', { avaliacao, onSave: fetchAvaliacoes })} 
+                                        className="table-row-clickable"
+                                    >
+                                        <td>
+                                            <SourceLogo source={avaliacao.source} />
+                                        </td>
+                                        <td className="customer-cell">
+                                            <span className="customer-name">{avaliacao.customer_name}</span>
+                                        </td>
+                                        <td>
+                                            <RatingStars rating={avaliacao.rating} />
+                                        </td>
+                                        <td>
+                                            <StatusBadge status={avaliacao.status} />
+                                        </td>
+                                        <td className="assignee-cell">
+                                            {(() => {
+                                                const user = users.find(u => u.id === avaliacao.assigned_to);
+                                                return user ? (userDisplayNameMap[user.email] || user.username) : 
+                                                    <span className="unassigned">Não atribuído</span>;
+                                            })()}
+                                        </td>
+                                        <td className="date-cell">
+                                            {formatUTCDate(avaliacao.review_date)}
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button
+                                                    className={`btn btn-secondary btn-sm action-btn ${!avaliacao.review_url ? 'disabled' : ''}`}
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        if (avaliacao.review_url) {
+                                                            window.open(avaliacao.review_url, '_blank');
+                                                        }
+                                                    }}
+                                                    disabled={!avaliacao.review_url}
+                                                    title="Ver avaliação original"
+                                                >
+                                                    <i className="fas fa-external-link-alt"></i>
+                                                </button>
+                                                <button 
+                                                    className="btn btn-danger btn-sm action-btn" 
+                                                    onClick={(e) => handleDelete(e, avaliacao.id)}
+                                                    title="Excluir avaliação"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state">
+                            <i className="fas fa-star-half-alt"></i>
+                            <h3>Nenhuma avaliação encontrada</h3>
+                            <p>Nenhuma avaliação corresponde aos filtros selecionados.</p>
+                        </div>
+                    )}
                 </div>
-                {!isLoading && filteredAvaliacoes.length === 0 && <p style={{textAlign: 'center', padding: '2rem'}}>Nenhuma avaliação encontrada.</p>}
             </div>
         </div>
     );

@@ -63,10 +63,10 @@ export function ColumnModal() {
 
     return (
         <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content stats-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-content-private" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={closeModal}><i className="fas fa-times"></i></button>
                 <div className="modal-header"><h2><i className="fas fa-columns"></i><span>{isEditing ? 'Editar Coluna' : 'Nova Coluna'}</span></h2></div>
-                <div className="modal-body" style={{ padding: '2rem' }}>
+                <div className="modal-body-private" style={{ padding: '2rem' }}>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="columnTitle" className="form-label"><i className="fas fa-heading"></i> Título da Coluna</label>
