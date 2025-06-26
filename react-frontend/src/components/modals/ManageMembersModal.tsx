@@ -53,7 +53,7 @@ export function ManageMembersModal() {
 
     return (
         <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content stats-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={closeModal}><i className="fas fa-times"></i></button>
                 <div className="modal-header"><h2><i className="fas fa-users-cog"></i> Gerenciar Membros</h2></div>
                 <div className="modal-body" style={{ padding: '2rem', display: 'block' }}>

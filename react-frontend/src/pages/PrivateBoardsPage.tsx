@@ -11,6 +11,7 @@ import { Loader } from '../components/ui/Loader';
 export function PrivateBoardsPage() {
     const [boards, setBoards] = useState<Board[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'owned' | 'shared'>('all');
     
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -45,18 +46,22 @@ export function PrivateBoardsPage() {
         e.stopPropagation();
 
         toast((t) => (
-            <span>
-                Tem certeza que deseja excluir <b>"{boardTitle}"</b>?
-                <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+            <div className="delete-confirmation-toast">
+
+                <div className="toast-message">
+                    Tem certeza que deseja excluir o quadro <strong>"{boardTitle}"</strong>?
+                    <br />
+                    <small>Esta ação não pode ser desfeita.</small>
+                </div>
+                <div className="toast-actions">
                     <button
-                        className="btn btn-primary"
-                        style={{ flex: 1 }}
+                        className="btn btn-danger btn-sm"
                         onClick={async () => {
                             toast.dismiss(t.id);
                             const loadingToast = toast.loading("Excluindo quadro...");
                             try {
                                 await boardService.deleteBoard(boardId);
-                                toast.success(`Quadro "${boardTitle}" excluído.`);
+                                toast.success(`Quadro "${boardTitle}" excluído com sucesso.`);
                                 setBoards(prevBoards => prevBoards.filter(b => b.id !== boardId));
                             } catch (error) {
                                 toast.error("Falha ao excluir o quadro.");
@@ -65,69 +70,179 @@ export function PrivateBoardsPage() {
                             }
                         }}
                     >
-                        Sim, Excluir
+                        <i className="fas fa-trash"></i>
+                        Excluir
                     </button>
-                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => toast.dismiss(t.id)}>
-                        Não
+                    <button 
+                        className="btn btn-secondary btn-sm" 
+                        onClick={() => toast.dismiss(t.id)}
+                    >
+                        Cancelar
                     </button>
                 </div>
-            </span>
-        ), { duration: 6000 });
+            </div>
+        ), { duration: Infinity });
     };
+
+    const filteredBoards = boards.filter(board => {
+        if (filter === 'owned') return board.owner_id === user?.id;
+        if (filter === 'shared') return board.owner_id !== user?.id;
+        return true;
+    });
+
+    const ownedCount = boards.filter(board => board.owner_id === user?.id).length;
+    const sharedCount = boards.filter(board => board.owner_id !== user?.id).length;
 
     if (isLoading) {
         return <Loader fullScreen />;
     }
 
     return (
-        <div className="content-section" style={{ display: 'block' }}>
-            <div className="content-header">
-                <h2><i className="fas fa-user-lock"></i> Meus Quadros Privados</h2>
-                <p>Quadros criados por você ou compartilhados com você.</p>
-            </div>
-            <div className="content-body">
-                <div className="private-boards-actions" style={{ marginBottom: '2rem' }}>
-                    <button className="btn btn-primary" onClick={handleCreateBoard}>
-                        <i className="fas fa-plus"></i> Criar Novo Quadro
+        <div className="private-boards-page">
+            <div className="page-header">
+                <div className="header-content">
+                    <div className="header-title">
+                        <h1>
+                            <i className="fas fa-user-lock"></i>
+                            Meus Quadros Privados
+                        </h1>
+                        <p>Gerencie seus quadros pessoais e colaborativos</p>
+                    </div>
+                    <button className="btn btn-primary btn-create" onClick={handleCreateBoard}>
+                        <i className="fas fa-plus"></i>
+                        <span>Novo Quadro Privado</span>
                     </button>
                 </div>
-                <div className="private-boards-container">
-                    {boards.length > 0 ? (
-                        boards.map(board => {
+
+                {boards.length > 0 && (
+                    <div className="boards-stats">
+                        <div className="stat-item">
+                            <span className="stat-number">{boards.length}</span>
+                            <span className="stat-label">Total</span>
+                        </div>
+                        <div className="stat-item">
+                            <span className="stat-number">{ownedCount}</span>
+                            <span className="stat-label">Próprios</span>
+                        </div>
+                        <div className="stat-item">
+                            <span className="stat-number">{sharedCount}</span>
+                            <span className="stat-label">Compartilhados</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {boards.length > 0 && (
+                <div className="filter-section">
+                    <div className="filter-tabs">
+                        <button 
+                            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+                            onClick={() => setFilter('all')}
+                        >
+                            <i className="fas fa-th-large"></i>
+                            Todos ({boards.length})
+                        </button>
+                        <button 
+                            className={`filter-tab ${filter === 'owned' ? 'active' : ''}`}
+                            onClick={() => setFilter('owned')}
+                        >
+                            <i className="fas fa-crown"></i>
+                            Meus Quadros ({ownedCount})
+                        </button>
+                        <button 
+                            className={`filter-tab ${filter === 'shared' ? 'active' : ''}`}
+                            onClick={() => setFilter('shared')}
+                        >
+                            <i className="fas fa-users"></i>
+                            Compartilhados ({sharedCount})
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="boards-content">
+                {filteredBoards.length > 0 ? (
+                    <div className="boards-grid">
+                        {filteredBoards.map(board => {
                             const isOwner = board.owner_id === user?.id;
                             return (
-                                <div key={board.id} className="private-board-card">
-                                    <div className="private-board-header">
-                                        <h3><i className="fas fa-user-lock" style={{ color: board.color || '#3498db' }}></i> {board.title}</h3>
-                                    </div>
-
-                                    {!isOwner && board.owner_name && (
-                                        <div className="board-owner-tag">
-                                            Quadro de {board.owner_name}
+                                <div 
+                                    key={board.id} 
+                                    className={`board-card ${isOwner ? 'owned' : 'shared'}`}
+                                    onClick={() => handleSelectBoard(board.id)}
+                                >
+                                    <div className="card-header">
+                                        <div className="board-icon" style={{ backgroundColor: board.color || '#3498db' }}>
+                                            <i className="fas fa-user-lock"></i>
                                         </div>
-                                    )}
-
-                                    <p>{board.description || "Sem descrição."}</p>
-                                    
-                                    <div className="private-board-actions">
-                                        <button className="btn btn-primary btn-view-board" onClick={() => handleSelectBoard(board.id)}>
-                                            <i className="fas fa-arrow-right"></i> Acessar
-                                        </button>
+                                        <div className="board-status">
+                                            {isOwner ? (
+                                                <span className="status-badge owner">
+                                                    <i className="fas fa-crown"></i>
+                                                    ﾠProprietário
+                                                </span>
+                                            ) : (
+                                                <span className="status-badge shared">
+                                                    <i className="fas fa-users"></i>
+                                                    ﾠCompartilhado
+                                                </span>
+                                            )}
+                                        </div>
                                         {isOwner && (
-                                            <button className="btn btn-secondary btn-delete-board" onClick={(e) => handleDeleteBoard(e, board.id, board.title)}>
-                                                <i className="fas fa-times"></i> Excluir
+                                            <button 
+                                                className="delete-btn"
+                                                onClick={(e) => handleDeleteBoard(e, board.id, board.title)}
+                                                title="Excluir quadro"
+                                            >
+                                                <i className="fas fa-trash"></i>
                                             </button>
                                         )}
                                     </div>
+
+                                    <div className="card-content">
+                                        <h3 className="board-title">{board.title}</h3>
+                                        <p className="board-description">
+                                            {board.description || "Sem descrição disponível."}
+                                        </p>
+                                    </div>
+
+                                    <div className="card-footer">
+                                        {!isOwner && board.owner_name && (
+                                            <div className="owner-info">
+                                                <i className="fas fa-user"></i>
+                                                <span>Por {board.owner_name}</span>
+                                            </div>
+                                        )}
+                                        <div className="access-btn">
+                                            <i className="fas fa-arrow-right"></i>
+                                            <span>Acessar</span>
+                                        </div>
+                                    </div>
                                 </div>
                             );
-                        })
-                    ) : (
-                        <p style={{ color: 'var(--text-muted)' }}>
-                            Você ainda não tem quadros privados. Crie um ou aguarde um convite!
-                        </p>
-                    )}
-                </div>
+                        })}
+                    </div>
+                ) : boards.length === 0 ? (
+                    <div className="empty-state">
+                        <div className="empty-icon">
+                            <i className="fas fa-clipboard"></i>
+                        </div>
+                        <h3>Nenhum quadro encontrado</h3>
+                        <p>Você ainda não possui quadros privados. Comece criando seu primeiro quadro!</p>
+                        <button className="btn btn-primary" onClick={handleCreateBoard}>
+                            <i className="fas fa-plus"></i>
+                            Criar Primeiro Quadro
+                        </button>
+                    </div>
+                ) : (
+                    <div className="empty-state">
+                        <div className="empty-icon">
+                            <i className="fas fa-filter"></i>
+                        </div>
+                        <h3>Nenhum quadro nesta categoria</h3>
+                        <p>Tente alterar o filtro para ver outros quadros.</p>
+                    </div>
+                )}
             </div>
         </div>
     );

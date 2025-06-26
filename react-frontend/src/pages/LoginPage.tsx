@@ -47,7 +47,7 @@ export function LoginPage() {
       <div className="login-container">
         <form id="loginForm" onSubmit={handleLogin} className="login-form">
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <img src={logo} alt="Logo N-MULTIFIBRA" style={{ height: '80px' }} />
+                <img src={logo} alt="Logo N-MULTIFIBRA" style={{ width: '200px' }} />
             </div>
             <div className="form-group2">
               <label htmlFor="email">Email</label>

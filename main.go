@@ -150,6 +150,19 @@ type Avaliacao struct {
 	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// estrutura contatos
+type ContatoStatus struct {
+	ID               int       `json:"id" db:"id"`
+	ContatoID        string    `json:"contato_id" db:"contato_id"`
+	Status           string    `json:"status" db:"status"`
+	Anotacao         string    `json:"anotacao" db:"anotacao"`
+	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
+	UpdatedBy        string    `json:"updated_by" db:"updated_by"`
+	AssignedTo       *string   `json:"assigned_to,omitempty" db:"assigned_to"`
+	AssignedToName   *string   `json:"assigned_to_name,omitempty" db:"assigned_to_name"`
+	AssignedToAvatar *string   `json:"assigned_to_avatar,omitempty" db:"assigned_to_avatar"`
+}
+
 // estrutura reorderpayload
 type ReorderPayload struct {
 	ColumnID       int   `json:"column_id"`
@@ -511,14 +524,178 @@ func (app *App) deleteBoard(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-// endpoints rotas API
+func (app *App) handleGetContatosStatus(c *fiber.Ctx) error {
+	query := `SELECT contato_id, status, anotacao, updated_at, updated_by, assigned_to, assigned_to_name, assigned_to_avatar FROM contato_status`
+	rows, err := app.db.Query(context.Background(), query)
+	if err != nil {
+		log.Printf("Erro ao buscar status de contatos: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao buscar dados de status"})
+	}
+	defer rows.Close()
+
+	statuses := make([]ContatoStatus, 0)
+	for rows.Next() {
+		var cs ContatoStatus
+		var anotacao, assignedTo, assignedToName, assignedToAvatar sql.NullString
+		if err := rows.Scan(&cs.ContatoID, &cs.Status, &anotacao, &cs.UpdatedAt, &cs.UpdatedBy, &assignedTo, &assignedToName, &assignedToAvatar); err == nil {
+			cs.Anotacao = anotacao.String
+			if assignedTo.Valid {
+				cs.AssignedTo = &assignedTo.String
+			}
+			if assignedToName.Valid {
+				cs.AssignedToName = &assignedToName.String
+			}
+			if assignedToAvatar.Valid {
+				cs.AssignedToAvatar = &assignedToAvatar.String
+			}
+			statuses = append(statuses, cs)
+		}
+	}
+	return c.JSON(statuses)
+}
+
+func (app *App) handleSetContatoStatus(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var payload struct {
+		ContatoID string `json:"contato_id"`
+		Status    string `json:"status"`
+		Anotacao  string `json:"anotacao"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Payload inválido"})
+	}
+
+	if payload.ContatoID == "" || payload.Status == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "contato_id e status são obrigatórios"})
+	}
+
+	query := `
+		INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by)
+		VALUES ($1, $2, $3, NOW(), $4)
+		ON CONFLICT (contato_id) 
+		DO UPDATE SET
+			status = EXCLUDED.status,
+			anotacao = EXCLUDED.anotacao,
+			updated_at = NOW(),
+			updated_by = EXCLUDED.updated_by
+		RETURNING id
+	`
+
+	var returnedId int
+	err := app.db.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
+	if err != nil {
+		log.Printf("Erro ao fazer upsert do status do contato: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao salvar o status no banco de dados"})
+	}
+
+	return c.Status(200).JSON(fiber.Map{"status": "success", "id": returnedId})
+}
+
+func (app *App) handleAssignContato(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	// Busca nome e avatar do usuário
+	var userName, userAvatar sql.NullString
+	err := app.db.QueryRow(context.Background(),
+		"SELECT raw_user_meta_data->>'username', raw_user_meta_data->>'avatar_url' FROM auth.users WHERE id = $1",
+		userID).Scan(&userName, &userAvatar)
+	if err != nil {
+		log.Printf("Aviso: não foi possível encontrar metadados para o userID %s: %v", userID, err)
+	}
+
+	var payload struct {
+		ContatoID string `json:"contato_id"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Payload inválido"})
+	}
+
+	if payload.ContatoID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "contato_id é obrigatório"})
+	}
+
+	query := `
+        INSERT INTO contato_status (contato_id, status, updated_by, assigned_to, assigned_to_name, assigned_to_avatar)
+        VALUES ($1, 'pendente', $2, $3, $4, $5)
+        ON CONFLICT (contato_id)
+        DO UPDATE SET
+            assigned_to = EXCLUDED.assigned_to,
+            assigned_to_name = EXCLUDED.assigned_to_name,
+            assigned_to_avatar = EXCLUDED.assigned_to_avatar,
+            updated_at = NOW(),
+            updated_by = EXCLUDED.updated_by
+        RETURNING id, status, anotacao, updated_at
+    `
+
+	var returnedId int
+	var status string
+	var updatedAt time.Time
+	var anotacao sql.NullString
+
+	err = app.db.QueryRow(context.Background(), query, payload.ContatoID, userID, userID, userName.String, userAvatar.String).Scan(&returnedId, &status, &anotacao, &updatedAt)
+	if err != nil {
+		log.Printf("Erro ao fazer upsert para assumir contato: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao salvar a atribuição no banco de dados"})
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":             "success",
+		"assigned_to":        userID,
+		"assigned_to_name":   userName.String,
+		"assigned_to_avatar": userAvatar.String,
+		"updated_at":         updatedAt,
+	})
+}
+
+func (app *App) handleUnassignContato(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var payload struct {
+		ContatoID string `json:"contato_id"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Payload inválido"})
+	}
+
+	if payload.ContatoID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "contato_id é obrigatório"})
+	}
+
+	query := `
+        UPDATE contato_status
+        SET 
+            assigned_to = NULL,
+            assigned_to_name = NULL,
+            assigned_to_avatar = NULL,
+            updated_at = NOW(),
+            updated_by = $2::uuid 
+        WHERE contato_id = $1 AND assigned_to = $2
+    `
+
+	cmdTag, err := app.db.Exec(context.Background(), query, payload.ContatoID, userID)
+	if err != nil {
+		log.Printf("Erro ao desassociar contato: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao remover associação no banco de dados"})
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return c.Status(403).JSON(fiber.Map{"error": "Tarefa não encontrada ou você não tem permissão para desassociá-la."})
+	}
+
+	return c.Status(200).JSON(fiber.Map{"status": "success"})
+}
+
 func (app *App) setupRoutes(fiberApp *fiber.App) {
 	api := fiberApp.Group("/api")
 	protected := api.Use(app.authMiddleware)
 
 	protected.Get("/users", app.getUsers)
-
 	protected.Post("/user/avatar", app.handleAvatarUpload)
+
 	protected.Get("/boards/public", app.getPublicBoards)
 	protected.Get("/boards/private", app.getPrivateBoards)
 	protected.Post("/boards", app.createBoard)
@@ -563,6 +740,10 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Put("/avaliacoes/:id", app.updateAvaliacao)
 	protected.Delete("/avaliacoes/:id", app.deleteAvaliacao)
 
+	protected.Get("/contatos/status", app.handleGetContatosStatus)
+	protected.Post("/contatos/status", app.handleSetContatoStatus)
+	protected.Post("/contatos/assign", app.handleAssignContato)
+	protected.Post("/contatos/unassign", app.handleUnassignContato)
 }
 
 // endpoint users

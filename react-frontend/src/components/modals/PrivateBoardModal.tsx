@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-
 import { useModal } from '../../contexts/ModalContext';
 import * as boardService from '../../services/boards';
 
@@ -48,12 +47,12 @@ export function PrivateBoardModal() {
         }
     };
 
-     return (
+    return (
         <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content stats-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-content-private"  onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={closeModal} disabled={isLoading}><i className="fas fa-times"></i></button>
                 <div className="modal-header"><h2><i className="fas fa-user-lock"></i><span>Novo Quadro Privado</span></h2></div>
-                <div className="modal-body" style={{ padding: '2rem' }}>
+                <div className="modal-body-private" style={{ padding: '2rem'}}>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="boardTitle" className="form-label"><i className="fas fa-heading"></i> Título do Quadro</label>

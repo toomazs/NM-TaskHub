@@ -200,7 +200,6 @@ export function TaskModal() {
                         <i className="fas fa-edit"></i>
                         <span>{isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}</span>
                         
-                        {/* CORREÇÃO: A renderização agora usa a lógica completa de visibilidade e animação */}
                         {isIndicatorVisible && (
                             <div className={`autosave-indicator ${isSaving ? 'fade-in' : 'fade-out'}`}>
                                 <i className="fas fa-spinner fa-spin"></i> Salvando...

@@ -21,6 +21,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LigacoesPage } from './pages/LigacoesPage';
 import { AvaliacoesPage } from './pages/AvaliacoesPage';
 import { AgendaPage } from './pages/AgendaPage';
+import { ContatosPage } from './pages/ContatosPage';
+
 
 function ProtectedAppLayout() {
   return (
@@ -55,6 +57,8 @@ function AppRoutes() {
         <Route path="ligacoes" element={<LigacoesPage />} />
         <Route path="avaliacoes" element={<AvaliacoesPage />} />
         <Route path="agenda" element={<AgendaPage />} />
+        <Route path="contatos-preventivos" element={<ContatosPage />} />
+
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

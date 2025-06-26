@@ -24,97 +24,170 @@ export function KanbanHeader() {
 
   const handleLeaveBoard = () => {
     toast((t) => (
-        <span>
-            Tem certeza que deseja sair do quadro <b>"{board.title}"</b>?
-            <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+        <div className="toast-confirmation">
+            <div className="toast-message">
+                Tem certeza que deseja sair do quadro <strong>"{board.title}"</strong>?
+            </div>
+            <div className="toast-actions">
                 <button
-                    className="btn btn-primary" style={{ flex: 1 }}
+                    className="btn btn-danger btn-sm"
                     onClick={async () => {
                         toast.dismiss(t.id);
                         try {
                            await boardService.leaveBoard(board.id);
                            toast.success("Você saiu do quadro.");
                            navigate('/private-boards');
-                        } catch (error) { toast.error("Falha ao sair do quadro."); }
+                        } catch (error) { 
+                           toast.error("Falha ao sair do quadro."); 
+                        }
                     }}
                 >
                     Sim, Sair
                 </button>
-                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => toast.dismiss(t.id)}>
-                    Não
+                <button 
+                    className="btn btn-secondary btn-sm" 
+                    onClick={() => toast.dismiss(t.id)}
+                >
+                    Cancelar
                 </button>
             </div>
-        </span>
-    ));
+        </div>
+    ), { duration: Infinity });
   };
 
   return (
-    <div className="header">
-      <div className="header-main">
+    <header className="kanban-header">
+      <div className="header-left">
         {!board.is_public && (
-          <button className="btn btn-secondary" style={{ marginRight: '1.5rem' }} onClick={() => navigate('/private-boards')}>
-            <i className="fas fa-arrow-left"></i><span> Voltar</span>
+          <button 
+            className="btn btn-ghost btn-back" 
+            onClick={() => navigate('/private-boards')}
+            title="Voltar aos quadros privados"
+          >
+            <i className="fas fa-arrow-left"></i>
           </button>
         )}
-        <h2>
-          <i className={board.is_public ? "fas fa-headset" : "fas fa-user-lock"}></i> {board.title}
-        </h2>
+        
+        <div className="board-info">
+          <div className="board-title">
+            <div className="board-icon">
+              <i className={board.is_public ? "fas fa-headset" : "fas fa-user-lock"}></i>
+            </div>
+            <h1>{board.title}</h1>
+            <div className="board-type-badge">
+              {board.is_public ? 'Público' : 'Privado'}
+            </div>
+          </div>
+          
+          {board.description && (
+            <p className="board-description">{board.description}</p>
+          )}
+        </div>
       </div>
 
-      <div className="header-actions">
+      <div className="header-right">
         {board.is_public ? (
-          <div className="stats">
-            <div className="stat-item clickable-stat" onClick={() => openModal('stats', { status: 'pendente' })}>
-              <div className="stat-number">{pending}</div>
-              <div><i className="fa-solid fa-spinner"></i> Pendentes</div>
+          <div className="stats-container">
+            <div 
+              className="stat-card stat-pending" 
+              onClick={() => openModal('stats', { status: 'pendente' })}
+              title="Ver tickets pendentes"
+            >
+              <div className="stat-icon">
+                <i className="fa-solid fa-clock"></i>
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{pending}</div>
+                <div className="stat-label">Pendentes</div>
+              </div>
             </div>
-            <div className="stat-item clickable-stat" onClick={() => openModal('stats', { status: 'solucionado' })}>
-              <div className="stat-number">{completed}</div>
-              <div><i className="fas fa-check-circle"></i> Solucionados</div>
+            
+            <div 
+              className="stat-card stat-completed" 
+              onClick={() => openModal('stats', { status: 'solucionado' })}
+              title="Ver tickets solucionados"
+            >
+              <div className="stat-icon">
+                <i className="fas fa-check-circle"></i>
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{completed}</div>
+                <div className="stat-label">Solucionados</div>
+              </div>
             </div>
-            <div className="stat-item clickable-stat" onClick={() => openModal('stats', { status: 'nao-solucionado' })}>
-              <div className="stat-number">{failed}</div>
-              <div><i className="fas fa-times-circle"></i> Não Solucionados</div>
+            
+            <div 
+              className="stat-card stat-failed" 
+              onClick={() => openModal('stats', { status: 'nao-solucionado' })}
+              title="Ver tickets não solucionados"
+            >
+              <div className="stat-icon">
+                <i className="fas fa-times-circle"></i>
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{failed}</div>
+                <div className="stat-label">Não Solucionados</div>
+              </div>
             </div>
           </div>
         ) : (
-          <>
-            <div className="board-members-container" onClick={() => openModal('manageMembers')} title="Gerenciar Membros">
-              {boardMembers.map(member => {
-                const displayName = userDisplayNameMap[member.email] || member.username;
-                return (
-                  <div 
-                    key={member.id} 
-                    className="board-member-avatar" 
-                    title={`${displayName} ${member.is_owner ? '(Dono)' : ''}`}
-                    style={{ 
-                        backgroundImage: member.avatar ? `url(${member.avatar})` : 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                     }}
-                  >
-                    {!member.avatar && displayName.charAt(0).toUpperCase()}
+          <div className="private-board-actions">
+            <div 
+              className="board-members" 
+              onClick={() => openModal('manageMembers')} 
+              title="Gerenciar membros do quadro"
+            >
+              <div className="members-avatars">
+                {boardMembers.slice(0, 3).map(member => {
+                  const displayName = userDisplayNameMap[member.email] || member.username;
+                  return (
+                    <div 
+                      key={member.id} 
+                      className={`member-avatar ${member.is_owner ? 'owner' : ''}`}
+                      title={`${displayName} ${member.is_owner ? '(Proprietário)' : ''}`}
+                      style={{ 
+                        backgroundImage: member.avatar ? `url(${member.avatar})` : 'none'
+                      }}
+                    >
+                      {!member.avatar && displayName.charAt(0).toUpperCase()}
+                    </div>
+                  );
+                })}
+                {boardMembers.length > 3 && (
+                  <div className="member-avatar more-members">
+                    +{boardMembers.length - 3}
                   </div>
-                )
-              })}
+                )}
+              </div>
+              <span className="members-count">{boardMembers.length} membro{boardMembers.length !== 1 ? 's' : ''}</span>
             </div>
             
-            {isOwner && (
-              <button className="btn btn-secondary" onClick={() => openModal('inviteUser')}>
-                <i className="fas fa-user-plus"></i><span> Convidar</span>
-              </button>
-            )}
-            {!isOwner && (
-                <button className="btn btn-danger" onClick={handleLeaveBoard}>
-                    <i className="fas fa-sign-out-alt"></i><span> Sair do Quadro</span>
+            <div className="action-buttons">
+              {isOwner && (
+                <button 
+                  className="btn btn-primary btn-invite" 
+                  onClick={() => openModal('inviteUser')}
+                  title="Convidar usuário"
+                >
+                  <i className="fas fa-user-plus"></i>
+                  <span>Convidar</span>
                 </button>
-            )}
-          </>
+              )}
+              
+              {!isOwner && (
+                <button 
+                  className="btn btn-danger btn-leave" 
+                  onClick={handleLeaveBoard}
+                  title="Sair do quadro"
+                >
+                  <i className="fas fa-sign-out-alt"></i>
+                  <span>Sair</span>
+                </button>
+              )}
+            </div>
+          </div>
         )}
       </div>
-    </div>
+    </header>
   );
 }

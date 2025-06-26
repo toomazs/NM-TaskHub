@@ -8,6 +8,10 @@ import { ColumnModal } from './ColumnModal';
 import { LigacaoModal } from './LigacaoModal';
 import { AgendaEventModal } from './AgendaEventModal';
 import { AvaliacaoModal } from './AvaliacaoModal';
+import { ContatoModal } from './ContatoModal';
+import { ContatoStatsModal } from './ContatoStatsModal';
+
+
 
 const modalComponents = {
     task: TaskModal,
@@ -19,6 +23,8 @@ const modalComponents = {
     ligacao: LigacaoModal,
     agendaEvent: AgendaEventModal,
     avaliacao: AvaliacaoModal,
+    contato: ContatoModal,
+    contatoStats: ContatoStatsModal,
 };
 
 export function ModalManager() {
