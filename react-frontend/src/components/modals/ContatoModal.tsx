@@ -1,5 +1,3 @@
-// src/components/modals/ContatoModal.tsx
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     FaTimes, FaUndo, FaClipboardList, FaUser, FaCalendarCheck, FaPhoneSlash,
@@ -74,7 +72,7 @@ export function ContatoModal() {
             closeModal();
         } catch (error) {
             console.error('Erro ao salvar:', error);
-            setIsSubmitting(false); // Mantém o modal aberto em caso de erro
+            setIsSubmitting(false);
         }
     }, [onSave, closeModal]);
 
@@ -155,9 +153,12 @@ export function ContatoModal() {
                         </div>
 
                         <div className="client-extra-details">
+                            <div className="detail-item"><i className="fa-solid fa-user"></i><span>ID:</span><strong>{cliente.id}</strong></div>
                             <div className="detail-item"><FaServer /><span>OLT:</span><strong>{cliente.olt}</strong></div>
                             <div className="detail-item"><FaSitemap /><span>PON:</span><strong>{cliente.ponid}</strong></div>
                             <div className="detail-item"><FaFingerprint /><span>MAC:</span><strong>{cliente.mac && cliente.mac.trim() ? cliente.mac : 'N/A'}</strong></div>
+                            <div className="detail-item"><i className="fa-solid fa-arrow-down"></i><span>Sinal RX:</span><strong>{cliente.rx}</strong></div>
+                            <div className="detail-item"><i className="fa-solid fa-arrow-up"></i><span>Sinal TX:</span><strong>{cliente.tx}</strong></div>
                         </div>
                     </div>
 
@@ -177,7 +178,7 @@ export function ContatoModal() {
                         <div>
                         {isCurrentUserAssigned && (
                             <button className="btn btn-danger" onClick={handleUnassignClick} disabled={isSubmitting}>
-                                <FaUserSlash /> Desassociar
+                                <FaUserSlash /> 
                             </button>
                         )}
                         </div>

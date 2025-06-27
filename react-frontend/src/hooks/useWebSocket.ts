@@ -5,6 +5,12 @@ export function useWebSocket(boardId: number | undefined, onMessage: (message: a
   const ws = useRef<WebSocket | null>(null);
   const { user } = useAuth();
 
+  const onMessageRef = useRef(onMessage);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
   useEffect(() => {
     if (!boardId || !user) {
       return;
@@ -16,10 +22,8 @@ export function useWebSocket(boardId: number | undefined, onMessage: (message: a
 
     const wsUrl = isProduction 
       ? `${protocol}://${host}/ws/board/${boardId}`
-      : `${protocol}://${window.location.hostname}:8080/ws/board/${boardId}`;
+      : `${protocol}://${window.location.hostname}:10000/ws/board/${boardId}`;
     
-    console.log("Conectando ao WebSocket em:", wsUrl);
-
     ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => console.log(`[WebSocket] Conectado ao board ${boardId}`);
@@ -32,7 +36,8 @@ export function useWebSocket(boardId: number | undefined, onMessage: (message: a
           return;
         }
 
-        onMessage(messageData);
+        onMessageRef.current(messageData);
+
       } catch (error) {
         console.error("[WebSocket] Erro ao processar mensagem:", error);
       }
@@ -46,5 +51,6 @@ export function useWebSocket(boardId: number | undefined, onMessage: (message: a
         ws.current?.close();
       }
     };
-  }, [boardId, user, onMessage]); 
+  }, [boardId, user]); 
+
 }

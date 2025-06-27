@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -1996,6 +1997,16 @@ func (app *App) deleteAvaliacao(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func isPortInUse(port string) bool {
+	listener, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		return true
+	}
+
+	listener.Close()
+	return false
+}
+
 // MAIN
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -2028,10 +2039,15 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "10000"
 	}
+
+	if isPortInUse(port) {
+		log.Fatalf("ERRO: A porta %s já está em uso.", port)
+	}
+
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
-	log.Printf("Servidor iniciando na porta %BOARDs", port)
+	log.Printf("Servidor iniciando na porta %s", port)
 	if err := fiberApp.Listen(addr); err != nil {
 		log.Fatalf("Erro ao iniciar o servidor: %v", err)
 	}

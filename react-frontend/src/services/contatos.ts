@@ -24,29 +24,31 @@ export interface SinaisResponse {
 }
 
 export async function getSinais(): Promise<SinaisResponse> {
-  try {
-    const response = await tryFetch(PRIMARY_SINAIS_API_URL);
-    if (response.ok) {
-      const data = await response.json();
-      return { data: data };
-    }
-  } catch (error) {
-    console.warn("API primária indisponível, tentando fallback:", error);
+  const fetchFromUrl = async (url: string): Promise<SinaisResponse> => {
+      const response = await tryFetch(url);
+      if (!response.ok) {
+          throw new Error(`API de sinais em ${url} retornou erro: ${response.statusText}`);
+      }
+
+      const apiResponse: SinaisResponse = await response.json();
+      
+      return { data: apiResponse.data };
   }
 
   try {
-    const response = await tryFetch(FALLBACK_SINAIS_API_URL);
-    if (!response.ok) {
-      throw new Error(`A API de sinais retornou um erro: ${response.statusText}`);
-    }
-    const data = await response.json();
-    return { data: data };
+    return await fetchFromUrl(PRIMARY_SINAIS_API_URL);
   } catch (error) {
-    console.error("Falha ao buscar dados de sinais da API (ambas as URLs):", error);
-    toast.error("Não foi possível carregar os clientes. As APIs de sinais estão online?");
-    return { data: [] }; 
+    console.warn("API primária indisponível, tentando fallback:", error);
+    try {
+        return await fetchFromUrl(FALLBACK_SINAIS_API_URL);
+    } catch (fallbackError) {
+        console.error("Falha ao buscar dados de sinais da API (ambas as URLs):", fallbackError);
+        toast.error("Não foi possível carregar os clientes. As APIs de sinais estão online?");
+        return { data: [] }; 
+    }
   }
 }
+
 export async function getContatosStatus(): Promise<ContatoStatus[]> {  
     const response = await api('/contatos/status', { method: 'GET' });  
     if (!response.ok) {  
