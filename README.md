@@ -1,8 +1,6 @@
-# 💙 NM TaskHub v2.0 (React)
+# 💙 NM TaskHub v2.0
 
 NM TaskHub é uma aplicação web full-stack de quadro Kanban, projetada para gerenciamento de tarefas e fluxos de trabalho de demandas da **N-MultiFibra**. A aplicação foi modernizada, utilizando uma API RESTful de alta performance em Go (Golang) e um frontend dinâmico e reativo construído com **React, TypeScript e Vite**, com atualizações em tempo real via WebSockets.
-
-O sistema é modular, seguro, performático e pronto para deploy em plataformas de nuvem modernas.
 
 ---
 
@@ -19,38 +17,31 @@ O sistema é modular, seguro, performático e pronto para deploy em plataformas 
 
 ## 📷 Imagens
 
-<details>
-  <summary> Clique para ver </summary>
+ - Tela de Login <br> <br>
+  <img src="https://i.imgur.com/DT6rG6l.png" width="600"/><br><br>
 
-- Login <br> <br>
-  <img src="https://i.imgur.com/16a5u0j.png" width="600"/><br><br>
-
-- Suporte (Kanban) <br> <br>
-  <img src="https://i.imgur.com/zh3A2Lz.png" width="600"/><br><br>
+- Kanban <br> <br>
+  <img src="https://i.imgur.com/TPoLDhx.png" width="600"/><br><br>
  
 - Quadros Privados <br> <br>
-  <img src="https://i.imgur.com/yBZ3GJF.png" width="600"/><br><br>
+  <img src="https://i.imgur.com/WPfYUCx.png" width="600"/><br><br>
 
-- Quadros Privados 2 <br> <br>
-  <img src="https://i.imgur.com/0X1ATQp.png" width="600"/><br><br>
+-  <img src="https://i.imgur.com/61saOIt.png" width="600"/><br><br>
 
 - Ligações Ativas <br> <br>
-  <img src="https://i.imgur.com/c8weM22.png" width="600"/><br><br>
+  <img src="https://i.imgur.com/r5dhP39.png" width="600"/><br><br>
 
 - Avaliações Negativas <br> <br>
-  <img src="https://i.imgur.com/ObxFttQ.jpeg" width="600"/><br><br>
+  <img src="https://i.imgur.com/LntyCAH.png" width="600"/><br><br>
 
 - Dashboard <br> <br>
-  <img src="https://i.imgur.com/xDIlUmL.png" width="600"/><br><br>
+  <img src="https://i.imgur.com/qA9dyud.png" width="600"/><br><br>
 
-- Dashboard 2 <br> <br>
-  <img src="https://i.imgur.com/Fa4CjOz.png" width="600"/><br><br>
+- <img src="https://i.imgur.com/u4YwDuJ.png" width="600"/><br><br>
 
 - Agenda Diária <br> <br>
-  <img src="https://i.imgur.com/mwsQuc4.png" width="600"/><br><br>
+  <img src="https://i.imgur.com/1ca94HP.png" width="600"/><br><br>
 
-
-</details>
 
 ---
 
@@ -78,9 +69,10 @@ A aplicação utiliza uma arquitetura moderna e eficiente, separando claramente 
     -   `recharts` para a criação de gráficos no dashboard.
     -   `react-hot-toast` para notificações.
     -   `date-fns` para manipulação de datas.
+    -   `lodash` para utilitários gerais.
     -   `supabase-js` para interagir com a autenticação do Supabase.
 -   **Estilização:** **CSS3** moderno com uso extensivo de Variáveis CSS para um tema escuro customizável e layout baseado em Flexbox/Grid.
--   **Ícones:** Font Awesome.
+-   **Ícones:** `react-icons`.
 
 ---
 
@@ -141,9 +133,9 @@ Para rodar este projeto em sua máquina local, siga os passos abaixo.
 
 ---
 
-## 🌐 **Endpoints da API**
+## 🌐 Endpoints da API
 
-Todos os endpoints listados abaixo estão no grupo `/api` e são protegidos, ou seja, exigem um token de autenticação JWT válido no cabeçalho `Authorization`. <br>
+Todos os endpoints listados abaixo estão no grupo `/api` e são protegidos, ou seja, exigem um token de autenticação JWT válido no cabeçalho `Authorization`.<br>
 [Clique para ver em Swagger](https://app.swaggerhub.com/apis-docs/tomazinc/n-multifibra_kanban_api/2.0.1).
 
 #### Usuários e Autenticação
@@ -155,8 +147,8 @@ Todos os endpoints listados abaixo estão no grupo `/api` e são protegidos, ou 
 #### Quadros (Boards)
 | Método HTTP | Rota | Descrição |
 | :--- | :--- | :--- |
-| `GET` | `/api/boards/public` | Busca o quadro público principal. |
-| `GET` | `/api/boards/private` | Busca os quadros privados do usuário. |
+| `GET` | `/api/boards/public` | Busca todos os quadros públicos. |
+| `GET` | `/api/boards/private` | Busca os quadros privados do usuário autenticado. |
 | `POST` | `/api/boards` | Cria um novo quadro privado. |
 | `DELETE` | `/api/boards/:id` | Deleta um quadro privado (apenas o dono). |
 | `POST` | `/api/boards/:id/leave` | Permite que um usuário saia de um quadro do qual é membro. |
@@ -165,8 +157,8 @@ Todos os endpoints listados abaixo estão no grupo `/api` e são protegidos, ou 
 | Método HTTP | Rota | Descrição |
 | :--- | :--- | :--- |
 | `GET` | `/api/boards/:id/columns` | Busca todas as colunas de um quadro específico. |
-| `POST` | `/api/boards/:id/columns/reorder` | Reordena a posição das colunas em um quadro. |
 | `POST` | `/api/columns` | Cria uma nova coluna em um quadro. |
+| `POST` | `/api/columns/reorder` | Reordena a posição das colunas em um quadro. |
 | `PUT` | `/api/columns/:id` | Atualiza os dados de uma coluna. |
 | `DELETE` | `/api/columns/:id` | Deleta uma coluna (somente se estiver vazia). |
 
@@ -219,19 +211,3 @@ Todos os endpoints listados abaixo estão no grupo `/api` e são protegidos, ou 
 | `POST` | `/api/avaliacoes` | Registra uma nova avaliação. |
 | `PUT` | `/api/avaliacoes/:id` | Atualiza uma avaliação existente. |
 | `DELETE` | `/api/avaliacoes/:id` | Deleta uma avaliação. |
-
----
-
-## ⬆️ Deploy no Render
-
-A aplicação está configurada e pronta para deploy na plataforma **Render**.
-
--   **Build Command:**
-    ```bash
-    cd react-frontend && npm install && npm run build && cd .. && go build -tags netgo -ldflags '-s -w' -o app
-    ```
--   **Start Command:**
-    ```bash
-    ./app
-    ```
--   As **Variáveis de Ambiente** (`DATABASE_URL`, `SUPABASE_JWT_SECRET`, etc.) devem ser configuradas diretamente no painel de controle do seu serviço no Render.
