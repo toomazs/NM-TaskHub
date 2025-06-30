@@ -6,6 +6,7 @@ import { useBoard } from '../../contexts/BoardContext';
 import { useAuth } from '../../contexts/AuthContext';
 import * as boardService from '../../services/boards';
 import { userDisplayNameMap } from '../../api/config';
+import styles from './ManageMembersModal.module.css';
 
 export function ManageMembersModal() {
     const { closeModal, isClosing } = useModal();
@@ -52,12 +53,12 @@ export function ManageMembersModal() {
     };
 
     return (
-        <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <button className="modal-close" onClick={closeModal}><i className="fas fa-times"></i></button>
-                <div className="modal-header"><h2><i className="fas fa-users-cog"></i> Gerenciar Membros</h2></div>
-                <div className="modal-body" style={{ padding: '2rem', display: 'block' }}>
-                    <div className="member-list">
+        <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={closeModal}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                <button className={styles.modalClose} onClick={closeModal}><i className="fas fa-times"></i></button>
+                <div className={styles.modalHeader}><h2><i className="fas fa-users-cog"></i> Gerenciar Membros</h2></div>
+                <div className={styles.modalBody}>
+                    <div className={styles.memberList}>
                         {boardMembers.map(member => {
                            const isCurrentUserOwner = user?.id === board?.owner_id;
                            const isMemberOwnerInList = member.id === board?.owner_id;
@@ -65,24 +66,24 @@ export function ManageMembersModal() {
                            const isBeingRemoved = removingIds.has(member.id);
 
                            return (
-                                <div key={member.id} className="member-list-item">
-                                   <div className="member-info">
-                                       <div className="user-avatar" style={{ backgroundImage: member.avatar ? `url(${member.avatar})` : 'none' }}>
+                                <div key={member.id} className={styles.memberListItem}>
+                                   <div className={styles.memberInfo}>
+                                       <div className={styles.userAvatar} style={{ backgroundImage: member.avatar ? `url(${member.avatar})` : 'none' }}>
                                           {!member.avatar && displayName.charAt(0).toUpperCase()}
                                        </div>
-                                       <div className="member-details">
-                                           <span className="user-name">{displayName}</span>
-                                           {isMemberOwnerInList && <span className="user-role-tag">Dono</span>}
+                                       <div className={styles.memberDetails}>
+                                           <span className={styles.userName}>{displayName}</span>
+                                           {isMemberOwnerInList && <span className={styles.userRoleTag}>Dono</span>}
                                        </div>
                                    </div>
                                    {isCurrentUserOwner && !isMemberOwnerInList && (
                                        <button 
-                                          className="btn btn-sm btn-remove-member" 
+                                          className={styles.btnRemoveMember}
                                           onClick={() => handleRemoveMember(member.id, displayName)} 
                                           title="Remover membro"
                                           disabled={isBeingRemoved}
                                         >
-                                           {isBeingRemoved ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-times"></i>}
+                                           {isBeingRemoved ? <i className={`fas fa-spinner ${styles.faSpin}`}></i> : <i className="fas fa-times"></i>}
                                        </button>
                                    )}
                                </div>

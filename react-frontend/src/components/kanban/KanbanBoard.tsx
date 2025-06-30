@@ -10,6 +10,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { useBoard } from '../../contexts/BoardContext';
 import { useModal } from '../../contexts/ModalContext';
 import { KanbanCard } from './KanbanCard';
+import styles from './KanbanBoard.module.css'; // Importando o módulo CSS
 
 export function KanbanBoard() {
   const { columns, setColumns, board, fetchBoardData, solucionadoId, naoSolucionadoId, setIsColumnDragging } = useBoard();
@@ -143,7 +144,7 @@ export function KanbanBoard() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="kanban-container">
+      <div className={styles.kanbanContainer}>
         <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
           {sortedColumns.map(col => {
             const isHidden = board?.is_public && (col.id === solucionadoId || col.id === naoSolucionadoId);
@@ -151,17 +152,20 @@ export function KanbanBoard() {
           })}
         </SortableContext>
         
-        <div className="add-column-placeholder">
-          <button className="add-column-btn" onClick={() => openModal('column')}>
+        <div className={styles.addColumnPlaceholder}>
+          <button className={styles.addColumnBtn} onClick={() => openModal('column')}>
             <i className="fas fa-plus"></i> Adicionar Coluna
           </button>
         </div>
       </div>
 
-      <DragOverlay>
-        {activeColumn && <KanbanColumn column={activeColumn} isOverlay />}
-        {activeCard && <KanbanCard card={activeCard} isOverlay />}
-      </DragOverlay>
+      {createPortal(
+        <DragOverlay>
+            {activeColumn && <KanbanColumn column={activeColumn} isOverlay />}
+            {activeCard && <KanbanCard card={activeCard} isOverlay />}
+        </DragOverlay>,
+        document.body
+      )}
     </DndContext>
   );
 }

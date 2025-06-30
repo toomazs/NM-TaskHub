@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useModal } from '../../contexts/ModalContext';
 import * as boardService from '../../services/boards';
+import styles from './PrivateBoardModal.module.css';
 
 export function PrivateBoardModal() {
     const { closeModal, isClosing, modalProps } = useModal();
@@ -48,44 +49,45 @@ export function PrivateBoardModal() {
     };
 
     return (
-        <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content-private"  onClick={e => e.stopPropagation()}>
-                <button className="modal-close" onClick={closeModal} disabled={isLoading}><i className="fas fa-times"></i></button>
-                <div className="modal-header"><h2><i className="fas fa-user-lock"></i><span>Novo Quadro Privado</span></h2></div>
-                <div className="modal-body-private" style={{ padding: '2rem'}}>
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="boardTitle" className="form-label"><i className="fas fa-heading"></i> Título do Quadro</label>
+        <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={closeModal}>
+            <div className={styles.modalContentPrivate}  onClick={e => e.stopPropagation()}>
+                <button className={styles.modalClose} onClick={closeModal} disabled={isLoading}><i className="fas fa-times"></i></button>
+                <div className={styles.modalHeader}><h2><i className="fas fa-user-lock"></i><span>Novo Quadro Privado</span></h2></div>
+                <div className={styles.modalBodyPrivate}>
+                    <form onSubmit={handleSubmit} style={{width: '100%'}}>
+                        <div className={styles.formGroup}>
+                            <label htmlFor="boardTitle" className={styles.formLabel}><i className="fas fa-heading"></i> Título do Quadro</label>
                             <input 
                                 type="text" 
                                 id="boardTitle" 
                                 value={title} 
                                 onChange={e => setTitle(e.target.value)} 
-                                className="form-input" 
+                                className={styles.formInput} 
                                 required 
+                                autoFocus
                                 placeholder="Ex: Projetos Pessoais"
                                 disabled={isLoading}
                             />
                         </div>
-                        <div className="form-group">
-                            <label htmlFor="boardDescription" className="form-label"><i className="fas fa-align-left"></i> Descrição (Opcional)</label>
+                        <div className={styles.formGroup}>
+                            <label htmlFor="boardDescription" className={styles.formLabel}><i className="fas fa-align-left"></i> Descrição (Opcional)</label>
                             <textarea 
                                 id="boardDescription" 
                                 value={description} 
                                 onChange={e => setDescription(e.target.value)} 
-                                className="form-textarea" 
+                                className={styles.formTextarea} 
                                 placeholder="Descreva o objetivo deste quadro..." 
                                 rows={4}
                                 disabled={isLoading}
                             ></textarea>
                         </div>
-                        <div className="form-actions" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
-                            <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={isLoading}>
+                        <div className={styles.formActions}>
+                            <button type="button" className={`btn ${styles.btnSecondary}`} onClick={closeModal} disabled={isLoading}>
                                 Cancelar
                             </button>
-                            <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                            <button type="submit" className={`btn ${styles.btnPrimary}`} disabled={isLoading}>
                                 {isLoading ? (
-                                    <><i className="fas fa-spinner fa-spin"></i> Salvando...</>
+                                    <><i className={`fas fa-spinner ${styles.faSpin}`}></i> Salvando...</>
                                 ) : (
                                     <><i className="fas fa-check-circle"></i> Salvar Quadro</>
                                 )}

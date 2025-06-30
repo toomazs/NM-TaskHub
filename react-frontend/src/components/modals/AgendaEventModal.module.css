@@ -1,0 +1,389 @@
+/* Estilos Genéricos de Modal e Formulário */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    animation: modalFadeIn 0.6s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal.closing {
+    animation: modalFadeOut 0.3s ease-out forwards;
+}
+
+@keyframes modalFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.modalContent {
+    background: var(--bg-modal);
+    border-radius: 16px;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-modal);
+    border: 1px solid var(--border-color);
+    animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    display: flex;
+    flex-direction: column;
+    max-width: 550px; /* Específico deste modal */
+}
+
+@keyframes modalSlideIn {
+    from { transform: translateY(20px) scale(0.98); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal.closing .modalContent {
+    animation: modalSlideOut 0.3s ease-out forwards;
+}
+
+@keyframes modalSlideOut {
+    from { transform: translateY(0) scale(1); opacity: 1; }
+    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+}
+
+.modalHeader {
+    padding: 2rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modalClose {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.modalBody {
+    display: flex;
+    background: var(--bg-modal);
+    flex: 1;
+    min-height: 0;
+}
+
+.modalMain {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.formGroup {
+    margin-bottom: 1.5rem;
+}
+
+.formLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.formInput, .formTextarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.formInput:focus, .formTextarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+    background: var(--bg-modal);
+}
+
+.formTextarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnPrimary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+}
+.btnPrimary:hover { box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); }
+
+.btnSecondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+.btnSecondary:hover {
+    background: var(--bg-card);
+    border-color: var(--accent-blue);
+}
+
+/* Estilos Específicos do Modal de Evento */
+.modalTitle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modalIcon {
+    color: var(--accent-blue);
+    font-size: 1.25rem;
+}
+.formLabel i {
+    color: var(--accent-blue);
+    font-size: 1rem; /* Ajustado para caber bem no formulário */
+}
+.customColorLabel i {
+    color: var(--accent-blue);
+    font-size: 1.25rem;
+}
+/* Ícone de check dentro da bolinha de cor mantém seu estilo original (branco) */
+.colorOption.selected i {
+    color: white;
+}
+/* Ícones em botões de ação (Salvar, Cancelar) mantêm seus estilos originais */
+.btnPrimary i, .btnSecondary i {
+    font-size: 1rem; /* Mantém um tamanho consistente para botões */
+}
+
+.modalTitle h2 {
+    font-size: 1.25rem;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modalSubtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eventForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formSection {
+    margin-bottom: 0; /* Removido para usar o gap do flex */
+}
+
+.formHint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    display: block;
+    text-align: right;
+}
+
+.colorSelection {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+.predefinedColors {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.colorOption {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.colorOption.selected,
+.colorOption:hover {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.customColor {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.customColorLabel {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.formColorInput {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.formColorInput::-webkit-color-swatch {
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+.formColorInput::-moz-color-swatch {
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+
+.colorPreview {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.previewLabel {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.eventPreview {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.eventPreview span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 250px;
+}
+
+.eventDot {
+    font-size: 0.5rem;
+}
+
+/* =================================== */
+/* MEDIA QUERIES (Mobile)              */
+/* =================================== */
+
+@media (max-width: 768px) {
+    .modalContent {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+
+    .modalHeader {
+        padding: 1.5rem;
+    }
+
+    .modalMain {
+        padding: 1.5rem;
+    }
+
+    .modalTitle h2 {
+        font-size: 1.1rem;
+    }
+
+    .formActions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalHeader {
+        padding: 1rem;
+    }
+
+    .modalMain {
+        padding: 1rem;
+    }
+    
+    .colorSelection {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .eventPreview span {
+        max-width: 150px;
+    }
+}

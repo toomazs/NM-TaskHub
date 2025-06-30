@@ -1,0 +1,565 @@
+/* Estilos Genéricos de Modal */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    animation: modalFadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.modalContent {
+    background: var(--bg-modal);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    animation: modalSlideIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-modal) 100%);
+    flex-shrink: 0;
+}
+
+.modalHeader h2 {
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modalHeader h2 svg {
+    color: var(--accent-blue);
+}
+
+.modalClose {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    font-size: 0.8rem;
+}
+
+.modalClose:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Layout do Corpo do Modal */
+.modalBody {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.infoAndActionsColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 260px;
+}
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.75rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sectionTitle svg {
+    color: var(--accent-blue);
+    font-size: 0.8rem;
+}
+
+/* Seção de Info do Cliente */
+.clientInfo, .technicalDetails {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.clientPrimaryInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.clientLogin {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.clientLogin strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.clientStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    background-color: rgba(var(--status-color), 0.1);
+    color: var(--status-color);
+    border: 1px solid rgba(var(--status-color), 0.2);
+}
+
+.assigneeInfo {
+    margin-top: 0.75rem;
+}
+
+.assignedBadge, .unassignedBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    padding: 0.5rem 0.7rem;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 0.75rem;
+}
+
+.assignedBadge {
+    color: var(--accent-green);
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.assignedBadge svg {
+    color: var(--accent-blue);
+}
+
+.unassignedBadge {
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.unassignedBadge svg {
+    color: var(--accent-blue);
+}
+
+/* Grid para Detalhes Técnicos */
+.detailsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+}
+
+.detailItem {
+    background: var(--bg-modal);
+    padding: 0.5rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    min-height: 32px;
+}
+
+.detailItem.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.detailItem svg {
+    color: var(--accent-blue);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.detailItem strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-right: 0.2rem;
+}
+
+.detailItem span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Estilos do Formulário */
+.formLabel {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.formTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    transition: all 0.3s;
+    flex-grow: 1;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.5;
+    min-height: 150px;
+}
+
+.formTextarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.textareaFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.4rem;
+}
+
+.helpText {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-style: italic;
+}
+
+.characterCount {
+    font-size: 0.7rem;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Seção de Atribuição e Footer */
+.adminAssignSectionHorizontal {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.adminAssignSectionHorizontal .assigneeTitle {
+    margin: 0 0 0.6rem 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;  
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.adminAssignSectionHorizontal .assigneeTitle svg {
+    color: var(--accent-blue);
+}
+
+.modalFooter {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-modal);
+    flex-shrink: 0;
+}
+
+.footerActions {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.statusButtons {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    min-height: 34px;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.btn svg {
+    font-size: 0.8rem;
+}
+
+.btnPrimary { 
+    background: var(--gradient-primary); 
+    color: white; 
+}
+
+.btnSecondary { 
+    background: var(--bg-tertiary); 
+    color: var(--text-primary); 
+    border: 1px solid var(--border-color); 
+}
+
+.btnSecondary:hover { 
+    border-color: var(--accent-blue); 
+}
+
+.btnDanger { 
+    background: var(--gradient-danger); 
+    color: white; 
+}
+
+.assignButton { 
+    background: var(--gradient-primary); 
+    color: white; 
+    width: 100%; 
+}
+
+.changesAlert, .submittingIndicator {
+    margin-top: 0.75rem;
+    padding: 0.7rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    text-align: center;
+    width: 100%;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.changesAlert {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.changesAlert svg {
+    color: #f59e0b;
+}
+
+.submittingIndicator {
+    color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.submittingIndicator svg {
+    color: var(--accent-blue);
+}
+
+/* Animações */
+@keyframes modalFadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
+
+@keyframes modalSlideIn { 
+    from { transform: translateY(20px) scale(0.98); opacity: 0; } 
+    to { transform: translateY(0) scale(1); opacity: 1; } 
+}
+
+.closing { 
+    animation: modalFadeOut 0.3s ease-out forwards; 
+}
+
+.closing .modalContent { 
+    animation: modalSlideOut 0.3s ease-out forwards; 
+}
+
+@keyframes modalFadeOut { 
+    to { opacity: 0; } 
+}
+
+@keyframes modalSlideOut { 
+    to { transform: translateY(20px) scale(0.98); opacity: 0; } 
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .modalContent {
+        max-width: 800px;
+    }
+    
+    .modalBody {
+        gap: 1.25rem;
+        padding: 1rem 1.25rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .modalBody {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+    
+    .modalHeader, .modalFooter, .adminAssignSectionHorizontal {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .infoAndActionsColumn {
+        min-width: unset;
+    }
+    
+    .footerActions {
+        justify-content: center;
+    }
+    
+    .statusButtons {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .modal {
+        padding: 0.5rem;
+    }
+    
+    .modalContent {
+        max-height: 95vh;
+    }
+    
+    .modalHeader, .modalFooter, .adminAssignSectionHorizontal {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .modalBody {
+        padding: 0.75rem;
+    }
+    
+    .modalHeader h2 {
+        font-size: 1rem;
+    }
+    
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .clientPrimaryInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+/* =================================== */
+/* MEDIA QUERIES ADICIONAIS (Mobile)   */
+/* =================================== */
+
+@media (max-width: 480px) {
+    .modal {
+        padding: 0;
+    }
+
+    .modalContent {
+        max-width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .modalHeader {
+        padding: 0.75rem 1rem;
+    }
+
+    .modalClose {
+        width: 28px;
+        height: 28px;
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+
+    .modalBody {
+        padding: 0.75rem;
+    }
+
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .clientInfo, .technicalDetails {
+        padding: 0.75rem;
+    }
+    
+    .statusButtons {
+        gap: 0.5rem;
+    }
+
+    .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.7rem;
+    }
+}

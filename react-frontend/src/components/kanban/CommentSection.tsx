@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { Comment } from '../../types/kanban';
 import { useBoard } from '../../contexts/BoardContext';
 import { userDisplayNameMap } from '../../api/config';
+import styles from './CommentSection.module.css'; // Importando o módulo CSS
 
 interface CommentSectionProps {
   title: string;
@@ -69,44 +70,44 @@ export function CommentSection({ title, icon, comments, onCommentsChange, author
     };
 
     return (
-        <div className="comment-section">
-            <div className="comment-header">
-                <div className="comment-title"><i className={`fas ${icon}`}></i><span>{title}</span></div>
-                <button type="button" className="add-comment-btn" onClick={() => setInputVisible(s => !s)}><i className="fas fa-plus"></i></button>
+        <div className={styles.commentSection}>
+            <div className={styles.commentHeader}>
+                <div className={styles.commentTitle}><i className={`fas ${icon}`}></i><span>{title}</span></div>
+                <button type="button" className={styles.addCommentBtn} onClick={() => setInputVisible(s => !s)}><i className="fas fa-plus"></i></button>
             </div>
-            <div className="comments-list">
+            <div className={styles.commentsList}>
                 {comments && comments.map((comment, index) => {
                     const authorUser = (board?.is_public ? users : boardMembers).find(u => (userDisplayNameMap[u.email] || u.username) === comment.author);
                     const canEdit = comment.author === authorName; 
 
                     if (editingIndex === index && canEdit) {
                         return (
-                            <div key={index} className="comment-edit-container">
-                                <textarea className="comment-edit-textarea" value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={3}></textarea>
-                                <div className="comment-actions">
-                                    <button type="button" className="btn-save" onClick={handleSaveEdit}><i className="fas fa-check"></i> Salvar</button>
-                                    <button type="button" className="btn-cancel" onClick={handleCancelEditing}><i className="fas fa-times"></i></button>
+                            <div key={index} className={styles.commentEditContainer}>
+                                <textarea className={styles.commentEditTextarea} value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={3}></textarea>
+                                <div className={styles.commentActions}>
+                                    <button type="button" className={styles.btnSave} onClick={handleSaveEdit}><i className="fas fa-check"></i> Salvar</button>
+                                    <button type="button" className={styles.btnCancel} onClick={handleCancelEditing}><i className="fas fa-times"></i></button>
                                 </div>
                             </div>
                         );
                     }
 
                     return (
-                        <div key={index} className="comment-item">
-                            <div className="comment-content">{comment.text}</div>
-                            <div className="comment-meta">
-                                <span className="comment-author">
-                                    <div className="comment-avatar" style={{ backgroundImage: authorUser?.avatar ? `url(${authorUser.avatar})` : 'none' }}>
+                        <div key={index} className={styles.commentItem}>
+                            <div className={styles.commentContent}>{comment.text}</div>
+                            <div className={styles.commentMeta}>
+                                <span className={styles.commentAuthor}>
+                                    <div className={styles.commentAvatar} style={{ backgroundImage: authorUser?.avatar ? `url(${authorUser.avatar})` : 'none' }}>
                                         {!authorUser?.avatar && comment.author.charAt(0).toUpperCase()}
                                     </div>
                                     {comment.author}
                                 </span>
-                                <span className="comment-timestamp">{comment.timestamp}</span>
+                                <span className={styles.commentTimestamp}>{comment.timestamp}</span>
                             </div>
                             {canEdit && (
-                                <div className="comment-item-actions">
-                                    <button className="edit-comment-btn" onClick={() => handleStartEditing(index, comment.text)} title="Editar Comentário"><i className="fas fa-pencil-alt"></i></button>
-                                    <button className="delete-comment-btn" onClick={() => handleDeleteComment(index)} title="Excluir Comentário"><i className="fas fa-trash"></i></button>
+                                <div className={styles.commentItemActions}>
+                                    <button className={styles.editCommentBtn} onClick={() => handleStartEditing(index, comment.text)} title="Editar Comentário"><i className="fas fa-pencil-alt"></i></button>
+                                    <button className={styles.deleteCommentBtn} onClick={() => handleDeleteComment(index)} title="Excluir Comentário"><i className="fas fa-trash"></i></button>
                                 </div>
                             )}
                         </div>
@@ -114,11 +115,11 @@ export function CommentSection({ title, icon, comments, onCommentsChange, author
                 })}
             </div>
             {isInputVisible && (
-                <div className="comment-input-container" style={{display: 'block'}}>
+                <div className={styles.commentInputContainer} style={{display: 'block'}}>
                     <textarea placeholder={`Adicionar ${title.toLowerCase()}...`} rows={3} value={newCommentText} onChange={e => setNewCommentText(e.target.value)}></textarea>
-                    <div className="comment-actions">
-                        <button type="button" className="btn-save" onClick={handleAddComment}><i className="fas fa-check"></i> Salvar</button>
-                        <button type="button" className="btn-cancel" onClick={() => setInputVisible(false)}><i className="fas fa-times"></i></button>
+                    <div className={styles.commentActions}>
+                        <button type="button" className={styles.btnSave} onClick={handleAddComment}><i className="fas fa-check"></i> Salvar</button>
+                        <button type="button" className={styles.btnCancel} onClick={() => setInputVisible(false)}><i className="fas fa-times"></i></button>
                     </div>
                 </div>
             )}

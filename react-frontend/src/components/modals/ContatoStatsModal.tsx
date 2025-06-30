@@ -1,17 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { 
-    FaTimes, 
-    FaCommentDots, 
-    FaChevronLeft, 
-    FaChevronRight, 
-    FaUsers, 
-    FaExclamationCircle,
-    FaEdit,
-    FaNetworkWired,
-    FaSitemap
+    FaTimes, FaCommentDots, FaChevronLeft, FaChevronRight, 
+    FaUsers, FaExclamationCircle, FaSitemap
 } from 'react-icons/fa';
 import { useModal } from '../../contexts/ModalContext';
 import { ClienteSinalAltoComStatus, StatusKey } from '../../types/sinal';
+import styles from './ContatoStatsModal.module.css';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -56,54 +50,54 @@ export function ContatoStatsModal() {
   };
 
   return (
-    <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-      <div className="modal-content stats-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={closeModal}>
+      <div className={`${styles.modalContent}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
           <h2>
             <i className={`fas ${icon}`}></i> 
             {title} 
-            <span className="stats-count">
+            <span className={styles.statsCount}>
               <FaUsers /> {clientes.length}
             </span>
           </h2>
-          <button className="modal-close" onClick={closeModal}>
+          <button className={styles.modalClose} onClick={closeModal}>
             <FaTimes />
           </button>
         </div>
         
-        <div className="stats-body">
+        <div className={styles.statsBody}>
           {clientes.length === 0 ? (
-            <div className="empty-state">
-              <FaExclamationCircle className="empty-icon" />
+            <div className={styles.emptyState}>
+              <FaExclamationCircle className={styles.emptyIcon} />
               <p>Nenhum cliente neste status.</p>
             </div>
           ) : (
             <>
-              <div className="stats-summary">
-                <div className="summary-item">
+              <div className={styles.statsSummary}>
+                <div className={styles.summaryItem}>
                   <i className="fas fa-list"></i>
                   <span>Total: <strong>{clientes.length}</strong></span>
                 </div>
-                <div className="summary-item">
+                <div className={styles.summaryItem}>
                   <i className="fas fa-eye"></i>
                   <span>Exibindo: <strong>{paginatedClientes.length}</strong></span>
                 </div>
               </div>
 
-            <div className="stats-list">
+            <div className={styles.statsList}>
                 {paginatedClientes.map((cliente) => (
-                  <div key={cliente.id} className="stats-list-item" onClick={() => handleCardClick(cliente)}>
-                    <div className="item-header">
-                      <div className="task-title">
+                  <div key={cliente.id} className={styles.statsListItem} onClick={() => handleCardClick(cliente)}>
+                    <div className={styles.itemHeader}>
+                      <div className={styles.taskTitle}>
                         <i className="fas fa-user"></i> {cliente.login}
                       </div>
-                      <div className="item-actions"> <i className="fa-solid fa-pen-to-square"></i></div>
+                      <div className={styles.itemActions}> <i className="fa-solid fa-pen-to-square"></i></div>
                     </div>
-                    <div className="task-meta">
-                      {cliente.assigned_to && (
+                    <div className={styles.taskMeta}>
+                      {cliente.assigned_to_name && (
                             <div 
-                              className="avatar-bubble small" 
-                              style={{ backgroundColor: cliente.assigned_to_avatar ? 'transparent' : (cliente.assigned_to_name || '') }}
+                              className={styles.avatarBubble} 
+                              style={{ backgroundColor: cliente.assigned_to_avatar ? 'transparent' : '#3fb950' }}
                               title={`Assumido por ${cliente.assigned_to_name}`}
                             >
                                 {cliente.assigned_to_avatar ? (
@@ -113,17 +107,16 @@ export function ContatoStatsModal() {
                                 )}
                             </div>
                         )}
-                      <div className="meta-item">•ﾠ
+                      <div className={styles.metaItem}>
                         <i className="fa-solid fa-globe"></i>
                         <span>{cliente.olt}</span>
-                        
                       </div>
-                      <div className="meta-item-separator">•</div>
-                      <div className="meta-item"><FaSitemap /><span>{cliente.ponid}</span></div>
+                      <div className={styles.metaItemSeparator}>•</div>
+                      <div className={styles.metaItem}><FaSitemap /><span>{cliente.ponid}</span></div>
                       {cliente.anotacao && (
                         <>
-                            <div className="meta-item-separator">•</div>
-                            <div className="meta-item annotation">
+                            <div className={styles.metaItemSeparator}>•</div>
+                            <div className={`${styles.metaItem} ${styles.annotation}`}>
                                 <FaCommentDots />
                                 <span title={cliente.anotacao}>
                                     {cliente.anotacao.length > 50 ? `${cliente.anotacao.substring(0, 50)}...` : cliente.anotacao}
@@ -137,10 +130,10 @@ export function ContatoStatsModal() {
               </div>
               
               {totalPages > 1 && (
-                <div className="pagination-container">
-                  <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="contatos-pagination__btn contatos-pagination__btn--prev"> <FaChevronLeft /> Anterior </button>
-                  <div className="pagination-info"><span>Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong></span></div>
-                  <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="contatos-pagination__btn contatos-pagination__btn--next"> Próxima <FaChevronRight /> </button>
+                <div className={styles.paginationContainer}>
+                  <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className={styles.paginationBtn}> <FaChevronLeft /> Anterior </button>
+                  <div className={styles.paginationInfo}><span>Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong></span></div>
+                  <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className={styles.paginationBtn}> Próxima <FaChevronRight /> </button>
                 </div>
               )}
             </>

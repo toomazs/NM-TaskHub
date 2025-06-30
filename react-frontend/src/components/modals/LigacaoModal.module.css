@@ -1,0 +1,409 @@
+/* Estilos Genéricos de Modal e Formulário */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    animation: modalFadeIn 0.3s ease-out;
+}
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal.closing {
+    animation: modalFadeOut 0.3s ease-out forwards;
+}
+@keyframes modalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+.modalContent {
+    background: var(--bg-modal);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-modal);
+    border: 1px solid var(--border-color);
+    animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes modalSlideIn {
+    from { transform: translateY(20px) scale(0.98); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal.closing .modalContent {
+    animation: modalSlideOut 0.3s ease-out forwards;
+}
+@keyframes modalSlideOut {
+    from { transform: translateY(0) scale(1); opacity: 1; }
+    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+}
+
+.modalHeader {
+    padding: 2rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.modalHeader h2 {
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modalHeader h2 i, .modalSubtitle i, .sectionHeader i {
+    color: var(--accent-blue);
+    font-size: 1.25rem;
+}
+.formLabel i {
+    color: var(--accent-blue);
+    font-size: 1rem;
+}
+.fileInputPlaceholder i {
+    color: var(--accent-blue);
+    font-size: 2rem;
+}
+.textareaCounter i {
+    color: var(--accent-blue);
+    font-size: 1rem;
+}
+/* Ícones com cores contextuais mantidas */
+.inputHelp i {
+    color: var(--accent-orange);
+}
+.filePreview i {
+    color: var(--accent-green);
+}
+
+.formInput[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.modalClose {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.modalBody {
+    display: flex;
+    background: var(--bg-modal);
+    flex: 1;
+    min-height: 0;
+}
+
+.modalMain {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.formGroup {
+    margin-bottom: 1.5rem;
+}
+
+.formLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.formInput, .formSelect, .formTextarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.formInput:focus, .formSelect:focus, .formTextarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+    background: var(--bg-modal);
+}
+
+.formTextarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.formActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border-color);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnPrimary {
+    background: var(--gradient-primary);
+    color: white;
+}
+.btnPrimary:hover { transform: translateY(-2px); }
+
+.btnSecondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+.btnSecondary:hover {
+    background: var(--bg-card);
+    border-color: var(--accent-blue);
+}
+
+/* Estilos Específicos do Modal de Ligação */
+.modalSubtitle {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 400;
+}
+.modalSubtitle i {
+    color: var(--accent-blue);
+    font-size: 0.8rem;
+}
+
+.formSection {
+    margin-bottom: 2rem;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+.sectionHeader i {
+    color: var(--accent-blue);
+    font-size: 1.25rem;
+}
+.sectionHeader h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.inputHelp {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-blue);
+}
+.inputHelp i {
+    color: var(--accent-orange);
+}
+
+.fileInputWrapper {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.fileInputWrapper:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-secondary);
+}
+
+.fileInput {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.fileInputPlaceholder {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+.fileInputPlaceholder i {
+    font-size: 2rem;
+    color: var(--accent-blue);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+.fileInputPlaceholder span {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+.fileInputPlaceholder small {
+    font-size: 0.75rem;
+}
+
+.filePreview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+.filePreview i {
+    color: var(--accent-green);
+    font-size: 1.1rem;
+}
+
+.fileRemove {
+    background: var(--accent-red);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+.fileRemove:hover {
+    filter: brightness(1.2);
+    transform: scale(1.1);
+}
+
+.textareaCounter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.textareaCounter i {
+    color: var(--accent-blue);
+}
+
+.faSpin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* =================================== */
+/* MEDIA QUERIES (Mobile)              */
+/* =================================== */
+
+@media (max-width: 768px) {
+    .modalContent {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+    
+    .modalHeader, .modalMain {
+        padding: 1.5rem;
+    }
+
+    .modalHeader h2 {
+        font-size: 1.25rem;
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .formActions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalHeader, .modalMain {
+        padding: 1rem;
+    }
+
+    .fileInputPlaceholder {
+        padding: 1.5rem 1rem;
+    }
+}

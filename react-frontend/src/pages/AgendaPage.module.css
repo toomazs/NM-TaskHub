@@ -1,0 +1,241 @@
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.agendaPage {
+    max-width: none;
+    margin: 0;
+    padding: 2rem; /* ALTERADO: Adiciona espaçamento em todos os lados da página */
+    min-height: 100vh;
+    background: var(--bg-primary);
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.agendaPage .pageHeader {
+    padding: 0; /* REMOVIDO o padding de 2rem daqui para não duplicar */
+    margin-bottom: 2rem; /* ADICIONADO de volta o espaçamento inferior do header */
+}
+
+.pageHeader {
+    margin-bottom: 2rem;
+}
+.headerContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 2rem;
+}
+.headerTitle h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.headerTitle h1 i { color: var(--accent-blue); font-size: 1.5rem; }
+.headerTitle p { color: var(--text-secondary); font-size: 1rem; margin: 0; }
+.headerActions { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; }
+.headerCount {
+    background: linear-gradient(135deg, var(--accent-blue), #4A90E2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(88, 166, 255, 0.2);
+}
+.btnCreate {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(88, 166, 255, 0.2);
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+}
+.btnCreate:hover {
+     transform: translateY(-2px);
+     cursor: pointer; box-shadow: 0 4px 16px rgba(88, 166, 255, 0.3); }
+
+.btnPrimary {
+    background: var(--gradient-primary);
+    color: white;
+}
+.btnPrimary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3); }
+
+
+.agendaMainContainer { background: var(--bg-primary); border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; }
+.agendaLoadingWrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; color: var(--text-secondary); }
+.agendaLoadingWrapper p { margin-top: 1.5rem; font-size: 1.1rem; font-weight: 500; }
+.agendaSpinner { width: 60px; height: 60px; position: relative; }
+.agendaDot1, .agendaDot2, .agendaDot3 { width: 18px; height: 18px; border-radius: 50%; background-color: var(--accent-blue); position: absolute; animation: agenda-sk-bounce 1.4s infinite ease-in-out both; }
+.agendaDot1 { left: 0px; animation-delay: -0.32s; }
+.agendaDot2 { left: 21px; animation-delay: -0.16s; }
+.agendaDot3 { left: 42px; animation-delay: 0s; }
+@keyframes agenda-sk-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+.agendaCalendarHeader { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: linear-gradient(90deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); width: 100%; margin: 0; }
+.agendaCalendarNavBtn { padding: 0.75rem; border-radius: 50%; transition: all 0.3s ease; min-width: 48px; height: 48px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; }
+.agendaCalendarNavBtn:hover { background-color: var(--accent-blue); color: white; transform: scale(1.1); border-color: var(--accent-blue); }
+.agendaCalendarTitle { text-align: center; flex: 1; }
+.agendaCalendarTitle h3 { color: var(--text-primary); font-size: 1.75rem; font-weight: 700; text-transform: capitalize; margin-bottom: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.agendaCalendarSubtitle { color: var(--text-secondary); font-size: 1rem; font-weight: 500; }
+
+.agendaBtn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent; background: transparent; }
+.agendaBtnSecondary { color: var(--text-secondary); background: var(--bg-secondary); border-color: var(--border-color); }
+.agendaBtnSecondary:hover { color: var(--text-primary); background: var(--bg-tertiary); border-color: var(--accent-blue); }
+.agendaBtnDanger { color: white; background: #dc3545; border-color: #dc3545; }
+.agendaBtnDanger:hover { background: #c82333; border-color: #c82333; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3); }
+
+.agendaCalendarGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: var(--border-color); border: 1px solid var(--border-color); border-radius: 0; overflow: hidden; margin: 0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); width: 100%; }
+.agendaWeekdayHeader { text-align: center; padding: 1rem 0; font-weight: 700; color: var(--text-primary); background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-bottom: 2px solid var(--border-color); }
+.agendaDayCell { position: relative; min-height: 140px; background-color: var(--bg-primary); padding: 0.75rem; transition: all 0.3s ease; display: flex; flex-direction: column; border-radius: 0; }
+.agendaDayCell:not(.agendaDisabled):hover { background-color: var(--bg-secondary); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+.agendaDisabled { background-color: var(--bg-tertiary); opacity: 0.4; cursor: not-allowed; }
+.agendaToday { background: linear-gradient(135deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%); border: 2px solid var(--accent-blue); box-shadow: 0 0 20px rgba(88, 166, 255, 0.3); }
+
+.agendaDayHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.agendaDayNumber { font-weight: 600; color: var(--text-secondary); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s ease; position: relative; font-size: 1rem; }
+.agendaToday .agendaDayNumber { background: linear-gradient(135deg, var(--accent-blue) 0%, #4a90e2 100%); color: white; font-weight: 700; box-shadow: 0 2px 8px rgba(88, 166, 255, 0.4); }
+.agendaAddEventBtn { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #218838 100%); border: none; color: white; cursor: pointer; opacity: 0; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
+.agendaDayCell:hover .agendaAddEventBtn { opacity: 1; transform: scale(1); }
+.agendaAddEventBtn:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4); }
+.agendaEventsContainer { display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
+.agendaEventsContainer::-webkit-scrollbar { width: 4px; }
+.agendaEventsContainer::-webkit-scrollbar-track { background: transparent; }
+.agendaEventsContainer::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+.agendaEventItem { position: relative; color: white; font-size: 0.8rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: space-between; min-height: 28px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2); }
+.agendaEventItem:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); filter: brightness(1.1); }
+.agendaEventContent { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
+.agendaEventDot { font-size: 0.5rem; opacity: 0.8; }
+.agendaEventTitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; flex: 1; }
+.agendaDeleteEventBtn { background: none; border: none; color: white; cursor: pointer; opacity: 0; transition: all 0.3s ease; font-size: 0.7rem; padding: 0.25rem; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; margin-left: 0.5rem; }
+.agendaEventItem:hover .agendaDeleteEventBtn { opacity: 0.8; }
+.agendaDeleteEventBtn:hover { opacity: 1; background-color: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+.agendaNoEvents { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.8rem; padding: 1rem 0; opacity: 0; transition: opacity 0.3s ease; }
+.agendaDayCell:hover .agendaNoEvents { opacity: 1; }
+.agendaEmptyIcon { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-muted); }
+.agendaNoEvents span { font-size: 0.7rem; text-align: center; }
+.agendaToastMessage { margin-bottom: 1rem; color: var(--text-primary); font-weight: 500; }
+.agendaToastButtons { display: flex; gap: 0.75rem; justify-content: flex-end; }
+.agendaToastButtons .agendaBtn { padding: 0.5rem 1rem; font-size: 0.875rem; min-width: auto; }
+
+/* =================================== */
+/* MEDIA QUERIES (Mobile)       */
+/* =================================== */
+
+@media (max-width: 992px) {
+    .agendaPage {
+        padding: 1.5rem;
+    }
+
+    .agendaCalendarHeader {
+        padding: 1rem 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .agendaCalendarTitle h3 {
+        font-size: 1.5rem;
+    }
+
+    .agendaCalendarTitle .agendaCalendarSubtitle {
+        font-size: 0.9rem;
+    }
+
+    .agendaWeekdayHeader {
+        padding: 0.75rem 0;
+        font-size: 0.7rem;
+    }
+    
+    .agendaDayCell {
+        min-height: 120px;
+        padding: 0.5rem;
+    }
+
+    .agendaEventItem {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .agendaPage {
+        padding: 1rem;
+    }
+    
+    .headerContent {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+    
+    .btnCreate {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .agendaCalendarHeader {
+        flex-direction: column;
+    }
+    
+    .agendaWeekdayHeader {
+        /* Esconde os dias da semana e mostra no cabeçalho da célula */
+        display: none;
+    }
+
+    .agendaCalendarGrid {
+        grid-template-columns: repeat(2, 1fr); /* 2 dias por linha */
+    }
+    
+    .agendaDayCell::before {
+        /* Adiciona o nome do dia da semana em cada célula */
+        content: attr(data-weekday);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .agendaCalendarGrid {
+        grid-template-columns: 1fr; /* 1 dia por linha, formato de lista */
+    }
+    
+    .agendaDayCell {
+        min-height: auto; /* Altura automática */
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .agendaEventsContainer {
+        max-height: 150px; /* Limita a altura para não ficar gigante */
+    }
+
+    .agendaCalendarNavBtn {
+        padding: 0.5rem;
+        min-width: 40px;
+        height: 40px;
+    }
+
+    .agendaCalendarTitle h3 {
+        font-size: 1.25rem;
+    }
+}

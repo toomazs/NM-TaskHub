@@ -1,0 +1,94 @@
+/* Estilo base do card da tarefa */
+.task {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid transparent; /* Borda base transparente */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Força a aceleração por hardware, garantindo a animação no primeiro hover */
+    transform: translateZ(0);
+}
+
+.task:hover {
+    /* Mantemos o translateZ(0) aqui para consistência durante a animação */
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Modificadores de Prioridade */
+.priorityBaixa { border-left-color: var(--priority-baixa); }
+.priorityMedia { border-left-color: var(--priority-media); }
+.priorityAlta { border-left-color: var(--priority-alta); }
+
+/* Modificadores de Estado de Prazo */
+.dueToday {
+    border-left-color: #f39c12 !important; /* Usa !important para garantir a sobreposição */
+    background: linear-gradient(135deg, rgba(243, 156, 18, 0.1), rgba(243, 156, 18, 0.05));
+}
+.dueToday .taskDateText, .dueToday .taskAssignee { color: #f39c12; font-weight: 500; }
+
+.overdue {
+    border-left-color: #d93025 !important; /* Usa !important para garantir a sobreposição */
+    background: linear-gradient(135deg, rgba(217, 48, 37, 0.1), rgba(217, 48, 37, 0.05));
+}
+.overdue .taskDateText, .overdue .taskAssignee { color: #d93025; font-weight: 500; }
+
+/* Estilo para tarefa completa */
+.completed {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(46, 204, 113, 0.05));
+    border-left-color: #27ae60 !important; /* Verde para indicar conclusão */
+}
+
+.completed .taskTitle {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.completed .taskMeta {
+    opacity: 0.7; /* Reduz a opacidade das informações secundárias */
+}
+
+/* Modificadores de Drag-and-Drop */
+.dragging {
+    opacity: 0.4;
+    border: 2px dashed var(--border-color);
+    background: var(--bg-tertiary);
+}
+.isOverlay {
+    box-shadow: var(--shadow-modal);
+    transform: scale(1.05) rotate(3deg);
+    cursor: grabbing;
+    z-index: 1000;
+}
+
+/* Conteúdo Interno */
+.taskHeader { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; }
+.taskTitle { font-weight: 500; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.4rem; word-break: break-word; }
+.taskMeta { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted); }
+.taskAssignee { display: flex; align-items: center; gap: 0.4rem; }
+.assigneeAvatar { width: 20px; height: 20px; border-radius: 50%; background-size: cover; background-position: center; background-color: var(--bg-tertiary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.taskDueInfo { display: flex; align-items: center; gap: 0.4rem; }
+.taskStatusIcons { display: flex; align-items: center; font-size: 0.8rem; }
+.overdueIcon, .dueTodayIcon { animation: pulse 1.5s infinite; }
+.overdueIcon { color: #d93025; }
+.dueTodayIcon { color: #f39c12; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+/* Ações do Card */
+.taskActions { position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem; background-color: rgba(0,0,0,0.2); padding: 2px; border-radius: 6px; opacity: 0; transition: opacity 0.3s ease; }
+.task:hover .taskActions { opacity: 0.8; }
+.actionBtn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; border-radius: 4px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;}
+.actionBtn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+.deleteBtn:hover { background: #e74c3c; border-color: #e74c3c; color: white; transform: scale(1.1); }
+
+.completeBtn:hover {
+    background: #2ecc71; /* Verde no hover */
+    color: white;
+    transform: scale(1.1);
+}

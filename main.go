@@ -25,6 +25,7 @@ import (
 	"github.com/gofiber/websocket/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -37,6 +38,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	Avatar    string    `json:"avatar" db:"avatar"`
 	Role      string    `json:"role" db:"role"`
+	IsAdmin   bool      `json:"is_admin" db:"is_admin"`
 }
 
 // estrutura board
@@ -659,27 +661,48 @@ func (app *App) handleUnassignContato(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&payload); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Payload inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Payload inválido"})
 	}
 
 	if payload.ContatoID == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "contato_id é obrigatório"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "contato_id é obrigatório"})
 	}
 
-	query := `
+	var isAdmin bool
+	adminCheckQuery := "SELECT COALESCE((raw_user_meta_data->>'is_admin')::boolean, false) FROM auth.users WHERE id = $1"
+	err := app.db.QueryRow(context.Background(), adminCheckQuery, userID).Scan(&isAdmin)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			log.Printf("Erro ao checar status de admin para o usuário %s: %v", userID, err)
+		}
+		isAdmin = false
+	}
+
+	var (
+		cmdTag  pgconn.CommandTag
+		execErr error
+	)
+
+	baseUpdate := `
         UPDATE contato_status
         SET 
             assigned_to = NULL,
             assigned_to_name = NULL,
             assigned_to_avatar = NULL,
             updated_at = NOW(),
-            updated_by = $2::uuid 
-        WHERE contato_id = $1 AND assigned_to = $2
-    `
+            updated_by = $2::uuid
+	`
 
-	cmdTag, err := app.db.Exec(context.Background(), query, payload.ContatoID, userID)
-	if err != nil {
-		log.Printf("Erro ao desassociar contato: %v", err)
+	if isAdmin {
+		query := baseUpdate + " WHERE contato_id = $1"
+		cmdTag, execErr = app.db.Exec(context.Background(), query, payload.ContatoID, userID)
+	} else {
+		query := baseUpdate + " WHERE contato_id = $1 AND assigned_to = $2"
+		cmdTag, execErr = app.db.Exec(context.Background(), query, payload.ContatoID, userID)
+	}
+
+	if execErr != nil {
+		log.Printf("Erro ao desassociar contato (admin=%t): %v", isAdmin, execErr)
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao remover associação no banco de dados"})
 	}
 
@@ -692,28 +715,31 @@ func (app *App) handleUnassignContato(c *fiber.Ctx) error {
 
 func (app *App) setupRoutes(fiberApp *fiber.App) {
 	api := fiberApp.Group("/api")
-	protected := api.Use(app.authMiddleware)
+
+	// --- Grupo para TODOS os usuários autenticados ---
+	protected := api.Group("")
+	protected.Use(app.authMiddleware)
 
 	protected.Get("/users", app.getUsers)
 	protected.Post("/user/avatar", app.handleAvatarUpload)
 
+	// Rotas do Kanban
 	protected.Get("/boards/public", app.getPublicBoards)
 	protected.Get("/boards/private", app.getPrivateBoards)
 	protected.Post("/boards", app.createBoard)
 	protected.Delete("/boards/:id", app.deleteBoard)
-
 	protected.Get("/boards/:id/columns", app.getColumns)
 	protected.Post("/boards/:id/columns/reorder", app.reorderColumns)
 	protected.Post("/columns", app.createColumn)
 	protected.Put("/columns/:id", app.updateColumn)
 	protected.Delete("/columns/:id", app.deleteColumn)
-
 	protected.Get("/columns/:id/cards", app.getCards)
 	protected.Post("/columns/:id/cards", app.createCard)
 	protected.Put("/cards/:id", app.updateCard)
 	protected.Delete("/cards/:id", app.deleteCard)
 	protected.Post("/cards/move", app.moveCard)
 
+	// Rotas de Membros e Convites
 	protected.Get("/boards/:id/members", app.getBoardMembers)
 	protected.Get("/boards/:id/invitable-users", app.getInvitableUsers)
 	protected.Post("/boards/:id/invite", app.inviteUserToBoard)
@@ -721,31 +747,61 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Delete("/boards/:boardId/members/:memberId", app.removeBoardMember)
 	protected.Post("/boards/:id/leave", app.leaveBoard)
 
+	// Notificações
 	protected.Get("/notifications", app.getNotifications)
 	protected.Post("/notifications/:id/read", app.markNotificationRead)
 	protected.Post("/notifications/mark-all-as-read", app.markAllNotificationsRead)
 
+	// Rotas de Leitura e Edição para todos
 	protected.Get("/ligacoes", app.getLigacoes)
-	protected.Post("/ligacoes", app.createLigacao)
 	protected.Put("/ligacoes/:id", app.updateLigacao)
-	protected.Delete("/ligacoes/:id", app.deleteLigacao)
-	protected.Post("/ligacoes/:id/image", app.handleLigacaoImageUpload)
 
 	protected.Get("/agenda/events", app.getAgendaEvents)
-	protected.Post("/agenda/events", app.createAgendaEvent)
 	protected.Put("/agenda/events/:id", app.updateAgendaEvent)
-	protected.Delete("/agenda/events/:id", app.deleteAgendaEvent)
 
 	protected.Get("/avaliacoes", app.getAvaliacoes)
-	protected.Post("/avaliacoes", app.createAvaliacao)
 	protected.Put("/avaliacoes/:id", app.updateAvaliacao)
-	protected.Delete("/avaliacoes/:id", app.deleteAvaliacao)
 
+	// Rotas de Contato para todos
 	protected.Get("/contatos/status", app.handleGetContatosStatus)
 	protected.Post("/contatos/status", app.handleSetContatoStatus)
 	protected.Post("/contatos/assign", app.handleAssignContato)
 	protected.Post("/contatos/unassign", app.handleUnassignContato)
+
+	// --- Grupo EXCLUSIVO para Administradores ---
+	// Todas as rotas aqui dentro exigem que o usuário seja admin.
+	adminProtected := api.Group("")
+	adminProtected.Use(app.authMiddleware)  // 1. Verifica se está logado
+	adminProtected.Use(app.adminMiddleware) // 2. Verifica se é admin
+
+	// Admin: Ligações
+	adminProtected.Post("/ligacoes", app.createLigacao)
+	adminProtected.Delete("/ligacoes/:id", app.deleteLigacao)
+	adminProtected.Post("/ligacoes/:id/image", app.handleLigacaoImageUpload)
+
+	// Admin: Agenda
+	adminProtected.Post("/agenda/events", app.createAgendaEvent)
+	adminProtected.Delete("/agenda/events/:id", app.deleteAgendaEvent)
+
+	// Admin: Avaliações
+	adminProtected.Post("/avaliacoes", app.createAvaliacao)
+	adminProtected.Delete("/avaliacoes/:id", app.deleteAvaliacao)
+
+	// Admin: Contatos
+	adminProtected.Post("/contatos/admin-assign", app.handleAdminAssignContato)
 }
+
+/* comando dar admin supabase
+UPDATE auth.users
+SET raw_user_meta_data = raw_user_meta_data || '{"is_admin": true}'::jsonb
+WHERE email = 'email@kanban.local;
+*/
+
+/* comando tirar admin supabase
+UPDATE auth.users
+SET raw_user_meta_data = raw_user_meta_data || '{"is_admin": false}'::jsonb
+WHERE email = 'email@kanban.local';
+*/
 
 // endpoint users
 func (app *App) getUsers(c *fiber.Ctx) error {
@@ -762,7 +818,8 @@ func (app *App) getUsers(c *fiber.Ctx) error {
             COALESCE(raw_user_meta_data->>'username', email) as username,
             COALESCE(raw_user_meta_data->>'avatar_url', '') as avatar,
             created_at,
-            COALESCE(role, '') as role
+            COALESCE(role, '') as role,
+            COALESCE((raw_user_meta_data->>'is_admin')::boolean, false) as is_admin -- <-- ADICIONE ESTA LINHA
         FROM auth.users ORDER BY email
     `
 	rows, err := conn.Query(context.Background(), query)
@@ -772,12 +829,92 @@ func (app *App) getUsers(c *fiber.Ctx) error {
 	defer rows.Close()
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Email, &user.Username, &user.Avatar, &user.CreatedAt, &user.Role); err != nil {
+		if err := rows.Scan(&user.ID, &user.Email, &user.Username, &user.Avatar, &user.CreatedAt, &user.Role, &user.IsAdmin); err != nil { // <-- ATUALIZE AQUI
 			continue
 		}
 		users = append(users, user)
 	}
 	return c.JSON(users)
+}
+
+// middleware de verificacao admim
+func (app *App) adminMiddleware(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	if userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Usuário não autenticado"})
+	}
+
+	var isAdmin bool
+	query := "SELECT COALESCE((raw_user_meta_data->>'is_admin')::boolean, false) FROM auth.users WHERE id = $1"
+	err := app.db.QueryRow(context.Background(), query, userID).Scan(&isAdmin)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao verificar permissões de usuário"})
+	}
+
+	if !isAdmin {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Acesso negado. Esta ação requer privilégios de administrador."})
+	}
+
+	return c.Next()
+}
+
+// admin distribuir tarefa
+func (app *App) handleAdminAssignContato(c *fiber.Ctx) error {
+	var payload struct {
+		ContatoID  string `json:"contato_id"`
+		AssigneeID string `json:"assignee_id"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Payload inválido"})
+	}
+
+	if payload.ContatoID == "" || payload.AssigneeID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "contato_id e assignee_id são obrigatórios"})
+	}
+
+	var userName, userAvatar sql.NullString
+	err := app.db.QueryRow(context.Background(),
+		"SELECT raw_user_meta_data->>'username', raw_user_meta_data->>'avatar_url' FROM auth.users WHERE id = $1",
+		payload.AssigneeID).Scan(&userName, &userAvatar)
+	if err != nil {
+		log.Printf("Aviso: não foi possível encontrar metadados para o assigneeID %s: %v", payload.AssigneeID, err)
+	}
+
+	updatedBy := c.Locals("userID").(string)
+
+	query := `
+        INSERT INTO contato_status (contato_id, status, updated_by, assigned_to, assigned_to_name, assigned_to_avatar)
+        VALUES ($1, 'pendente', $2, $3, $4, $5)
+        ON CONFLICT (contato_id)
+        DO UPDATE SET
+            assigned_to = EXCLUDED.assigned_to,
+            assigned_to_name = EXCLUDED.assigned_to_name,
+            assigned_to_avatar = EXCLUDED.assigned_to_avatar,
+            updated_at = NOW(),
+            updated_by = EXCLUDED.updated_by
+        RETURNING id, status, anotacao, updated_at
+    `
+
+	var returnedId int
+	var status string
+	var updatedAt time.Time
+	var anotacao sql.NullString
+
+	err = app.db.QueryRow(context.Background(), query, payload.ContatoID, updatedBy, payload.AssigneeID, userName.String, userAvatar.String).Scan(&returnedId, &status, &anotacao, &updatedAt)
+	if err != nil {
+		log.Printf("Erro ao fazer upsert para admin assumir contato: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao salvar a atribuição no banco de dados"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":             "success",
+		"assigned_to":        payload.AssigneeID,
+		"assigned_to_name":   userName.String,
+		"assigned_to_avatar": userAvatar.String,
+		"updated_at":         updatedAt,
+	})
 }
 
 // endpoint boards publicos
@@ -1195,34 +1332,61 @@ func (app *App) updateCard(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID do card inválido"})
 	}
-	var newCardData Card
-	if err := c.BodyParser(&newCardData); err != nil {
+
+	var payload Card
+	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Dados de card inválidos"})
 	}
+
 	tx, err := app.db.Begin(context.Background())
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao iniciar transação"})
 	}
 	defer tx.Rollback(context.Background())
-	var oldCardData Card
-	err = tx.QueryRow(context.Background(), "SELECT assigned_to FROM cards WHERE id = $1", cardID).Scan(&oldCardData.AssignedTo)
+
+	var existingCard Card
+	err = tx.QueryRow(context.Background(), "SELECT column_id, assigned_to FROM cards WHERE id = $1", cardID).Scan(&existingCard.ColumnID, &existingCard.AssignedTo)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "Tarefa original não encontrada"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return c.Status(404).JSON(fiber.Map{"error": "Tarefa não encontrada"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao buscar tarefa original"})
 	}
-	query := `UPDATE cards SET title = $1, description = $2, assigned_to = $3, priority = $4, due_date = $5, updated_at = NOW() WHERE id = $6`
-	_, err = tx.Exec(context.Background(), query, newCardData.Title, newCardData.Description, newCardData.AssignedTo, newCardData.Priority, newCardData.DueDate, cardID)
+
+	if payload.ColumnID == 0 {
+		payload.ColumnID = existingCard.ColumnID
+	}
+
+	query := `
+		UPDATE cards SET 
+			title = $1, 
+			description = $2, 
+			assigned_to = $3, 
+			priority = $4, 
+			due_date = $5, 
+			column_id = $6,
+			completed_at = $7,
+			updated_at = NOW() 
+		WHERE id = $8`
+
+	_, err = tx.Exec(context.Background(), query,
+		payload.Title, payload.Description, payload.AssignedTo, payload.Priority,
+		payload.DueDate, payload.ColumnID, payload.CompletedAt, cardID)
+
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Erro ao atualizar card"})
+		log.Printf("Erro ao atualizar card no DB: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao atualizar card no banco de dados"})
 	}
-	if newCardData.AssignedTo != "" && newCardData.AssignedTo != oldCardData.AssignedTo {
+
+	if payload.AssignedTo != "" && payload.AssignedTo != existingCard.AssignedTo {
 		boardID, err := app.getBoardIDFromCard(cardID)
 		if err == nil {
-			assigneeID, err := app.getUserIDByUsername(newCardData.AssignedTo)
+			assigneeID, err := app.getUserIDByUsername(payload.AssignedTo)
 			if err == nil {
 				notification := Notification{
 					UserID:         assigneeID,
 					Type:           "new_task_assigned",
-					Message:        fmt.Sprintf("Você foi atribuído à tarefa: %s", newCardData.Title),
+					Message:        fmt.Sprintf("Você foi atribuído à tarefa: %s", payload.Title),
 					RelatedBoardID: &boardID,
 					RelatedCardID:  &cardID,
 				}
@@ -1230,16 +1394,26 @@ func (app *App) updateCard(c *fiber.Ctx) error {
 			}
 		}
 	}
+
 	if err := tx.Commit(context.Background()); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao confirmar atualização"})
 	}
-	boardID, err := app.getBoardIDFromCard(cardID)
-	if err == nil {
-		var updatedCard Card
-		selectQuery := `SELECT id, column_id, title, COALESCE(description, '') as description, COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority, due_date, position, created_at, updated_at, completed_at FROM cards WHERE id = $1`
-		app.db.QueryRow(context.Background(), selectQuery, cardID).Scan(&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description, &updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position, &updatedCard.CreatedAt, &updatedCard.UpdatedAt, &updatedCard.CompletedAt)
-		app.broadcast(boardID, WsMessage{Type: "CARD_UPDATED", Payload: updatedCard})
-	}
+
+	// Envia a atualização para outros clientes via WebSocket
+	go func() {
+		boardID, err := app.getBoardIDFromCard(cardID)
+		if err == nil {
+			var updatedCard Card
+			selectQuery := `SELECT id, column_id, title, COALESCE(description, '') as description, COALESCE(assigned_to, '') as assigned_to, COALESCE(priority, 'media') as priority, due_date, position, created_at, updated_at, completed_at FROM cards WHERE id = $1`
+			err := app.db.QueryRow(context.Background(), selectQuery, cardID).Scan(&updatedCard.ID, &updatedCard.ColumnID, &updatedCard.Title, &updatedCard.Description, &updatedCard.AssignedTo, &updatedCard.Priority, &updatedCard.DueDate, &updatedCard.Position, &updatedCard.CreatedAt, &updatedCard.UpdatedAt, &updatedCard.CompletedAt)
+			if err != nil {
+				log.Printf("Erro ao buscar card atualizado para broadcast: %v", err)
+				return
+			}
+			app.broadcast(boardID, WsMessage{Type: "CARD_UPDATED", Payload: updatedCard})
+		}
+	}()
+
 	return c.Status(200).JSON(fiber.Map{"status": "updated"})
 }
 
@@ -2023,7 +2197,7 @@ func main() {
 	fiberApp := fiber.New()
 	fiberApp.Use(logger.New(), recover.New())
 	fiberApp.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://nm-kanban-api.onrender.com, http://localhost:5173, http://127.0.0.1:8080",
+		AllowOrigins:     "http://localhost:10001, http://127.0.0.1:10001",
 		AllowCredentials: true,
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",

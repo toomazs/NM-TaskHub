@@ -1,0 +1,17 @@
+/* Define o container principal da aplicação */
+.appContainer {
+    display: flex; /* Garante que a sidebar e o main fiquem lado a lado */
+}
+
+/* Define a área de conteúdo principal */
+.mainContent {
+    flex-grow: 1; /* Faz com que o conteúdo principal ocupe todo o espaço restante */
+    min-height: 100vh;
+    padding-left: var(--sidebar-width-expanded); /* Define o padding inicial */
+    transition: padding-left 0.3s ease-in-out; /* Anima a mudança do padding */
+}
+
+/* Quando a sidebar está recolhida, ajusta o padding do conteúdo principal */
+.sidebarCollapsed {
+    padding-left: var(--sidebar-width-collapsed);
+}

@@ -1,0 +1,138 @@
+.invitationsDropdown {
+    display: none; /* O display block é aplicado via style no componente */
+    position: absolute;
+    top: 50px;
+    left: 20px;
+    background-color: var(--bg-modal);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-modal);
+    z-index: 1002;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.invitationItem {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.invitationItem:last-child {
+    border-bottom: none;
+}
+
+.invitationItem p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem 0;
+    line-height: 1.4;
+}
+
+.invitationItem p strong {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.invitationItem.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.invitationItem.clickable:hover {
+    background-color: var(--sidebar-hover);
+}
+
+.invitationActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btnAccept, .btnReject {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    flex: 1;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.btnReject {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.btnReject:hover {
+    background-color: var(--accent-red);
+    color: white;
+    border-color: var(--accent-red);
+}
+
+.btnAccept {
+    background-color: var(--accent-blue);
+    color: white;
+    border: 1px solid var(--accent-blue);
+}
+.btnAccept:hover {
+    filter: brightness(1.1);
+}
+
+.readNotificationsToggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-top: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.readNotificationsToggle:hover {
+    background-color: var(--sidebar-hover);
+    color: var(--text-primary);
+}
+
+.readNotificationsToggle i {
+    transition: transform 0.3s ease;
+}
+
+.collapsibleContent {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.collapsibleContent.active {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.invitationItem.read {
+    opacity: 0.6;
+    background-image: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.02));
+}
+
+.invitationItem.read:hover {
+    opacity: 1;
+}
+
+/* =================================== */
+/* MEDIA QUERIES (Mobile)              */
+/* =================================== */
+
+@media (max-width: 480px) {
+    .invitationsDropdown {
+        width: calc(100vw - 2rem); /* Ocupa quase toda a largura da tela */
+        left: 1rem;
+        right: 1rem;
+        top: 60px; /* Ajusta a posição vertical */
+    }
+}

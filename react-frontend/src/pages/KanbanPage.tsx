@@ -4,6 +4,7 @@ import { useBoard } from '../contexts/BoardContext';
 import { Loader } from '../components/ui/Loader';
 import { KanbanBoard } from '../components/kanban/KanbanBoard';
 import { KanbanHeader } from '../components/layout/KanbanHeader';
+import styles from './KanbanPage.module.css';
 
 const PUBLIC_BOARD_ID = 8; 
 
@@ -24,7 +25,7 @@ export function KanbanPage() {
   }
 
   return (
-    <div id="kanbanSection" style={{ display: 'block' }}>
+    <div className={styles.kanbanPage}>
       <KanbanHeader />
       <KanbanBoard />
     </div>

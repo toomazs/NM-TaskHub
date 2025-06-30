@@ -8,6 +8,7 @@ import { KanbanCard } from './KanbanCard';
 import { useModal } from '../../contexts/ModalContext';
 import { useBoard } from '../../contexts/BoardContext';
 import * as columnService from '../../services/columns';
+import styles from './KanbanColumn.module.css'; // Importando o módulo CSS
 
 interface ColumnProps {
   column: ColumnType;
@@ -72,10 +73,10 @@ export function KanbanColumn({ column, isOverlay, isHidden }: ColumnProps) {
   };
 
   const columnClasses = [
-    'column',
-    isDragging ? 'dragging' : '',
-    isOverlay ? 'is-overlay' : '',
-    isHidden ? 'hidden' : ''
+    styles.column,
+    isDragging ? styles.dragging : '',
+    isOverlay ? styles.isOverlay : '',
+    isHidden ? styles.hidden : ''
   ].filter(Boolean).join(' ');
 
   const finalStyle = isOverlay ? {} : style;
@@ -88,24 +89,24 @@ export function KanbanColumn({ column, isOverlay, isHidden }: ColumnProps) {
       {...(isOverlay ? {} : listeners)} 
       className={columnClasses}
     >
-      <div className="column-header">
-        <div className="column-title" title={column.title}>
+      <div className={styles.columnHeader}>
+        <div className={styles.columnTitle} title={column.title}>
             <span style={{ color: column.color, fontWeight: 'bold' }}>{column.title}</span>
-            <span className="column-count">{cardsIds.length}</span>
+            <span className={styles.columnCount}>{cardsIds.length}</span>
             {!isOverlay && (
-              <button className="delete-column-btn" onClick={handleDeleteColumn} title="Excluir Coluna">
+              <button className={styles.deleteColumnBtn} onClick={handleDeleteColumn} title="Excluir Coluna">
                   <i className="fas fa-times"></i>
               </button>
             )}
         </div>
         {!isOverlay && (
-          <button className="add-task-btn" onClick={() => openModal('task', { columnId: column.id })} title="Adicionar Tarefa">
+          <button className={styles.addTaskBtn} onClick={() => openModal('task', { columnId: column.id })} title="Adicionar Tarefa">
               <i className="fas fa-plus"></i>
           </button>
         )}
       </div>
       
-      <div className="task-list">
+      <div className={styles.taskList}>
         {!isOverlay ? (
           <SortableContext items={cardsIds} strategy={verticalListSortingStrategy}>
             {column.cards.map((card: CardType) => (
@@ -118,7 +119,7 @@ export function KanbanColumn({ column, isOverlay, isHidden }: ColumnProps) {
           ))
         )}
         {isOverlay && column.cards.length > 3 && (
-          <div className="more-cards-indicator">
+          <div className={styles.moreCardsIndicator}>
             +{column.cards.length - 3} tarefas
           </div>
         )}

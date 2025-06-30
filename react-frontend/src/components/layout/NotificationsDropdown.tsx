@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { Notification } from '../../types/kanban';
+import styles from './NotificationsDropdown.module.css';
 
 export function NotificationsDropdown() {
     const { notifications, respondToInvitation, isLoading } = useNotifications();
@@ -16,8 +17,8 @@ export function NotificationsDropdown() {
 
     if (isLoading) {
         return (
-            <div className="invitations-dropdown" style={{ display: 'block' }}>
-                <div className="invitation-item"><p>Carregando...</p></div>
+            <div className={styles.invitationsDropdown} style={{ display: 'block' }}>
+                <div className={styles.invitationItem}><p>Carregando...</p></div>
             </div>
         );
     }
@@ -26,36 +27,36 @@ export function NotificationsDropdown() {
     const readNotifications = notifications.filter(n => n.is_read);
 
     return (
-        <div className="invitations-dropdown" style={{ display: 'block' }}>
+        <div className={styles.invitationsDropdown} style={{ display: 'block' }}>
             <div id="unreadNotificationsContainer">
                 {unreadNotifications.length > 0 ? (
                     unreadNotifications.map(n => (
-                        <div key={n.id} className={`invitation-item ${n.type !== 'board_invitation' ? 'clickable' : ''}`} onClick={() => n.type !== 'board_invitation' && handleNotificationClick(n)}>
-                            <p>{n.message}</p>
+                        <div key={n.id} className={`${styles.invitationItem} ${n.type !== 'board_invitation' ? styles.clickable : ''}`} onClick={() => n.type !== 'board_invitation' && handleNotificationClick(n)}>
+                            <p dangerouslySetInnerHTML={{ __html: n.message }} />
                             {n.type === 'board_invitation' && n.invitation_id && (
-                                <div className="invitation-actions">
-                                    <button className="btn btn-secondary btn-reject" onClick={(e) => { e.stopPropagation(); handleResponse(n.invitation_id!, n.id, false); }}>Rejeitar</button>
-                                    <button className="btn btn-primary btn-accept" onClick={(e) => { e.stopPropagation(); handleResponse(n.invitation_id!, n.id, true); }}>Aceitar</button>
+                                <div className={styles.invitationActions}>
+                                    <button className={`btn ${styles.btnReject}`} onClick={(e) => { e.stopPropagation(); handleResponse(n.invitation_id!, n.id, false); }}>Rejeitar</button>
+                                    <button className={`btn ${styles.btnAccept}`} onClick={(e) => { e.stopPropagation(); handleResponse(n.invitation_id!, n.id, true); }}>Aceitar</button>
                                 </div>
                             )}
                         </div>
                     ))
                 ) : (
-                    <div className="invitation-item"><p>Nenhuma notificação nova.</p></div>
+                    <div className={styles.invitationItem}><p>Nenhuma notificação nova.</p></div>
                 )}
             </div>
 
             {readNotifications.length > 0 && (
                 <>
-                    <div className="read-notifications-toggle" onClick={() => setShowRead(!showRead)}>
+                    <div className={styles.readNotificationsToggle} onClick={() => setShowRead(!showRead)}>
                         <i className={`fas ${showRead ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
                         <span>Lidas</span>
                     </div>
                     {showRead && (
-                        <div id="readNotificationsContainer" className="collapsible-content active">
+                        <div id="readNotificationsContainer" className={`${styles.collapsibleContent} ${styles.active}`}>
                             {readNotifications.map(n => (
-                                <div key={n.id} className="invitation-item read clickable" onClick={() => handleNotificationClick(n)}>
-                                    <p>{n.message}</p>
+                                <div key={n.id} className={`${styles.invitationItem} ${styles.read} ${styles.clickable}`} onClick={() => handleNotificationClick(n)}>
+                                    <p dangerouslySetInnerHTML={{ __html: n.message }} />
                                 </div>
                             ))}
                         </div>

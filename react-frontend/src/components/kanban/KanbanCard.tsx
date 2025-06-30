@@ -8,6 +8,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { useBoard } from '../../contexts/BoardContext';
 import { userDisplayNameMap } from '../../api/config';
 import * as cardService from '../../services/cards';
+import styles from './KanbanCard.module.css'; 
 
 interface CardProps {
   card: CardType;
@@ -16,7 +17,7 @@ interface CardProps {
 
 export function KanbanCard({ card, isOverlay = false }: CardProps) {
   const { openModal } = useModal();
-  const { users, removeCard, solucionadoId, naoSolucionadoId, isColumnDragging } = useBoard();
+  const { board, users, removeCard, updateCard, solucionadoId, naoSolucionadoId, isColumnDragging } = useBoard();
 
   const {
     attributes,
@@ -35,6 +36,14 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
     transition,
     transform: CSS.Translate.toString(transform),
   };
+
+  const isCompleted = useMemo(() => {
+    if (!board) return false;
+    if (board.is_public) {
+      return card.column_id === solucionadoId;
+    }
+    return !!card.completed_at;
+  }, [card, board, solucionadoId]);
   
   const cardStatus = useMemo(() => {
     let isOverdue = false;
@@ -42,9 +51,9 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
     let formattedDate = '';
     let statusIcon = null;
 
-    const isCompleted = card.column_id === solucionadoId || card.column_id === naoSolucionadoId;
+    const isConsideredDone = isCompleted || (board?.is_public && card.column_id === naoSolucionadoId);
 
-    if (card.due_date && !isCompleted) {
+    if (card.due_date && !isConsideredDone) {
         const now = new Date();
         const dueDate = new Date(card.due_date);
         
@@ -54,12 +63,12 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
 
         if (now > dueDate) {
             isOverdue = true;
-            statusIcon = <i className="fas fa-exclamation-triangle overdue-icon"></i>;
+            statusIcon = <i className={`fas fa-exclamation-triangle ${styles.overdueIcon}`}></i>;
         } else {
             const warningTime = new Date(dueDate.getTime() - (1 * 60 * 60 * 1000));
             if (now >= warningTime) {
                 isDueToday = true;
-                statusIcon = <i className="fas fa-clock due-today-icon"></i>;
+                statusIcon = <i className={`fas fa-clock ${styles.dueTodayIcon}`}></i>;
             } else {
                 statusIcon = <i className="fas fa-calendar"></i>;
             }
@@ -69,16 +78,23 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
     return {
       formattedDate,
       statusIcon,
-      statusClass: isOverdue ? 'overdue' : (isDueToday ? 'due-today' : ''),
+      statusClass: isOverdue ? styles.overdue : (isDueToday ? styles.dueToday : ''),
     };
-  }, [card.due_date, card.column_id, solucionadoId, naoSolucionadoId]);
+  }, [card.due_date, card.column_id, naoSolucionadoId, isCompleted, board]);
   
+  const priorityClass = {
+    baixa: styles.priorityBaixa,
+    media: styles.priorityMedia,
+    alta: styles.priorityAlta,
+  }[card.priority || 'media'];
+
   const cardClassName = [
-    'task',
-    `priority-${card.priority || 'media'}`,
+    styles.task,
+    priorityClass,
     cardStatus.statusClass,
-    isDragging ? 'dragging' : '',
-    isOverlay ? 'is-overlay' : '',
+    isDragging ? styles.dragging : '',
+    isOverlay ? styles.isOverlay : '',
+    isCompleted ? styles.completed : '',
   ].filter(Boolean).join(' ');
 
   const assignedUser = useMemo(() => 
@@ -113,6 +129,45 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
     ));
   };
 
+  const handleToggleComplete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!board) return;
+    if (board.is_public && isCompleted) return;
+
+    let updatedCardData: CardType;
+    let successMessage = "Tarefa concluída!";
+
+    if (board.is_public) {
+      if (!solucionadoId) {
+        toast.error("Coluna 'Solucionado' não configurada.");
+        return;
+      }
+      updatedCardData = { 
+        ...card, 
+        column_id: solucionadoId,
+        completed_at: new Date().toISOString()
+      };
+    } else {
+      const isCurrentlyCompleted = !!card.completed_at;
+      updatedCardData = { 
+        ...card, 
+        completed_at: isCurrentlyCompleted ? null : new Date().toISOString() 
+      };
+      if (isCurrentlyCompleted) {
+        successMessage = "Tarefa reaberta!";
+      }
+    }
+
+    try {
+      await cardService.updateCard(card.id, updatedCardData);
+      updateCard(updatedCardData);
+      toast.success(successMessage);
+    } catch (error) {
+      toast.error("Não foi possível atualizar a tarefa.");
+    }
+  };
+
   return (
     <div 
         ref={setNodeRef} 
@@ -122,19 +177,28 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
         className={cardClassName} 
         onClick={() => openModal('task', { card: card })}
     >
-      <div className="task-actions">
-        <button className="action-btn delete-btn" title="Excluir Tarefa" onClick={handleDelete}>
+      <div className={styles.taskActions}>
+        {(!board?.is_public || !isCompleted) && (
+           <button 
+               className={`${styles.actionBtn} ${styles.completeBtn}`} 
+               title={!board?.is_public && isCompleted ? 'Reabrir Tarefa' : 'Concluir Tarefa'} 
+               onClick={handleToggleComplete}
+           >
+              <i className={`fas ${!board?.is_public && isCompleted ? 'fa-undo' : 'fa-check'}`}></i>
+           </button>
+        )}
+        <button className={`${styles.actionBtn} ${styles.deleteBtn}`} title="Excluir Tarefa" onClick={handleDelete}>
             <i className="fas fa-trash"></i>
         </button>
       </div>
-      <div className="task-header">
-        <div className="task-title">{card.title}</div>
+      <div className={styles.taskHeader}>
+        <div className={`${styles.taskTitle} ${isCompleted ? styles.completedTitle : ''}`}>{card.title}</div>
       </div>
-      <div className="task-meta">
+      <div className={styles.taskMeta}>
 
         {assignedUser ? (
-            <div className="task-assignee">
-                <div className="assignee-avatar" style={{ backgroundImage: assignedUser.avatar ? `url(${assignedUser.avatar})` : 'none' }}>
+            <div className={styles.taskAssignee}>
+                <div className={styles.assigneeAvatar} style={{ backgroundImage: assignedUser.avatar ? `url(${assignedUser.avatar})` : 'none' }}>
                     {!assignedUser.avatar && (assigneeDisplayName.charAt(0).toUpperCase())}
                 </div>
                 <span>{assigneeDisplayName}</span>
@@ -143,9 +207,9 @@ export function KanbanCard({ card, isOverlay = false }: CardProps) {
             <div></div> 
         )}
         
-        <div className="task-due-info">
-            <span className="task-date-text">{cardStatus.formattedDate}</span>
-            <div className="task-status-icons">{cardStatus.statusIcon}</div>
+        <div className={styles.taskDueInfo}>
+            <span className={styles.taskDateText}>{cardStatus.formattedDate}</span>
+            <div className={styles.taskStatusIcons}>{cardStatus.statusIcon}</div>
         </div>
       </div>
     </div>

@@ -1,43 +1,61 @@
 import React from 'react';
-import { userDisplayNameModalMap } from '../../api/config'; 
-import { User } from '../../types/kanban'; 
+import { User } from '../../types/kanban';
+import { userDisplayNameModalMap } from '../../api/config';
+import styles from './AssigneeSelector.module.css';
 
 interface AssigneeSelectorProps {
     users: User[];
-    selectedAssignee: string | null;
-    onSelect: (assignee: string | null) => void;
+    onSelect: (selectedValue: string | null) => void;
+    currentSelection?: string | null;
+    valueType?: 'id' | 'email';
+    allowUnassign?: boolean;
+    unassignText?: string;
 }
 
-export function AssigneeSelector({ users, selectedAssignee, onSelect }: AssigneeSelectorProps) {
+export function AssigneeSelector({
+    users,
+    onSelect,
+    currentSelection,
+    valueType = 'email', 
+    allowUnassign = true,
+    unassignText = 'Ninguém'
+}: AssigneeSelectorProps) {
     return (
-        <div className="assignee-selector-grid">
-            <div
-                className={`assignee-item ${!selectedAssignee ? 'selected' : ''}`}
-                onClick={() => onSelect(null)}
-            >
-                <div className="assignee-item-avatar assignee-item-na-avatar">
-                    <i className="fas fa-ban"></i>
+        <div className={styles.assigneeSelectorGrid}>
+            {allowUnassign && (
+                 <div
+                    className={`${styles.assigneeItem} ${!currentSelection ? styles.selected : ''}`}
+                    onClick={() => onSelect(null)}
+                    title={unassignText}
+                >
+                    <div className={`${styles.assigneeItemAvatar} ${styles.assigneeItemNaAvatar}`}>
+                        <i className="fas fa-ban"></i>
+                    </div>
+                    <div className={styles.assigneeItemName}>{unassignText}</div>
                 </div>
-                <div className="assignee-item-name">Ninguém</div>
-            </div>
-
+            )}
+           
             {users.map(user => {
                 const displayName = userDisplayNameModalMap[user.email] || user.username;
                 const avatarInitial = displayName.charAt(0).toUpperCase();
+                
+                const valueToReturn = valueType === 'id' ? user.id : user.email;
+                const isSelected = currentSelection === valueToReturn;
 
                 return (
                     <div
                         key={user.id}
-                        className={`assignee-item ${selectedAssignee === user.email ? 'selected' : ''}`}
-                        onClick={() => onSelect(user.email)}
+                        className={`${styles.assigneeItem} ${isSelected ? styles.selected : ''}`}
+                        onClick={() => onSelect(valueToReturn)}
+                        title={`Atribuir para ${displayName}`}
                     >
                         <div
-                            className="assignee-item-avatar"
+                            className={styles.assigneeItemAvatar}
                             style={{ backgroundImage: user.avatar ? `url(${user.avatar})` : 'none' }}
                         >
                             {!user.avatar && avatarInitial}
                         </div>
-                        <div className="assignee-item-name">{displayName}</div> 
+                        <div className={styles.assigneeItemName}>{displayName}</div>
                     </div>
                 );
             })}

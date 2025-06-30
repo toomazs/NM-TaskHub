@@ -1,26 +1,21 @@
-import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../components/layout/Sidebar';
-import { useLayout } from '../contexts/LayoutContext';
+import React from 'react';
+import { useLayout } from '../contexts/LayoutContext'; 
+import { Sidebar } from '../components/layout/Sidebar'; 
 
-export function MainLayout() {
-    const { isSidebarCollapsed } = useLayout();
+export function MainLayout({ children }: { children: React.ReactNode }) {
+    const { isSidebarCollapsed, isMobileNavOpen } = useLayout();
 
-    const mainStyle = {
-        paddingLeft: isSidebarCollapsed 
-            ? 'var(--sidebar-width-collapsed)' 
-            : 'var(--sidebar-width-expanded)',
-        transition: 'padding-left 0.3s ease-in-out', 
-    };
-
+    const mainContentClass = `
+        main-content 
+        ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}
+        ${isMobileNavOpen ? 'mobile-nav-open' : ''}
+    `;
+    
     return (
         <div className="app-container">
-            {}
             <Sidebar />
-
-            {}
-            <main style={mainStyle}>
-                {}
-                <Outlet /> 
+            <main className={mainContentClass}>
+                {children}
             </main>
         </div>
     );

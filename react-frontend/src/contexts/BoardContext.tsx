@@ -24,6 +24,7 @@ interface BoardContextType {
   addColumn: (newColumn: Column) => void;
   updateColumn: (updatedColumn: Column) => void;
   deleteColumn: (columnId: number) => void;
+  updateCard: (updatedCard: Card) => void;
   removeCard: (cardId: number, columnId: number) => void;
 }
 
@@ -73,16 +74,32 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateCard = useCallback((updatedCard: Card) => {
+    setColumns(prev => {
+        const colsWithCardRemoved = prev.map(col => ({
+            ...col,
+            cards: col.cards.filter(c => c.id !== updatedCard.id)
+        }));
+
+        const colsWithCardAdded = colsWithCardRemoved.map(col => {
+            if (col.id === updatedCard.column_id) {
+                const newCards = [...col.cards, updatedCard];
+                newCards.sort((a, b) => a.position - b.position);
+                return { ...col, cards: newCards };
+            }
+            return col;
+        });
+
+        return colsWithCardAdded;
+    });
+  }, []);
+
+
   const handleWebSocketMessage = useCallback((message: { type: string, payload: any }) => {
     switch (message.type) {
       case 'CARD_UPDATED': {
         const updatedCard = message.payload as Card;
-        setColumns(prev => prev.map(col => {
-            if (col.id === updatedCard.column_id) {
-                return { ...col, cards: col.cards.map(c => c.id === updatedCard.id ? updatedCard : c) };
-            }
-            return col;
-        }));
+        updateCard(updatedCard); 
         break;
       }
       case 'CARD_CREATED': {
@@ -154,7 +171,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       default:
         console.log("Mensagem WebSocket não tratada:", message);
     }
-  }, [board, fetchBoardData]);
+  }, [board, fetchBoardData, updateCard]); 
 
   useWebSocket(board?.id, handleWebSocketMessage);
 
@@ -192,7 +209,8 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     addColumn, 
     updateColumn, 
     deleteColumn, 
-    removeCard, 
+    removeCard,
+    updateCard,
     isColumnDragging, 
     setIsColumnDragging 
   };

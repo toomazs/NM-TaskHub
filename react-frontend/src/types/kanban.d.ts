@@ -5,7 +5,8 @@ export interface User {
   avatar: string;
   created_at?: string;
   role?: string;
-  is_owner?: boolean; 
+  is_owner?: boolean;
+  is_admin?: boolean; 
 }
 
 export interface Board {
@@ -13,7 +14,7 @@ export interface Board {
   title: string;
   description: string;
   owner_id: string;
-  owner_name?: string; 
+  owner_name?: string;
   is_public: boolean;
   color: string;
   created_at: string;
@@ -40,7 +41,7 @@ export interface Card {
   position: number;
   created_at: string;
   updated_at: string;
-  completed_at: string | null; 
+  completed_at: string | null;
 }
 
 export interface Comment {
@@ -70,7 +71,7 @@ export interface Ligacao {
   status: string;
   spreadsheet_url?: string;
   address?: string;
-  end_date?: string; 
+  end_date?: string;
   observations?: string;
   created_at: string;
   updated_at: string;
@@ -80,7 +81,7 @@ export interface AgendaEvent {
   id: number;
   title: string;
   description?: string;
-  event_date: string; 
+  event_date: string;
   color: string;
   user_id?: string;
   created_at: string;

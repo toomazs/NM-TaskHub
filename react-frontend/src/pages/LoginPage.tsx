@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import * as authService from '../services/auth';
 import { useAuth } from '../contexts/AuthContext';
 import logo from '/img/nmlogo.png'; 
+import styles from './LoginPage.module.css';
 
 export function LoginPage() {
   const { user, isLoading } = useAuth();
@@ -13,9 +14,9 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    document.body.classList.add('login-page');
+    document.body.classList.add(styles.loginPage);
     return () => {
-      document.body.classList.remove('login-page');
+      document.body.classList.remove(styles.loginPage);
     };
   }, []);
 
@@ -43,13 +44,13 @@ export function LoginPage() {
   }
 
   return (
-    <div id="loginSection" style={{ display: 'flex' }}>
-      <div className="login-container">
-        <form id="loginForm" onSubmit={handleLogin} className="login-form">
+    <div className={styles.loginSection}>
+      <div className={styles.loginContainer}>
+        <form onSubmit={handleLogin} className={styles.loginForm}>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
                 <img src={logo} alt="Logo N-MULTIFIBRA" style={{ width: '200px' }} />
             </div>
-            <div className="form-group2">
+            <div className={styles.formGroup2}>
               <label htmlFor="email">Email</label>
               <input 
                 type="email" 
@@ -61,7 +62,7 @@ export function LoginPage() {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group2">
+            <div className={styles.formGroup2}>
               <label htmlFor="password">Senha</label>
               <input 
                 type="password" 
@@ -73,9 +74,9 @@ export function LoginPage() {
                 disabled={isSubmitting}
               />
             </div>
-            <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isSubmitting}>
+            <button type="submit" className={`btn ${styles.btnPrimary}`} disabled={isSubmitting}>
               {isSubmitting ? (
-                <><i className="fas fa-spinner fa-spin"></i> Entrando...</>
+                <><i className={`fas fa-spinner ${styles.faSpin}`}></i> Entrando...</>
               ) : (
                 'Entrar'
               )}

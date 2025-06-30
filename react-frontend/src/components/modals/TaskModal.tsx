@@ -12,6 +12,7 @@ import { userDisplayNameMap } from '../../api/config';
 import { AssigneeSelector } from '../kanban/AssigneeSelector';
 import { CommentSection } from '../kanban/CommentSection';
 import { Loader } from '../ui/Loader';
+import styles from './TaskModal.module.css';
 
 export function TaskModal() {
     const { isModalOpen, closeModal, isClosing, editingCard, currentColumnId } = useModal();
@@ -88,7 +89,7 @@ export function TaskModal() {
         if (!isEditing || !editingCard || !board) return;
         setIsSaving(true);
         const descriptionJson = board.is_public ? JSON.stringify({ observacoes, tentativas, resolucao }) : JSON.stringify({ comments: privateComments });
-        const cardData: Partial<Card> = { title, priority, assigned_to: assignee ?? '', due_date: dueDate ? new Date(dueDate).toISOString() : null, description: descriptionJson };
+        const cardData: Partial<Card> = { title, priority, assigned_to: assignee ?? undefined, due_date: dueDate ? new Date(dueDate).toISOString() : null, description: descriptionJson };
         
         try {
             await cardService.updateCard(editingCard.id, cardData);
@@ -107,7 +108,7 @@ export function TaskModal() {
         e.preventDefault();
         const toastId = toast.loading("Criando tarefa...");
         const cardData = {
-            title, priority, assigned_to: assignee ?? '', due_date: dueDate ? new Date(dueDate).toISOString() : null,
+            title, priority, assigned_to: assignee ?? undefined, due_date: dueDate ? new Date(dueDate).toISOString() : null,
             description: JSON.stringify({
                 observacoes: initialDescription ? [{ text: initialDescription, author: getAuthorName(), timestamp: new Date().toLocaleString('pt-BR') }] : [],
                 tentativas: [], resolucao: []
@@ -158,10 +159,10 @@ export function TaskModal() {
 
     const handleDelete = () => {
         toast((t) => (
-            <div className="confirmation-toast">
+            <div className={styles.confirmationToast}>
                 <h4>Confirmar Exclusão</h4>
                 <p>Você tem certeza? Esta ação não pode ser desfeita.</p>
-                <div className="toast-buttons">
+                <div className={styles.toastButtons}>
                     <button
                         className="btn btn-sm btn-danger"
                         onClick={() => {
@@ -186,80 +187,87 @@ export function TaskModal() {
     };
     
     if (!isModalOpen) return null;
-    if (!board) return <div className="modal" style={{display:'flex'}}><div className="modal-content" style={{width:'200px',height:'200px'}}><Loader isVisible={true}/></div></div>;
+    if (!board) return <div className={styles.modal} style={{display:'flex'}}><div className={styles.modalContent} style={{width:'200px',height:'200px'}}><Loader isVisible={true}/></div></div>;
 
     const userSource = board.is_public ? users : boardMembers;
     const isArchived = editingCard && (editingCard.column_id === solucionadoId || editingCard.column_id === naoSolucionadoId);
 
     return (
-        <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className={`modal-content priority-${priority}`} onClick={e => e.stopPropagation()}>
-                <button className="modal-close" onClick={closeModal}><i className="fas fa-times"></i></button>
-                <div className="modal-header">
-                    <h2 id="modalTitle" style={{display: 'flex', alignItems: 'center'}}>
+        <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={closeModal}>
+            <div className={`${styles.modalContent} ${styles[`priority-${priority}`]}`} onClick={e => e.stopPropagation()}>
+                <button className={styles.modalClose} onClick={closeModal}><i className="fas fa-times"></i></button>
+                <div className={styles.modalHeader}>
+                    <h2 style={{display: 'flex', alignItems: 'center'}}>
                         <i className="fas fa-edit"></i>
                         <span>{isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}</span>
                         
                         {isIndicatorVisible && (
-                            <div className={`autosave-indicator ${isSaving ? 'fade-in' : 'fade-out'}`}>
-                                <i className="fas fa-spinner fa-spin"></i> Salvando...
+                            <div className={`${styles.autosaveIndicator} ${isSaving ? styles.fadeIn : styles.fadeOut}`}>
+                                <i className={`fas fa-spinner ${styles.faSpin}`}></i> Salvando...
                             </div>
                         )}
                     </h2>
                 </div>
-                <div className="modal-body">
-                    <div className="modal-main">
+                <div className={styles.modalBody}>
+                    <div className={styles.modalMain}>
                         <form id="taskForm" onSubmit={handleSubmitNewTask}>
-                            <div className="form-section">
-                                <div className="form-group priority-group">
-                                    <label className="section-label"><i className="fas fa-flag"></i> Prioridade</label>
-                                    <div className="priority-options">
+                            <div className={styles.formSection}>
+                                <div className={`${styles.formGroup} ${styles.priorityGroup}`}>
+                                    <label className={styles.sectionLabel}><i className="fas fa-flag"></i> Prioridade</label>
+                                    <div className={styles.priorityOptions}>
                                         {(['baixa', 'media', 'alta'] as const).map(p => (
-                                            <label key={p} className="priority-radio"><input type="radio" name="priority" value={p} checked={priority === p} onChange={() => { setPriority(p); setIsDirty(true); }} /><span className={`priority-indicator priority-${p}`}></span><span className="priority-text">{p.charAt(0).toUpperCase() + p.slice(1)}</span></label>
+                                            <label key={p} className={styles.priorityRadio}><input type="radio" name="priority" value={p} checked={priority === p} onChange={() => { setPriority(p); setIsDirty(true); }} /><span className={`${styles.priorityIndicator} ${styles[`priority-${p}`]}`}></span><span className={styles.priorityText}>{p.charAt(0).toUpperCase() + p.slice(1)}</span></label>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                            <div className="form-section">
-                                <div className="form-group"><label htmlFor="taskTitle" className="form-label"><i className="fas fa-user"></i> ID e Nome do Cliente</label><input type="text" id="taskTitle" value={title} onChange={e => { setTitle(e.target.value); setIsDirty(true); }} className="form-input" required /></div>
-                                <div className="form-group"><label htmlFor="taskDate" className="form-label"><i className="fas fa-calendar"></i> Data e Hora de Entrega</label><input type="datetime-local" id="taskDate" value={dueDate} onChange={e => { setDueDate(e.target.value); setIsDirty(true); }} className="form-input" /></div>
-                                <div className="form-group">
-                                    <label className="form-label"><i className="fas fa-user-tag"></i> Colaborador</label>
-                                    <AssigneeSelector users={userSource} selectedAssignee={assignee} onSelect={(name) => { setAssignee(name); setIsDirty(true); }} />
+                            <div className={styles.formSection}>
+                                <div className={styles.formGroup}><label htmlFor="taskTitle" className={styles.formLabel}><i className="fas fa-user"></i> Titulo do Card</label><input type="text" id="taskTitle" value={title} onChange={e => { setTitle(e.target.value); setIsDirty(true); }} className={styles.formInput} required /></div>
+                                <div className={styles.formGroup}><label htmlFor="taskDate" className={styles.formLabel}><i className="fas fa-calendar"></i> Data e Hora de Entrega</label><input type="datetime-local" id="taskDate" value={dueDate} onChange={e => { setDueDate(e.target.value); setIsDirty(true); }} className={styles.formInput} /></div>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}><i className="fas fa-user-tag"></i> Colaborador</label>
+                                    <AssigneeSelector 
+    users={userSource} 
+    currentSelection={assignee}
+    onSelect={(name: string | null) => { 
+        setAssignee(name); 
+        setIsDirty(true); 
+    }} 
+/>
                                 </div>
-                                {!isEditing && <div className="form-group"><label htmlFor="taskNewDescription" className="form-label"><i className="fas fa-comment"></i> Comentário Inicial</label><textarea id="taskNewDescription" value={initialDescription} onChange={e => setInitialDescription(e.target.value)} className="form-textarea" placeholder="Descreva um comentário inicial..." rows={4}></textarea></div>}
+                                {!isEditing && <div className={styles.formGroup}><label htmlFor="taskNewDescription" className={styles.formLabel}><i className="fas fa-comment"></i> Comentário Inicial</label><textarea id="taskNewDescription" value={initialDescription} onChange={e => setInitialDescription(e.target.value)} className={styles.formTextarea} placeholder="Descreva um comentário inicial..." rows={4}></textarea></div>}
                             </div>
                             
-                            <div className="form-actions">
+                            <div className={styles.formActions}>
                                 {isEditing && (
-                                    <button type="button" className="btn btn-danger" onClick={handleDelete}>
+                                    <button type="button" className={`btn ${styles.btnDanger}`} onClick={handleDelete}>
                                         <i className="fas fa-trash-alt"></i>
                                         <span>Excluir</span>
                                     </button>
                                 )}
-                                <div className="main-actions">
+                                <div className={styles.mainActions}>
                                     {isEditing && board.is_public && !isArchived && (
-                                        <div className="status-buttons">
-                                            <button type="button" className="btn btn-solved" onClick={() => handleMoveToStatus(true)}><i className="fas fa-check"></i><span>Solucionado</span></button>
-                                            <button type="button" className="btn btn-unsolved" onClick={() => handleMoveToStatus(false)}><i className="fas fa-times"></i><span>Não Solucionado</span></button>
+                                        <div className={styles.statusButtons}>
+                                            <button type="button" className={`btn ${styles.btnSolved}`} onClick={() => handleMoveToStatus(true)}><i className="fas fa-check"></i><span>Solucionado</span></button>
+                                            <button type="button" className={`btn ${styles.btnUnsolved}`} onClick={() => handleMoveToStatus(false)}><i className="fas fa-times"></i><span>Não Solucionado</span></button>
                                         </div>
                                     )}
                                     {isEditing && isArchived && (
-                                        <div className="status-buttons">
-                                            <button type="button" className="btn btn-primary" onClick={handleReturnToBoard}>
+                                        <div className={styles.statusButtons}>
+                                            <button type="button" className={`btn ${styles.btnPrimary}`} onClick={handleReturnToBoard}>
                                                 <i className="fas fa-undo"></i><span>Retornar à Escala</span>
                                             </button>
                                         </div>
                                     )}
-                                    {!isEditing && <button type="submit" className="btn btn-primary"><i className="fas fa-check-circle"></i><span>Confirmar</span></button>}
+                                    {!isEditing && <button type="submit" className={`btn ${styles.btnPrimary}`}><i className="fas fa-check-circle"></i><span>Confirmar</span></button>}
                                 </div>
                             </div>
                         </form>
                     </div>
                     {isEditing && (
-                        <div className="modal-comments">
-                            <div className="comments-header"><h3><i className="fas fa-comments"></i> Acompanhamento</h3></div>
-                            <div className="comments-container">
+                        <div className={styles.modalComments}>
+                            <div className={styles.commentsHeader}><h3><i className="fas fa-comments"></i> Acompanhamento</h3></div>
+                            <div className={styles.commentsContainer}>
                                 {board.is_public ? (
                                     <>
                                         <CommentSection title="Observações" icon="fa-eye" comments={observacoes} onCommentsChange={(c) => { setObservacoes(c); setIsDirty(true); }} authorName={getAuthorName()} />

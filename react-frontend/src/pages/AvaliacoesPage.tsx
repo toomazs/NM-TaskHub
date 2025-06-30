@@ -1,25 +1,21 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useModal } from '../contexts/ModalContext';
+import { useAuth } from '../contexts/AuthContext'; // Importar
 import * as avaliacaoService from '../services/avaliacoes';
-import { Avaliacao, User } from '../types/kanban';
+import { Avaliacao } from '../types/kanban';
 import { useBoard } from '../contexts/BoardContext';
 import { Loader } from '../components/ui/Loader';
 import toast from 'react-hot-toast';
-import { format, parseISO } from 'date-fns';
 import { userDisplayNameMap } from '../api/config';
+import styles from './AvaliacoesPage.module.css';
 
 const formatUTCDate = (isoDateString: string | null | undefined): string => {
-    if (!isoDateString) {
-        return 'N/A';
-    }
+    if (!isoDateString) return 'N/A';
     const date = new Date(isoDateString);
-
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + 1;
     const day = date.getUTCDate();
-
     const pad = (num: number) => String(num).padStart(2, '0');
-
     return `${pad(day)}/${pad(month)}/${year}`;
 }
 
@@ -32,19 +28,10 @@ const sourceImageMap: { [key: string]: string } = {
 
 const SourceLogo = ({ source }: { source: string }) => {
     const imagePath = sourceImageMap[source];
-
     if (imagePath) {
-        return (
-            <img 
-                src={imagePath} 
-                alt={`${source} logo`} 
-                title={source}
-                style={{ height: '24px', maxWidth: '80px', verticalAlign: 'middle' }} 
-            />
-        );
+        return <img src={imagePath} alt={`${source} logo`} title={source} style={{ height: '24px', maxWidth: '80px', verticalAlign: 'middle' }} />;
     }
-
-    return <span className="source-text">{source}</span>;
+    return <span className={styles.sourceText}>{source}</span>;
 };
 
 const StatusBadge = ({ status }: { status: Avaliacao['status'] }) => {
@@ -55,13 +42,7 @@ const StatusBadge = ({ status }: { status: Avaliacao['status'] }) => {
         Ignorado: { background: 'var(--text-muted)', text: 'Ignorado' },
     };
     return (
-        <span 
-            className="status-badge" 
-            style={{
-                backgroundColor: `${styleMap[status].background}30`, 
-                color: styleMap[status].background
-            }}
-        >
+        <span className={styles.statusBadge} style={{ backgroundColor: `${styleMap[status].background}30`, color: styleMap[status].background }}>
             {styleMap[status].text}
         </span>
     );
@@ -70,23 +51,22 @@ const StatusBadge = ({ status }: { status: Avaliacao['status'] }) => {
 const RatingStars = ({ rating }: { rating?: number }) => {
     if (!rating) return <span style={{color: 'var(--text-muted)'}}>N/A</span>;
     return (
-        <div className="rating-stars">
+        <div className={styles.ratingStars}>
             {Array.from({length: 5}, (_, i) => 
-                <i key={i} className={`fas fa-star ${i < rating ? 'filled' : ''}`}></i>
+                <i key={i} className={`fas fa-star ${i < rating ? styles.filled : ''}`}></i>
             )}
         </div>
     );
 };
 
-const FilterBar = ({ filters, setFilters, onAddNew }: {
+const FilterBar = ({ filters, setFilters }: {
     filters: { status: string; source: string },
     setFilters: (filters: any) => void,
-    onAddNew: () => void
 }) => (
-    <div className="filters-bar">
-        <div className="filters-group">
+    <div className={styles.filtersBar}>
+        <div className={styles.filtersGroup}>
             <select 
-                className="form-select filter-select" 
+                className={styles.filterSelect}
                 value={filters.status} 
                 onChange={e => setFilters((f: any) => ({...f, status: e.target.value}))}
             >
@@ -98,7 +78,7 @@ const FilterBar = ({ filters, setFilters, onAddNew }: {
             </select>
             
             <select 
-                className="form-select filter-select" 
+                className={styles.filterSelect} 
                 value={filters.source} 
                 onChange={e => setFilters((f: any) => ({...f, source: e.target.value}))}
             >
@@ -110,7 +90,6 @@ const FilterBar = ({ filters, setFilters, onAddNew }: {
                 <option value="Outros">Outros</option>
             </select>
         </div>
-    
     </div>
 );
 
@@ -119,50 +98,39 @@ const StatsCards = ({ avaliacoes }: { avaliacoes: Avaliacao[] }) => {
         const total = avaliacoes.length;
         const pendentes = avaliacoes.filter(a => a.status === 'Pendente').length;
         const resolvidas = avaliacoes.filter(a => a.status === 'Resolvido').length;
-        const mediaNotas = avaliacoes.reduce((acc, a) => acc + (a.rating || 0), 0) / total || 0;
+        const mediaNotas = total > 0 ? avaliacoes.reduce((acc, a) => acc + (a.rating || 0), 0) / total : 0;
         
         return { total, pendentes, resolvidas, mediaNotas };
     }, [avaliacoes]);
 
     return (
-        <div className="stats-cards">
-            <div className="stat-card">
-                <div className="stat-icon">
-                    <i className="fas fa-chart-bar"></i>
-                </div>
-                <div className="stat-content">
-                    <div className="stat-value">{stats.total}</div>
-                    <div className="stat-label">Total</div>
+        <div className={styles.statsCards}>
+            <div className={styles.statCard}>
+                <div className={styles.statIcon}><i className="fas fa-chart-bar"></i></div>
+                <div className={styles.statContent}>
+                    <div className={styles.statValue}>{stats.total}</div>
+                    <div className={styles.statLabel}>Total</div>
                 </div>
             </div>
-            
-            <div className="stat-card warning">
-                <div className="stat-icon">
-                    <i className="fas fa-clock"></i>
-                </div>
-                <div className="stat-content">
-                    <div className="stat-value">{stats.pendentes}</div>
-                    <div className="stat-label">Pendentes</div>
+            <div className={`${styles.statCard} ${styles.warning}`}>
+                <div className={styles.statIcon}><i className="fas fa-clock"></i></div>
+                <div className={styles.statContent}>
+                    <div className={styles.statValue}>{stats.pendentes}</div>
+                    <div className={styles.statLabel}>Pendentes</div>
                 </div>
             </div>
-            
-            <div className="stat-card success">
-                <div className="stat-icon">
-                    <i className="fas fa-check-circle"></i>
-                </div>
-                <div className="stat-content">
-                    <div className="stat-value">{stats.resolvidas}</div>
-                    <div className="stat-label">Resolvidas</div>
+            <div className={`${styles.statCard} ${styles.success}`}>
+                <div className={styles.statIcon}><i className="fas fa-check-circle"></i></div>
+                <div className={styles.statContent}>
+                    <div className={styles.statValue}>{stats.resolvidas}</div>
+                    <div className={styles.statLabel}>Resolvidas</div>
                 </div>
             </div>
-            
-            <div className="stat-card info">
-                <div className="stat-icon">
-                    <i className="fas fa-star"></i>
-                </div>
-                <div className="stat-content">
-                    <div className="stat-value">{stats.mediaNotas.toFixed(1)}</div>
-                    <div className="stat-label">Média</div>
+            <div className={`${styles.statCard} ${styles.info}`}>
+                <div className={styles.statIcon}><i className="fas fa-star"></i></div>
+                <div className={styles.statContent}>
+                    <div className={styles.statValue}>{stats.mediaNotas.toFixed(1)}</div>
+                    <div className={styles.statLabel}>Média</div>
                 </div>
             </div>
         </div>
@@ -172,6 +140,7 @@ const StatsCards = ({ avaliacoes }: { avaliacoes: Avaliacao[] }) => {
 export function AvaliacoesPage() {
     const { openModal } = useModal();
     const { users } = useBoard();
+    const { user } = useAuth(); // Obter usuário
     const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filters, setFilters] = useState({ status: 'Todos', source: 'Todos' });
@@ -206,6 +175,14 @@ export function AvaliacoesPage() {
         );
     };
 
+    const handleOpenModal = (avaliacao: Avaliacao) => {
+        openModal('avaliacao', {
+            avaliacao,
+            onSave: fetchAvaliacoes,
+            isReadOnly: !user?.user_metadata?.is_admin
+        });
+    };
+
     const handleAddNew = () => {
         openModal('avaliacao', { onSave: fetchAvaliacoes });
     };
@@ -220,97 +197,64 @@ export function AvaliacoesPage() {
     if (isLoading) return <Loader fullScreen={false} />;
 
     return (
-        <div className="avaliacoes-page">
-            <div className="page-header">
-                <div className="header-content">
-                    <div className="header-title">
-                        <h1>
-                            <i className="fas fa-star-half-alt"></i>
-                            Avaliações Negativas
-                        </h1>
-                        <p>Gerencie e acompanhe avaliações que necessitam de atenção</p>
+        <div className={styles.avaliacoesPage}>
+            <div className={styles.pageHeader}>
+                <div className={styles.headerContent}>
+                    <div className={styles.headerTitle}>
+                        <h1><i className="fas fa-star-half-alt"></i>Avaliações Negativas</h1>
+                        <p>Gerencie e acompanhe avaliações que necessitam de atenção.</p>
                     </div>
-                    <button className="btn btn-primary btn-create" onClick={handleAddNew}>
-                        <i className="fas fa-plus"></i>
-                        <span>Registrar Avaliação Negativa</span>
-                    </button>
+                    {user?.user_metadata?.is_admin && (
+                        <button className={styles.btnCreate} onClick={handleAddNew}>
+                            <i className="fas fa-plus"></i><span>Registrar Avaliação Negativa</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
             <StatsCards avaliacoes={avaliacoes} />
             
-            <FilterBar 
-                filters={filters} 
-                setFilters={setFilters} 
-                onAddNew={handleAddNew}
-            />
+            <FilterBar filters={filters} setFilters={setFilters} />
 
-            <div className="content-section">
-                <div className="table-container">
+            <div className={styles.contentSection}>
+                <div className={styles.tableContainer}>
                     {filteredAvaliacoes.length > 0 ? (
-                        <table className="avaliacoes-table">
+                        <table className={styles.avaliacoesTable}>
                             <thead>
-                                <tr>
-                                    <th>Fonte</th>
-                                    <th>Cliente</th>
-                                    <th>Avaliação</th>
-                                    <th>Status</th>
-                                    <th>Responsável</th>
-                                    <th>Data</th>
-                                    <th>Ações</th>
-                                </tr>
+                                <tr><th>Fonte</th><th>Cliente</th><th>Avaliação</th><th>Status</th><th>Responsável</th><th>Data</th><th>Ações</th></tr>
                             </thead>
                             <tbody>
                                 {filteredAvaliacoes.map(avaliacao => (
-                                    <tr 
-                                        key={avaliacao.id} 
-                                        onClick={() => openModal('avaliacao', { avaliacao, onSave: fetchAvaliacoes })} 
-                                        className="table-row-clickable"
-                                    >
-                                        <td>
-                                            <SourceLogo source={avaliacao.source} />
-                                        </td>
-                                        <td className="customer-cell">
-                                            <span className="customer-name">{avaliacao.customer_name}</span>
-                                        </td>
-                                        <td>
-                                            <RatingStars rating={avaliacao.rating} />
-                                        </td>
-                                        <td>
-                                            <StatusBadge status={avaliacao.status} />
-                                        </td>
-                                        <td className="assignee-cell">
+                                    <tr key={avaliacao.id} onClick={() => handleOpenModal(avaliacao)} className={styles.tableRowClickable}>
+                                        <td><SourceLogo source={avaliacao.source} /></td>
+                                        <td className={styles.customerCell}><span className={styles.customerName}>{avaliacao.customer_name}</span></td>
+                                        <td><RatingStars rating={avaliacao.rating} /></td>
+                                        <td><StatusBadge status={avaliacao.status} /></td>
+                                        <td className={styles.assigneeCell}>
                                             {(() => {
-                                                const user = users.find(u => u.id === avaliacao.assigned_to);
-                                                return user ? (userDisplayNameMap[user.email] || user.username) : 
-                                                    <span className="unassigned">Não atribuído</span>;
+                                                const assignedUser = users.find(u => u.id === avaliacao.assigned_to);
+                                                return assignedUser ? (userDisplayNameMap[assignedUser.email!] || assignedUser.username) : <span className={styles.unassigned}>Não atribuído</span>;
                                             })()}
                                         </td>
-                                        <td className="date-cell">
-                                            {formatUTCDate(avaliacao.review_date)}
-                                        </td>
+                                        <td className={styles.dateCell}>{formatUTCDate(avaliacao.review_date)}</td>
                                         <td>
-                                            <div className="action-buttons">
+                                            <div className={styles.actionButtons}>
                                                 <button
-                                                    className={`btn btn-secondary btn-sm action-btn ${!avaliacao.review_url ? 'disabled' : ''}`}
+                                                    className={`${styles.actionBtn} ${styles.btnSecondary}`}
                                                     onClick={e => {
                                                         e.stopPropagation();
-                                                        if (avaliacao.review_url) {
-                                                            window.open(avaliacao.review_url, '_blank');
-                                                        }
+                                                        if (avaliacao.review_url) window.open(avaliacao.review_url, '_blank');
                                                     }}
                                                     disabled={!avaliacao.review_url}
                                                     title="Ver avaliação original"
-                                                >
-                                                    <i className="fas fa-external-link-alt"></i>
-                                                </button>
-                                                <button 
-                                                    className="btn btn-danger btn-sm action-btn" 
-                                                    onClick={(e) => handleDelete(e, avaliacao.id)}
-                                                    title="Excluir avaliação"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
+                                                ><i className="fas fa-external-link-alt"></i></button>
+                                                {user?.user_metadata?.is_admin && (
+                                                    <button 
+                                                        className={`${styles.actionBtn} ${styles.btnDanger}`}
+                                                        onClick={(e) => handleDelete(e, avaliacao.id)}
+                                                        title="Excluir avaliação"
+                                                    ><i className="fas fa-trash"></i></button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -318,7 +262,7 @@ export function AvaliacoesPage() {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="empty-state">
+                        <div className={styles.emptyState}>
                             <i className="fas fa-star-half-alt"></i>
                             <h3>Nenhuma avaliação encontrada</h3>
                             <p>Nenhuma avaliação corresponde aos filtros selecionados.</p>

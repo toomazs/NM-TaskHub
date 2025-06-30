@@ -3,10 +3,11 @@ import { useModal } from '../../contexts/ModalContext';
 import * as ligacaoService from '../../services/ligacoes';
 import { Ligacao } from '../../types/kanban';
 import toast from 'react-hot-toast';
+import styles from './LigacaoModal.module.css';
 
 export function LigacaoModal() {
     const { closeModal, modalProps, isClosing } = useModal();
-    const editingLigacao = modalProps.ligacao as Ligacao | undefined;
+    const { ligacao: editingLigacao, isReadOnly } = modalProps;
     const isEditing = !!editingLigacao;
 
     const [formData, setFormData] = useState<Partial<Ligacao>>({});
@@ -32,7 +33,7 @@ export function LigacaoModal() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (isSubmitting) return;
+        if (isSubmitting || isReadOnly) return;
         setIsSubmitting(true);
 
         const dataToSend: Partial<Ligacao> = { ...formData };
@@ -51,7 +52,7 @@ export function LigacaoModal() {
         
         try {
             const savedLigacao = isEditing
-                ? await ligacaoService.updateLigacao(editingLigacao!.id, dataToSend)
+                ? await ligacaoService.updateLigacao((editingLigacao as Ligacao).id, dataToSend)
                 : await ligacaoService.createLigacao(dataToSend);
             
             if (imageFile) {
@@ -72,229 +73,94 @@ export function LigacaoModal() {
     };
 
     return (
-        <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: '700px'}}>
-                <button className="modal-close" onClick={closeModal} disabled={isSubmitting}>
+        <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={closeModal}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                <button className={styles.modalClose} onClick={closeModal} disabled={isSubmitting}>
                     <i className="fas fa-times"></i>
                 </button>
                 
-                <div className="modal-header">
+                <div className={styles.modalHeader}>
                     <h2>
                         <i className="fas fa-network-wired"></i> 
-                        {isEditing ? 'Editar Ligação Ativa' : 'Nova Ligação Ativa'}
-                    </h2>
-                    <p className="modal-subtitle">
-                        <i className="fas fa-info-circle"></i>
-                        {isEditing ? 'Atualize as informações da ligação ativa' : 'Preencha os dados para criar uma nova ligação ativa'}
-                    </p>
+                        {isReadOnly ? 'Visualizar Ligação' : (isEditing ? 'Editar Ligação Ativa' : 'Nova Ligação Ativa')}
+                    </h2>          
                 </div>
                 
-                <div className="modal-body">
-                    <form onSubmit={handleSubmit} className="modal-main">
-                        <div className="form-section">
-                            <div className="section-header">
-                                <i className="fas fa-user-tag"></i>
-                                <h3>Informações Básicas</h3>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label htmlFor="name">
-                                    <i className="fas fa-signature"></i>
-                                    Nome da Ligação Ativa *
-                                </label>
+                <div className={styles.modalBody}>
+                    <form onSubmit={handleSubmit} className={styles.modalMain}>
+                        <div className={styles.formSection}>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="name" className={styles.formLabel}><i className="fas fa-signature"></i> Nome da Ligação Ativa *</label>
                                 <input 
-                                    id="name"
-                                    type="text" 
-                                    name="name" 
-                                    value={formData.name || ''} 
-                                    onChange={handleChange} 
-                                    className="form-input" 
-                                    required
-                                    disabled={isSubmitting}
+                                    id="name" type="text" name="name" value={formData.name || ''} 
+                                    onChange={handleChange} className={styles.formInput} required autoFocus
+                                    disabled={isSubmitting || isReadOnly}
                                     placeholder="Digite o nome da ligação ativa"
                                 />
                             </div>
-
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="type">
-                                        <i className="fas fa-tags"></i>
-                                        Sujeito Ativo
-                                    </label>
-                                    <select 
-                                        id="type"
-                                        name="type" 
-                                        value={formData.type || 'Condomínio'} 
-                                        onChange={handleChange} 
-                                        className="form-select"
-                                        disabled={isSubmitting}
-                                    >
-                                        <option value="Condomínio">
-                                            <i className="fas fa-building"></i> Condomínio
-                                        </option>
-                                        <option value="Bairro">
-                                            <i className="fas fa-map"></i> Bairro
-                                        </option>
-                                        <option value="Outros">
-                                            <i className="fas fa-ellipsis-h"></i> Outros
-                                        </option>
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="type" className={styles.formLabel}><i className="fas fa-tags"></i> Sujeito Ativo</label>
+                                    <select id="type" name="type" value={formData.type || 'Condomínio'} 
+                                        onChange={handleChange} className={styles.formSelect} disabled={isSubmitting || isReadOnly}>
+                                        <option value="Condomínio">Condomínio</option><option value="Bairro">Bairro</option><option value="Outros">Outros</option>
                                     </select>
                                 </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="end_date">
-                                        <i className="fas fa-calendar-times"></i>
-                                        Data Final
-                                    </label>
-                                    <input 
-                                        id="end_date"
-                                        type="date" 
-                                        name="end_date" 
-                                        value={formData.end_date?.split('T')[0] || ''} 
-                                        onChange={handleChange} 
-                                        className="form-input"
-                                        disabled={isSubmitting}
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="end_date" className={styles.formLabel}><i className="fas fa-calendar-times"></i> Data Final</label>
+                                    <input id="end_date" type="date" name="end_date" value={formData.end_date?.split('T')[0] || ''} 
+                                        onChange={handleChange} className={styles.formInput} disabled={isSubmitting || isReadOnly}
                                     />
                                 </div>
                             </div>
                         </div>
-
-                        <div className="form-section">
-                            <div className="section-header">
-                                <i className="fas fa-map-marker-alt"></i>
-                                <h3>Localização e Recursos</h3>
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="address">
-                                    <i className="fas fa-home"></i>
-                                    Endereço Completo
-                                </label>
-                                <input 
-                                    id="address"
-                                    type="text" 
-                                    name="address" 
-                                    value={formData.address || ''} 
-                                    onChange={handleChange} 
-                                    className="form-input"
-                                    disabled={isSubmitting}
-                                    placeholder="Endereço/Bairro"
+                        <div className={styles.formSection}>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="address" className={styles.formLabel}><i className="fas fa-home"></i> Endereço Completo</label>
+                                <input id="address" type="text" name="address" value={formData.address || ''} 
+                                    onChange={handleChange} className={styles.formInput} disabled={isSubmitting || isReadOnly} placeholder="Endereço/Bairro"
                                 />
                             </div>
-
-                            <div className="form-group">
-                                <label htmlFor="spreadsheet_url">
-                                    <i className="fas fa-table"></i>
-                                    Link da Planilha
-                                </label>
-                                <input 
-                                    id="spreadsheet_url"
-                                    type="url" 
-                                    name="spreadsheet_url" 
-                                    value={formData.spreadsheet_url || ''} 
-                                    onChange={handleChange} 
-                                    className="form-input"
-                                    disabled={isSubmitting}
-                                    placeholder="https://1drv.ms/..."
+                            <div className={styles.formGroup}>
+                                <label htmlFor="spreadsheet_url" className={styles.formLabel}><i className="fas fa-table"></i> Link da Planilha</label>
+                                <input id="spreadsheet_url" type="url" name="spreadsheet_url" value={formData.spreadsheet_url || ''} 
+                                    onChange={handleChange} className={styles.formInput} disabled={isSubmitting || isReadOnly} placeholder="https://1drv.ms/..."
                                 />
-                                <div className="input-help">
-                                    <i className="fas fa-lightbulb"></i>
-                                    Cole aqui o link da planilha do Excel Online ou Google Sheets
-                                </div>
+                                <div className={styles.inputHelp}><i className="fas fa-lightbulb"></i> Cole aqui o link da planilha do Excel Online ou Google Sheets</div>
                             </div>
-
-                            <div className="form-group">
-                                <label htmlFor="image">
-                                    <i className="fas fa-camera"></i>
-                                    Imagem da Ligação Ativa
-                                </label>
-                                <div className="file-input-wrapper">
-                                    <input 
-                                        id="image"
-                                        type="file" 
-                                        onChange={handleImageChange} 
-                                        className="form-input file-input"
-                                        disabled={isSubmitting}
-                                        accept="image/*"
-                                    />
-                                    <div className="file-input-placeholder">
-                                        <i className="fas fa-cloud-upload-alt"></i>
-                                        <span>Clique para selecionar uma imagem</span>
-                                        <small>PNG, JPG, JPEG até 5MB</small>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="image" className={styles.formLabel}><i className="fas fa-camera"></i> Imagem da Ligação Ativa</label>
+                                <div className={styles.fileInputWrapper}>
+                                    <input id="image" type="file" onChange={handleImageChange} className={styles.fileInput} disabled={isSubmitting || isReadOnly} accept="image/*"/>
+                                    <div className={styles.fileInputPlaceholder}>
+                                        <i className="fas fa-cloud-upload-alt"></i><span>Clique para selecionar uma imagem</span><small>PNG, JPG, JPEG até 5MB</small>
                                     </div>
                                 </div>
-                                {imageFile && (
-                                    <div className="file-preview">
-                                        <i className="fas fa-image"></i>
-                                        <span>{imageFile.name}</span>
-                                        <button 
-                                            type="button" 
-                                            className="file-remove"
-                                            onClick={() => setImageFile(null)}
-                                        >
-                                            <i className="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                )}
+                                {imageFile && <div className={styles.filePreview}><i className="fas fa-image"></i><span>{imageFile.name}</span><button type="button" className={styles.fileRemove} onClick={() => setImageFile(null)}><i className="fas fa-times"></i></button></div>}
                             </div>
                         </div>
-
-                        <div className="form-section">
-                            <div className="section-header">
-                                <i className="fas fa-sticky-note"></i>
-                                <h3>Observações Adicionais</h3>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label htmlFor="observations">
-                                    <i className="fas fa-comment-dots"></i>
-                                    Observações e Anotações
-                                </label>
-                                <textarea 
-                                    id="observations"
-                                    name="observations" 
-                                    value={formData.observations || ''} 
-                                    onChange={handleChange} 
-                                    className="form-textarea" 
-                                    rows={4}
-                                    disabled={isSubmitting}
-                                    placeholder="Adicione observações importantes, detalhes técnicos, etc.."
-                                />
-                                <div className="textarea-counter">
-                                    <i className="fas fa-text-width"></i>
-                                    {(formData.observations || '').length} caracteres
-                                </div>
+                        <div className={styles.formSection}>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="observations" className={styles.formLabel}><i className="fas fa-comment-dots"></i> Observações e Anotações</label>
+                                <textarea id="observations" name="observations" value={formData.observations || ''} onChange={handleChange} 
+                                    className={styles.formTextarea} rows={4} disabled={isSubmitting || isReadOnly} placeholder="Adicione observações importantes, detalhes técnicos, etc.."/>
+                                <div className={styles.textareaCounter}><i className="fas fa-text-width"></i>{(formData.observations || '').length} caracteres</div>
                             </div>
                         </div>
-
-                        <div className="form-actions">
-                            <button 
-                                type="button" 
-                                className="btn btn-secondary" 
-                                onClick={closeModal}
-                                disabled={isSubmitting}
-                            >
-                                <i className="fas fa-times"></i>
-                                Cancelar
-                            </button>
-                            <button 
-                                type="submit" 
-                                className="btn btn-primary" 
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <i className="fas fa-spinner fa-spin"></i>
-                                        {isEditing ? 'Atualizando...' : 'Salvando...'}
-                                    </>
-                                ) : (
-                                    <>
-                                        <i className="fas fa-save"></i>
-                                        {isEditing ? 'Atualizar' : 'Criar Ligação Ativa'}
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        {!isReadOnly && (
+                            <div className={styles.formActions}>
+                                <button type="button" className={`btn ${styles.btnSecondary}`} onClick={closeModal} disabled={isSubmitting}>
+                                    <i className="fas fa-times"></i> Cancelar
+                                </button>
+                                <button type="submit" className={`btn ${styles.btnPrimary}`} disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <><i className={`fas fa-spinner ${styles.faSpin}`}></i>{isEditing ? 'Atualizando...' : 'Salvando...'}</>
+                                    ) : (
+                                        <><i className="fas fa-save"></i>{isEditing ? 'Atualizar' : 'Criar Ligação Ativa'}</>
+                                    )}
+                                </button>
+                            </div>
+                        )}
                     </form>
                 </div>
             </div>

@@ -1,0 +1,103 @@
+.assigneeSelectorGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 1rem;
+    background-color: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color) !important;
+}
+
+.assigneeSelectorGrid::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.assigneeSelectorGrid::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track-color) !important;
+  border-radius: 4px !important;
+}
+
+.assigneeSelectorGrid::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color) !important;
+  border-radius: 4px !important;
+}
+
+.assigneeSelectorGrid::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-color) !important;
+}
+
+
+.assigneeItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.assigneeItem:hover {
+    background-color: var(--bg-card);
+}
+
+.assigneeItem.selected {
+    border-color: var(--accent-blue);
+    background-color: var(--bg-secondary);
+}
+
+.assigneeItemAvatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.assigneeItemNaAvatar {
+    background-color: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+.assigneeItemName {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    word-break: break-word;
+}
+
+/* =================================== */
+/* MEDIA QUERIES (Mobile)              */
+/* =================================== */
+
+@media (max-width: 600px) {
+    .assigneeSelectorGrid {
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .assigneeItemAvatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .assigneeItemName {
+        font-size: 0.7rem;
+    }
+}

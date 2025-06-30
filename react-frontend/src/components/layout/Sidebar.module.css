@@ -1,0 +1,522 @@
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: var(--sidebar-width-expanded);
+    height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sidebar);
+    z-index: 10;
+    transform: translateX(0);
+    transition: width 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-width-collapsed);
+}
+
+.sidebarHeader {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 1rem;
+    align-items: center; 
+}
+
+.sidebarHeaderTop {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.sidebarLogo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    overflow: hidden;
+    justify-content: center; 
+}
+
+.sidebarLogo img {
+    height: 40px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.sidebar.collapsed .sidebarLogo {
+    display: none;
+}
+
+.sidebarHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sidebar.collapsed .sidebarHeaderActions {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sidebar.collapsed .toggleSidebarBtn {
+    order: -1;
+}
+
+.notificationsBellContainer {
+    position: relative;
+    z-index: 20;
+}
+
+.sidebarActionBtn {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.sidebarActionBtn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: scale(1.1);
+}
+
+.invitationsCount {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: var(--accent-red);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--sidebar-bg);
+}
+
+.sidebarNav {
+    flex: 1;
+    padding: 20px 0;
+    overflow-y: auto;
+    scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color) !important;
+}
+
+.sidebarNav::-webkit-scrollbar { width: 8px !important; height: 8px !important; }
+.sidebarNav::-webkit-scrollbar-track { background-color: var(--scrollbar-track-color) !important; border-radius: 4px !important; }
+.sidebarNav::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-color) !important; border-radius: 4px !important; }
+.sidebarNav::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover-color) !important; }
+
+.navList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.navList li {
+    margin-bottom: 4px;
+}
+
+.navLink {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    position: relative;
+}
+
+.sidebar.collapsed .navLink {
+    justify-content: center;
+    padding: 14px 0;
+}
+
+.navLink:hover {
+    background: var(--sidebar-hover);
+    color: var(--text-primary);
+    border-left-color: var(--accent-blue);
+}
+
+.sidebar.collapsed .navLink:hover {
+    border-left-color: transparent;
+    border-radius: 8px;
+    margin: 0 8px;
+}
+
+.navLink i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.navLink span {
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .navLink span {
+    display: none;
+}
+
+.navLink.active {
+    background: linear-gradient(90deg, rgba(88, 166, 255, 0.1), transparent);
+    color: var(--accent-blue);
+    border-left-color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.sidebar.collapsed .navLink.active {
+    background: var(--sidebar-hover);
+    border-left-color: transparent;
+    border-radius: 8px;
+    margin: 0 8px;
+}
+
+.navLink.active::before {
+    content: '';
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: var(--accent-blue);
+    border-radius: 50%;
+}
+
+.sidebar.collapsed .navLink.active::before {
+    display: none;
+}
+
+.sidebarFooter {
+    padding: 20px;
+    border-top: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebarFooter {
+    padding: 20px 10px;
+}
+
+.sidebarUser {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    transition: all 0.2s ease;
+    margin-bottom: 1rem;
+}
+
+.sidebarUser:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+.sidebar.collapsed .sidebarUser {
+    padding: 10px;
+    justify-content: center;
+}
+
+.avatarContainer {
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.userAvatar {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    color: white;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.sidebar.collapsed .userAvatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+.avatarUploadLabel {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.avatarContainer:hover .avatarUploadLabel {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.sidebar.collapsed .avatarUploadLabel {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+    bottom: -2px;
+    right: -2px;
+}
+
+.userInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar.collapsed .userInfo {
+    display: none;
+}
+
+.userName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+.userRole {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+}
+
+.btnLogoutSidebar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, var(--accent-red), #da3633);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3);
+}
+
+.btnLogoutSidebar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(248, 81, 73, 0.4);
+}
+
+.btnLogoutSidebar:active {
+    transform: translateY(0);
+}
+
+.sidebar.collapsed .btnLogoutSidebar {
+    padding: 12px;
+}
+
+.sidebar.collapsed .btnLogoutSidebar span {
+    display: none;
+}
+
+.btnLogoutSidebar span {
+    display: none;
+}
+
+/* MELHORADO: Estilos para a seção de créditos */
+.sidebarCredits {
+    padding: 12px 20px;
+    margin-top: auto;
+    border-top: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebarCredits {
+    padding: 12px 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.creditsButton {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.creditsButton:hover {
+    color: var(--accent-blue);
+    background: var(--sidebar-hover);
+    transform: translateY(-1px);
+}
+
+.creditsButton:active {
+    transform: translateY(0);
+}
+
+.creditsButton i {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.sidebar.collapsed .creditsButton {
+    padding: 8px;
+    width: auto;
+    min-width: 32px;
+    height: 32px;
+}
+
+.sidebar.collapsed .creditsButton span {
+    display: none;
+}
+
+/* Efeito sutil de brilho no hover */
+.creditsButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(88, 166, 255, 0.1), transparent);
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.creditsButton:hover::before {
+    opacity: 1;
+}
+
+/* ============================================= */
+/* ===== MEDIA QUERIES (Tablet & Celular)    ===== */
+/* ============================================= */
+
+@media (max-width: 992px) {
+    /* Em telas menores, a sidebar se torna um menu "overlay" */
+    .sidebar {
+        width: var(--sidebar-width-expanded); /* Usa sempre a largura expandida */
+        transform: translateX(-100%); /* Esconde a sidebar fora da tela por padrão */
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5); /* Adiciona sombra para destacar sobre o conteúdo */
+        z-index: 1000; /* Garante que a sidebar fique acima do conteúdo e abaixo do botão de toggle */
+    }
+
+    /* A classe .mobile-open faz a sidebar deslizar para dentro da tela */
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    /* Garante que os elementos dentro da sidebar sempre tenham a aparência "expandida" */
+    .sidebarLogo,
+    .sidebar.mobile-open .sidebarLogo,
+    .sidebar .userInfo,
+    .sidebar.mobile-open .userInfo,
+    .sidebar .btnLogoutSidebar span,
+    .sidebar.mobile-open .btnLogoutSidebar span,
+    .sidebar .creditsButton span,
+    .sidebar.mobile-open .creditsButton span,
+    .sidebar .navLink span {
+        display: inline; /* Mostra os textos */
+    }
+
+    .sidebar .navLink span {
+        display: inline !important;
+    }
+
+    .sidebarHeaderActions,
+    .sidebar.mobile-open .sidebarHeaderActions {
+        flex-direction: row; /* Alinha os botões do cabeçalho horizontalmente */
+    }
+
+    .toggleSidebarBtn {
+        order: 0;
+    }
+
+    /* Garante que os links ocupem o espaço e se pareçam com a versão expandida */
+    .navLink,
+    .sidebar.mobile-open .navLink {
+        justify-content: flex-start;
+        padding: 14px 20px;
+    }
+
+    .navLink:hover,
+    .sidebar.mobile-open .navLink:hover {
+        margin: 0;
+        border-radius: 0;
+        border-left-color: var(--accent-blue);
+        background: var(--sidebar-hover);
+    }
+    
+    .navLink.active,
+    .sidebar.mobile-open .navLink.active {
+        margin: 0;
+        border-radius: 0;
+        background: linear-gradient(90deg, rgba(88, 166, 255, 0.1), transparent);
+        border-left-color: var(--accent-blue);
+    }
+
+    .navLink.active::before,
+    .sidebar.mobile-open .navLink.active::before {
+        display: block; /* Mostra o indicador de página ativa */
+    }
+}

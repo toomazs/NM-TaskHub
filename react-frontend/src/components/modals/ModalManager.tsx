@@ -10,8 +10,7 @@ import { AgendaEventModal } from './AgendaEventModal';
 import { AvaliacaoModal } from './AvaliacaoModal';
 import { ContatoModal } from './ContatoModal';
 import { ContatoStatsModal } from './ContatoStatsModal';
-
-
+import { CreditsModal } from './CreditsModal';
 
 const modalComponents = {
     task: TaskModal,
@@ -25,6 +24,7 @@ const modalComponents = {
     avaliacao: AvaliacaoModal,
     contato: ContatoModal,
     contatoStats: ContatoStatsModal,
+    credits: CreditsModal,
 };
 
 export function ModalManager() {

@@ -1,0 +1,265 @@
+.commentSection {
+    margin-bottom: 1.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+}
+
+.commentHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: var(--bg-modal);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.commentTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.commentTitle i {
+    color: var(--accent-blue);
+    width: 16px;
+}
+
+.addCommentBtn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addCommentBtn:hover {
+    background: var(--accent-blue);
+    color: white;
+    transform: scale(1.05);
+}
+
+.commentsList {
+    min-height: 60px;
+    padding: 1rem;
+}
+
+.commentsList:empty::after {
+    content: "Nenhum comentário adicionado ainda...";
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    display: block;
+    padding: 2rem;
+}
+
+.commentItem {
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid transparent;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.commentItem:hover {
+    border-color: var(--accent-blue);
+}
+
+.commentContent {
+    color: var(--text-secondary);
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.commentMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.commentAuthor {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.commentTimestamp {
+    color: var(--text-muted);
+}
+
+.commentAvatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.commentItemActions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.commentItem:hover .commentItemActions {
+    opacity: 1;
+}
+
+.editCommentBtn,
+.deleteCommentBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.editCommentBtn:hover {
+    color: var(--accent-blue);
+}
+
+.deleteCommentBtn:hover {
+    color: var(--accent-red);
+}
+
+.commentInputContainer,
+.commentEditContainer {
+    padding: 1rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-modal);
+}
+
+.commentInputContainer {
+    display: none;
+}
+
+.commentInputContainer textarea,
+.commentEditTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    resize: vertical;
+    margin-bottom: 1rem;
+    font-family: inherit;
+    min-height: 80px;
+}
+
+.commentInputContainer textarea:focus,
+.commentEditTextarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+.commentActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btnSave {
+    background: var(--gradient-success);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnSave:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3);
+}
+
+.btnCancel {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnCancel:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* =================================== */
+/* MEDIA QUERIES (Mobile)              */
+/* =================================== */
+
+@media (max-width: 600px) {
+    .commentHeader {
+        padding: 0.75rem 1rem;
+    }
+
+    .commentsList {
+        padding: 0.75rem;
+    }
+    
+    .commentItem {
+        padding: 0.75rem;
+    }
+
+    .commentMeta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .commentInputContainer,
+    .commentEditContainer {
+        padding: 0.75rem;
+    }
+
+    .commentActions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btnSave, .btnCancel {
+        width: 100%;
+        justify-content: center;
+    }
+}

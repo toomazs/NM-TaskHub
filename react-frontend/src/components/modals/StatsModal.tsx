@@ -4,6 +4,7 @@ import { useBoard } from '../../contexts/BoardContext';
 import { userDisplayNameMap } from '../../api/config';
 import { Card } from '../../types/kanban';
 import { FaTimes, FaCheckCircle, FaExclamationCircle, FaSpinner, FaUsers, FaChevronLeft, FaChevronRight, FaFlag, FaCalendarAlt, FaUser, FaEdit } from 'react-icons/fa';
+import styles from './StatsModal.module.css';
 
 type Priority = 'alta' | 'media' | 'baixa';
 type ModalStatus = 'pendente' | 'solucionado' | 'naoSolucionado';
@@ -91,35 +92,35 @@ export function StatsModal(): React.ReactElement {
     };
 
     return (
-        <div className={`modal ${isClosing ? 'closing' : ''}`} onClick={closeModal}>
-            <div className="modal-content stats-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
+        <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={closeModal}>
+            <div className={`${styles.modalContent}`} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalHeader}>
                     <h2>
                         <i className={`fas ${modalProps.status === 'solucionado' ? 'fa-check-circle' : modalProps.status === 'nao-solucionado' ? 'fa-times-circle' : 'fa-clock'}`}></i> 
                         {title}
-                        <span className="stats-count"><FaUsers /> {processedCards.length}</span>
+                        <span className={styles.statsCount}><FaUsers /> {processedCards.length}</span>
                     </h2>
-                    <button className="modal-close" onClick={closeModal}><FaTimes /></button>
+                    <button className={styles.modalClose} onClick={closeModal}><FaTimes /></button>
                 </div>
                 
-                <div className="stats-body">
-                    <div className="stats-summary">
-                        <div className="summary-item"><i className="fas fa-filter"></i>
-                            <select className="form-select" value={userFilter} onChange={e => setUserFilter(e.target.value)}>
+                <div className={styles.statsBody}>
+                    <div className={styles.statsSummary}>
+                        <div className={styles.summaryItem}><i className="fas fa-filter"></i>
+                            <select className={styles.formSelect} value={userFilter} onChange={e => setUserFilter(e.target.value)}>
                                 <option value="all">Todos Colaboradores</option>
                                 {users.map(u => (<option key={u.id} value={u.email}>{userDisplayNameMap[u.email] || u.username}</option>))}
                             </select>
                         </div>
-                        <div className="summary-item"><i className="fas fa-calendar-alt"></i>
-                            <select className="form-select" value={periodFilter} onChange={e => setPeriodFilter(e.target.value)}>
+                        <div className={styles.summaryItem}><i className="fas fa-calendar-alt"></i>
+                            <select className={styles.formSelect} value={periodFilter} onChange={e => setPeriodFilter(e.target.value)}>
                                 <option value="all">Todo o Período</option>
                                 <option value="7">Últimos 7 dias</option>
                                 <option value="14">Últimos 14 dias</option>
                                 <option value="30">Últimos 30 dias</option>
                             </select>
                         </div>
-                        <div className="summary-item"><i className="fas fa-sort"></i>
-                             <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value as SortByOption)}>
+                        <div className={styles.summaryItem}><i className="fas fa-sort"></i>
+                             <select className={styles.formSelect} value={sortBy} onChange={e => setSortBy(e.target.value as SortByOption)}>
                                 <option value="newest">Mais Recentes</option>
                                 <option value="oldest">Mais Antigos</option>
                                 <option value="priority">Prioridade</option>
@@ -128,9 +129,9 @@ export function StatsModal(): React.ReactElement {
                     </div>
 
                     {paginatedCards.length === 0 ? (
-                        <div className="empty-state"><FaExclamationCircle className="empty-icon" /><p>Nenhuma tarefa encontrada.</p></div>
+                        <div className={styles.emptyState}><FaExclamationCircle className={styles.emptyIcon} /><p>Nenhuma tarefa encontrada.</p></div>
                     ) : (
-                        <div className="stats-list">
+                        <div className={styles.statsList}>
                             {paginatedCards.map(card => {
                                 const assignedUser = userMap.get(card.assigned_to || '');
                                 const assigneeDisplayName = assignedUser ? (userDisplayNameMap[assignedUser.email] || assignedUser.username) : "Não Atribuído";
@@ -139,17 +140,17 @@ export function StatsModal(): React.ReactElement {
                                 const priority = (card.priority as Priority) || 'media';
                                 
                                 return (
-                                    <div key={card.id} className="stats-list-item" onClick={() => handleCardClick(card)}>
-                                        <div className="item-header">
-                                            <div className="task-title"><i className="fas fa-ticket-alt"></i>{card.title}</div>
-                                            <div className="item-actions"><i className="fa-solid fa-pen-to-square"></i></div>
+                                    <div key={card.id} className={styles.statsListItem} onClick={() => handleCardClick(card)}>
+                                        <div className={styles.itemHeader}>
+                                            <div className={styles.taskTitle}><i className="fas fa-ticket-alt"></i>{card.title}</div>
+                                            <div className={styles.itemActions}><i className="fa-solid fa-pen-to-square"></i></div>
                                         </div>
-                                        <div className="task-meta">
-                                            <div className="meta-item"><FaFlag className={`priority-value priority-${priority}`}/>{priorityDisplayMap[priority]}</div>•
-                                            {relevantDate && <div className="meta-item"><i className="fa-solid fa-calendar-check"></i> {relevantDate.toLocaleDateString('pt-BR')}</div>}•
+                                        <div className={styles.taskMeta}>
+                                            <div className={styles.metaItem}><FaFlag className={`${styles.priorityValue} ${styles[`priority-${priority}`]}`}/>{priorityDisplayMap[priority]}</div>•
+                                            {relevantDate && <div className={styles.metaItem}><i className="fa-solid fa-calendar-check"></i> {relevantDate.toLocaleDateString('pt-BR')}</div>}•
                                             {assignedUser && (
-                                                <div className="meta-item">
-                                                    <div className="meta-avatar" style={{ backgroundImage: assignedUser.avatar ? `url(${assignedUser.avatar})` : 'none' }}>
+                                                <div className={styles.metaItem}>
+                                                    <div className={styles.metaAvatar} style={{ backgroundImage: assignedUser.avatar ? `url(${assignedUser.avatar})` : 'none' }}>
                                                         {!assignedUser.avatar && avatarInitial}
                                                     </div>
                                                     {assigneeDisplayName}
@@ -163,10 +164,10 @@ export function StatsModal(): React.ReactElement {
                     )}
                     
                     {totalPages > 1 && (
-                        <div className="pagination-container">
-                             <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="contatos-pagination__btn contatos-pagination__btn--prev"> <FaChevronLeft /> Anterior </button>
-                             <div className="pagination-info"><span>Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong></span></div>
-                             <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="contatos-pagination__btn contatos-pagination__btn--next"> Próxima <FaChevronRight /> </button>
+                        <div className={styles.paginationContainer}>
+                             <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className={styles.paginationBtn}> <FaChevronLeft /> Anterior </button>
+                             <div className={styles.paginationInfo}><span>Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong></span></div>
+                             <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className={styles.paginationBtn}> Próxima <FaChevronRight /> </button>
                         </div>
                     )}
                 </div>

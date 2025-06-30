@@ -1,0 +1,53 @@
+/* Estilo base da coluna */
+.column {
+    width: 270px;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 0.8rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modificadores de Drag-and-Drop */
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+.dragging .task { pointer-events: none; }
+
+.isOverlay {
+  opacity: 0.95;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  transform: rotate(2deg);
+  cursor: grabbing;
+}
+.isOverlay .task { pointer-events: none; }
+
+.hidden { display: none; }
+
+/* Header da Coluna */
+.columnHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding: 0 0.2rem 0.5rem; border-bottom: 2px solid var(--border-color); }
+.columnTitle { font-weight: bold; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; position: relative; flex-grow: 1; }
+.columnCount { background: var(--accent-blue); color: white; padding: 0.2rem 0.45rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem; }
+
+/* Botão de deletar coluna */
+.deleteColumnBtn { background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-muted); width: 22px; height: 22px; font-size: 12px; position: absolute; right: 0; top: 50%; transform: translateY(-50%); border-radius: 50%; cursor: pointer; opacity: 0; transition: all 0.2s ease-in-out; }
+.columnTitle:hover .deleteColumnBtn { opacity: 1; }
+.deleteColumnBtn:hover { background-color: var(--accent-red); border-color: var(--accent-red); color: white; }
+
+/* Botão de adicionar tarefa */
+.addTaskBtn { background: var(--accent-blue); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+.addTaskBtn:hover { background: #4a91e2; transform: scale(1.1) rotate(90deg); }
+
+/* Lista de tarefas */
+.taskList { min-height: 200px; padding: 0.5rem 0.2rem; border-radius: 6px; transition: all 0.3s ease; flex-grow: 1; overflow-y: auto; }
+.taskList.dragOver { background: rgba(74, 144, 226, 0.1); border: 2px dashed var(--accent-blue); }
+.moreCardsIndicator { text-align: center; padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted); font-style: italic; background-color: var(--bg-tertiary); border-radius: 6px; margin-top: 0.5rem; }
+
+@media (max-width: 768px) {
+    .column { min-width: auto; width: 100%; }
+}
+

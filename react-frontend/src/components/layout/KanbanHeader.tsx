@@ -6,6 +6,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../contexts/AuthContext';
 import * as boardService from '../../services/boards';
 import { userDisplayNameMap } from '../../api/config';
+import styles from './KanbanHeader.module.css';
 
 export function KanbanHeader() {
   const { board, boardMembers, solucionadoId, naoSolucionadoId, columns } = useBoard();
@@ -56,11 +57,11 @@ export function KanbanHeader() {
   };
 
   return (
-    <header className="kanban-header">
-      <div className="header-left">
+    <header className={styles.kanbanHeader}>
+      <div className={styles.headerLeft}>
         {!board.is_public && (
           <button 
-            className="btn btn-ghost btn-back" 
+            className={styles.btnBack} 
             onClick={() => navigate('/private-boards')}
             title="Voltar aos quadros privados"
           >
@@ -68,82 +69,82 @@ export function KanbanHeader() {
           </button>
         )}
         
-        <div className="board-info">
-          <div className="board-title">
-            <div className="board-icon">
+        <div className={styles.boardInfo}>
+          <div className={styles.boardTitle}>
+            <div className={styles.boardIcon}>
               <i className={board.is_public ? "fas fa-headset" : "fas fa-user-lock"}></i>
             </div>
             <h1>{board.title}</h1>
-            <div className="board-type-badge">
+            <div className={styles.boardTypeBadge}>
               {board.is_public ? 'Público' : 'Privado'}
             </div>
           </div>
           
           {board.description && (
-            <p className="board-description">{board.description}</p>
+            <p className={styles.boardDescription}>{board.description}</p>
           )}
         </div>
       </div>
 
-      <div className="header-right">
+      <div className={styles.headerRight}>
         {board.is_public ? (
-          <div className="stats-container">
+          <div className={styles.statsContainer}>
             <div 
-              className="stat-card stat-pending" 
+              className={`${styles.statCard} ${styles.statPending}`} 
               onClick={() => openModal('stats', { status: 'pendente' })}
               title="Ver tickets pendentes"
             >
-              <div className="stat-icon">
+              <div className={styles.statIcon}>
                 <i className="fa-solid fa-clock"></i>
               </div>
-              <div className="stat-content">
-                <div className="stat-number">{pending}</div>
-                <div className="stat-label">Pendentes</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>{pending}</div>
+                <div className={styles.statLabel}>Pendentes</div>
               </div>
             </div>
             
             <div 
-              className="stat-card stat-completed" 
+              className={`${styles.statCard} ${styles.statCompleted}`} 
               onClick={() => openModal('stats', { status: 'solucionado' })}
               title="Ver tickets solucionados"
             >
-              <div className="stat-icon">
+              <div className={styles.statIcon}>
                 <i className="fas fa-check-circle"></i>
               </div>
-              <div className="stat-content">
-                <div className="stat-number">{completed}</div>
-                <div className="stat-label">Solucionados</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>{completed}</div>
+                <div className={styles.statLabel}>Solucionados</div>
               </div>
             </div>
             
             <div 
-              className="stat-card stat-failed" 
+              className={`${styles.statCard} ${styles.statFailed}`}
               onClick={() => openModal('stats', { status: 'nao-solucionado' })}
               title="Ver tickets não solucionados"
             >
-              <div className="stat-icon">
+              <div className={styles.statIcon}>
                 <i className="fas fa-times-circle"></i>
               </div>
-              <div className="stat-content">
-                <div className="stat-number">{failed}</div>
-                <div className="stat-label">Não Solucionados</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>{failed}</div>
+                <div className={styles.statLabel}>Não Solucionados</div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="private-board-actions">
+          <div className={styles.privateBoardActions}>
             <div 
-              className="board-members" 
+              className={styles.boardMembers} 
               onClick={() => openModal('manageMembers')} 
               title="Gerenciar membros do quadro"
             >
-              <div className="members-avatars">
+              <div className={styles.membersAvatars}>
                 {boardMembers.slice(0, 3).map(member => {
                   const displayName = userDisplayNameMap[member.email] || member.username;
                   return (
                     <div 
                       key={member.id} 
-                      className={`member-avatar ${member.is_owner ? 'owner' : ''}`}
+                      className={`${styles.memberAvatar} ${member.is_owner ? styles.owner : ''}`}
                       title={`${displayName} ${member.is_owner ? '(Proprietário)' : ''}`}
                       style={{ 
                         backgroundImage: member.avatar ? `url(${member.avatar})` : 'none'
@@ -154,18 +155,18 @@ export function KanbanHeader() {
                   );
                 })}
                 {boardMembers.length > 3 && (
-                  <div className="member-avatar more-members">
+                  <div className={`${styles.memberAvatar} ${styles.moreMembers}`}>
                     +{boardMembers.length - 3}
                   </div>
                 )}
               </div>
-              <span className="members-count">{boardMembers.length} membro{boardMembers.length !== 1 ? 's' : ''}</span>
+              <span className={styles.membersCount}>{boardMembers.length} membro{boardMembers.length !== 1 ? 's' : ''}</span>
             </div>
             
-            <div className="action-buttons">
+            <div className={styles.actionButtons}>
               {isOwner && (
                 <button 
-                  className="btn btn-primary btn-invite" 
+                  className={`btn ${styles.btnInvite}`} 
                   onClick={() => openModal('inviteUser')}
                   title="Convidar usuário"
                 >
@@ -176,7 +177,7 @@ export function KanbanHeader() {
               
               {!isOwner && (
                 <button 
-                  className="btn btn-danger btn-leave" 
+                  className={`btn ${styles.btnLeave}`} 
                   onClick={handleLeaveBoard}
                   title="Sair do quadro"
                 >

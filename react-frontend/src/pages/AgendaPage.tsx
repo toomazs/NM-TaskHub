@@ -1,41 +1,42 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { 
-    format, 
-    startOfMonth, 
-    endOfMonth, 
-    startOfWeek, 
-    endOfWeek, 
-    eachDayOfInterval, 
-    isSameMonth, 
-    isToday, 
-    addMonths, 
-    subMonths 
+import {
+    format,
+    startOfMonth,
+    endOfMonth,
+    startOfWeek,
+    endOfWeek,
+    eachDayOfInterval,
+    isSameMonth,
+    isToday,
+    addMonths,
+    subMonths
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 
-import * as agendaService from '../services/agenda'; 
-import { AgendaEvent } from '../types/kanban'; 
-import { useModal } from '../contexts/ModalContext'; 
+import { useAuth } from '../contexts/AuthContext'; 
+import * as agendaService from '../services/agenda';
+import { AgendaEvent } from '../types/kanban';
+import { useModal } from '../contexts/ModalContext';
+import styles from './AgendaPage.module.css';
 
-type CalendarGridCell = { 
-    day: Date; 
-    events: AgendaEvent[] 
+type CalendarGridCell = {
+    day: Date;
+    events: AgendaEvent[]
 } | null;
 
 const truncateText = (text: string, maxLength: number): string => {
-    if (text.length <= maxLength) {
-        return text;
-    }
+    if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 };
 
 export function AgendaPage() {
     const { openModal } = useModal();
+    const { user } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [events, setEvents] = useState<AgendaEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     const fetchEvents = useCallback(async (date: Date) => {
         setIsLoading(true);
         try {
@@ -59,22 +60,17 @@ export function AgendaPage() {
     const calendarGrid = useMemo((): CalendarGridCell[] => {
         const monthStart = startOfMonth(currentDate);
         const monthEnd = endOfMonth(currentDate);
-        const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 }); 
+        const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
         const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
         const daysInGrid = eachDayOfInterval({ start: gridStart, end: gridEnd });
-        
+
         return daysInGrid.map(day => {
-            if (!isSameMonth(day, currentDate)) {
-                return null;
-            }
-            
+            if (!isSameMonth(day, currentDate)) return null;
+
             const dayString = format(day, 'yyyy-MM-dd');
-            const dayEvents = events.filter(event => {
-                if (!event.event_date) return false;
-                return event.event_date.startsWith(dayString);
-            });
-            
+            const dayEvents = events.filter(event => event.event_date?.startsWith(dayString));
+
             return { day, events: dayEvents };
         });
     }, [currentDate, events]);
@@ -83,86 +79,52 @@ export function AgendaPage() {
 
     const handleAddEvent = useCallback((day: Date) => {
         const formattedDate = format(day, 'yyyy-MM-dd');
-        openModal('agendaEvent', { 
-            date: formattedDate, 
-            onSave: () => fetchEvents(currentDate) 
-        });
+        openModal('agendaEvent', { date: formattedDate, onSave: () => fetchEvents(currentDate) });
     }, [openModal, currentDate, fetchEvents]);
-    
+
     const handleEditEvent = useCallback((event: AgendaEvent) => {
-        openModal('agendaEvent', { 
-            event, 
-            onSave: () => fetchEvents(currentDate) 
+        openModal('agendaEvent', {
+            event,
+            onSave: () => fetchEvents(currentDate),
+            isReadOnly: !user?.user_metadata?.is_admin
         });
-    }, [openModal, currentDate, fetchEvents]);
-    
-    const handleDeleteEvent = useCallback(async (e: React.MouseEvent, eventId: number) => {
-        e.stopPropagation();
-        
-        toast((t) => (
-            <div>
-              <p className="agenda-toast-message">Tem certeza que deseja excluir este evento?</p>
-              <div className="agenda-toast-buttons">
-                <button
-                  className="agenda-btn agenda-btn-danger"
-                  onClick={() => {
-                    toast.dismiss(t.id);
-                    performDelete(eventId);
-                  }}
-                >
-                  Excluir
-                </button>
-                <button className="agenda-btn agenda-btn-secondary" onClick={() => toast.dismiss(t.id)}>
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          ), {
-            id: `agenda-confirm-delete-${eventId}`,
-          });
-    }, []);
+    }, [openModal, currentDate, fetchEvents, user]);
 
     const performDelete = async (eventId: number) => {
         try {
             await toast.promise(
                 agendaService.deleteAgendaEvent(eventId),
-                {
-                    loading: 'Excluindo evento...',
-                    success: 'Evento excluído com sucesso!',
-                    error: 'Falha ao excluir evento.',
-                }
+                { loading: 'Excluindo evento...', success: 'Evento excluído com sucesso!', error: 'Falha ao excluir evento.' }
             );
             setEvents(prev => prev.filter(e => e.id !== eventId));
-        } catch (error) {
-            console.error('Erro ao excluir evento:', error);
-        }
+        } catch (error) { console.error('Erro ao excluir evento:', error); }
     };
 
-    const navigateToPreviousMonth = useCallback(() => {
-        setCurrentDate(prev => subMonths(prev, 1));
+    const handleDeleteEvent = useCallback((e: React.MouseEvent, eventId: number) => {
+        e.stopPropagation();
+        toast((t) => (
+            <div>
+              <p className={styles.agendaToastMessage}>Tem certeza que deseja excluir este evento?</p>
+              <div className={styles.agendaToastButtons}>
+                <button className={`${styles.agendaBtn} ${styles.agendaBtnDanger}`} onClick={() => { toast.dismiss(t.id); performDelete(eventId); }}>Excluir</button>
+                <button className={`${styles.agendaBtn} ${styles.agendaBtnSecondary}`} onClick={() => toast.dismiss(t.id)}>Cancelar</button>
+              </div>
+            </div>
+        ), { id: `agenda-confirm-delete-${eventId}` });
     }, []);
 
-    const navigateToNextMonth = useCallback(() => {
-        setCurrentDate(prev => addMonths(prev, 1));
-    }, []);
-
+    const navigateToPreviousMonth = useCallback(() => setCurrentDate(prev => subMonths(prev, 1)), []);
+    const navigateToNextMonth = useCallback(() => setCurrentDate(prev => addMonths(prev, 1)), []);
     const handleAddEventToday = useCallback(() => {
-        const today = new Date();
-        const formattedDate = format(today, 'yyyy-MM-dd');
-        openModal('agendaEvent', { 
-            date: formattedDate, 
-            onSave: () => fetchEvents(currentDate) 
-        });
+        openModal('agendaEvent', { date: format(new Date(), 'yyyy-MM-dd'), onSave: () => fetchEvents(currentDate) });
     }, [openModal, currentDate, fetchEvents]);
 
-if (isLoading) {
+    if (isLoading) {
         return (
-            <div className="agenda-page">
-                <div className="agenda-loading-wrapper">
-                    <div className="agenda-spinner">
-                        <div className="agenda-dot1"></div>
-                        <div className="agenda-dot2"></div>
-                        <div className="agenda-dot3"></div>
+            <div className={styles.agendaPage}>
+                <div className={styles.agendaLoadingWrapper}>
+                    <div className={styles.agendaSpinner}>
+                        <div className={styles.agendaDot1}></div><div className={styles.agendaDot2}></div><div className={styles.agendaDot3}></div>
                     </div>
                     <p>Carregando eventos...</p>
                 </div>
@@ -171,124 +133,67 @@ if (isLoading) {
     }
 
     return (
-        <>
-            <div className="agenda-page">
-                <div className="page-header">
-                    <div className="header-content">
-                        <div className="header-title">
-                            <h1>
-                                <i className="fas fa-calendar-day"></i>
-                                Agenda Diária
-                            </h1>
-                            <p>Escala diária do setor</p>
-                        </div>
-                        <div className="header-actions">
-                            <div className="header-count">
-                                {events.length} evento{events.length !== 1 ? 's' : ''} este mês
-                            </div>
-                            <button
-                                className="btn btn-primary btn-create"
-                                onClick={handleAddEventToday}
-                            >
-                                <i className="fas fa-plus"></i>
-                                <span>Novo Evento Hoje</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="agenda-main-container">
-                    <div className="agenda-calendar-header">
-                        <button
-                            onClick={navigateToPreviousMonth}
-                            className="agenda-btn agenda-btn-secondary agenda-calendar-nav-btn"
-                            title="Mês anterior"
-                        >
-                            <i className="fas fa-chevron-left"></i>
-                        </button>
-
-                        <div className="agenda-calendar-title">
-                            <h3>
-                                {format(currentDate, "MMMM", { locale: ptBR })}
-                            </h3>
-                            <span className="agenda-calendar-subtitle">
-                                {format(currentDate, "yyyy", { locale: ptBR })}
-                            </span>
-                        </div>
-
-                        <button
-                            onClick={navigateToNextMonth}
-                            className="agenda-btn agenda-btn-secondary agenda-calendar-nav-btn"
-                            title="Próximo mês"
-                        >
-                            <i className="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-
-                    <div className="agenda-grid-days">
-                        <div className="agenda-calendar-grid">
-                            {weekDays.map(day => (
-                                <div key={day} className="agenda-weekday-header">
-                                    {day}
-                                </div>
-                            ))}
-
-                            {calendarGrid.map((dayData, index) => (
-                                <div
-                                    key={index}
-                                    className={`agenda-day-cell ${!dayData ? 'agenda-disabled' : ''} ${dayData && isToday(dayData.day) ? 'agenda-today' : ''}`}
-                                >
-                                    {dayData && (
-                                        <>
-                                            <div className="agenda-day-header">
-                                                <div className="agenda-day-number">{format(dayData.day, 'd')}</div>
-                                                <button
-                                                    className="agenda-add-event-btn"
-                                                    onClick={() => handleAddEvent(dayData.day)}
-                                                    title="Adicionar evento"
-                                                >
-                                                    <i className="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-
-                                            <div className="agenda-events-container">
-                                                {dayData.events.length > 0 ? (
-                                                    dayData.events.map(event => (
-                                                        <div
-                                                            key={event.id}
-                                                            className="agenda-event-item"
-                                                            style={{ backgroundColor: event.color ? `${event.color}BF` : 'var(--accent-blue)', borderColor: event.color || 'var(--accent-blue)' }}
-                                                            onClick={() => handleEditEvent(event)}
-                                                            title={`${event.title}${event.description ? ' - ' + event.description : ''}`}
-                                                        >
-                                                            <div className="agenda-event-content">
-                                                                <i className="fas fa-circle agenda-event-dot" style={{ color: event.color || 'var(--text-primary)' }}></i>
-                                                                <span className="agenda-event-title">{truncateText(event.title, 21)}</span>
-                                                            </div>
-                                                            <button
-                                                                className="agenda-delete-event-btn"
-                                                                onClick={(e) => handleDeleteEvent(e, event.id)}
-                                                                title="Excluir evento"
-                                                            >
-                                                                <i className="fas fa-times"></i>
-                                                            </button>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="agenda-no-events">
-                                                        <i className="far fa-calendar-plus agenda-empty-icon"></i>
-                                                        <span>Adicionar</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+        <div className={styles.agendaPage}>
+            <div className={styles.pageHeader}>
+                <div className={styles.headerContent}>
+                    <div className={styles.headerTitle}><h1><i className="fas fa-calendar-day"></i>Agenda Diária</h1><p>Escala mensal do setor atual.</p></div>
+                    <div className={styles.headerActions}>
+                        <div className={styles.headerCount}>{events.length} evento{events.length !== 1 ? 's' : ''} este mês</div>
+                        {user?.user_metadata?.is_admin && (
+                            <button className={`${styles.btn} ${styles.btnPrimary} ${styles.btnCreate}`} onClick={handleAddEventToday}><i className="fas fa-plus"></i><span>Novo Evento Hoje</span></button>
+                        )}
                     </div>
                 </div>
             </div>
-        </>
+            <div className={styles.agendaMainContainer}>
+                <div className={styles.agendaCalendarHeader}>
+                    <button onClick={navigateToPreviousMonth} className={styles.agendaCalendarNavBtn} title="Mês anterior"><i className="fas fa-chevron-left"></i></button>
+                    <div className={styles.agendaCalendarTitle}>
+                        <h3>{format(currentDate, "MMMM", { locale: ptBR })}</h3>
+                        <span className={styles.agendaCalendarSubtitle}>{format(currentDate, "yyyy", { locale: ptBR })}</span>
+                    </div>
+                    <button onClick={navigateToNextMonth} className={styles.agendaCalendarNavBtn} title="Próximo mês"><i className="fas fa-chevron-right"></i></button>
+                </div>
+                <div className={styles.agendaCalendarGrid}>
+                    {weekDays.map(day => (<div key={day} className={styles.agendaWeekdayHeader}>{day}</div>))}
+                    {calendarGrid.map((dayData, index) => (
+                        <div
+    key={index}
+    className={`${styles.agendaDayCell} ${!dayData ? styles.agendaDisabled : ''} ${dayData && isToday(dayData.day) ? styles.agendaToday : ''}`}
+    data-weekday={dayData ? weekDays[dayData.day.getDay()] : ''}
+>                            {dayData && (
+                                <>
+                                    <div className={styles.agendaDayHeader}>
+                                        <div className={styles.agendaDayNumber}>{format(dayData.day, 'd')}</div>
+                                        {user?.user_metadata?.is_admin && (
+                                            <button className={styles.agendaAddEventBtn} onClick={() => handleAddEvent(dayData.day)} title="Adicionar evento"><i className="fas fa-plus"></i></button>
+                                        )}
+                                    </div>
+                                    <div className={styles.agendaEventsContainer}>
+                                        {dayData.events.length > 0 ? (
+                                            dayData.events.map(event => (
+                                                <div key={event.id} className={styles.agendaEventItem} style={{ backgroundColor: event.color ? `${event.color}BF` : 'var(--accent-blue)', borderColor: event.color || 'var(--accent-blue)' }} onClick={() => handleEditEvent(event)} title={`${event.title}${event.description ? ' - ' + event.description : ''}`}>
+                                                    <div className={styles.agendaEventContent}>
+                                                        <i className={`fas fa-circle ${styles.agendaEventDot}`} style={{ color: event.color || 'var(--text-primary)' }}></i>
+                                                        <span className={styles.agendaEventTitle}>{truncateText(event.title, 21)}</span>
+                                                    </div>
+                                                    {user?.user_metadata?.is_admin && (
+                                                        <button className={styles.agendaDeleteEventBtn} onClick={(e) => handleDeleteEvent(e, event.id)} title="Excluir evento"><i className="fas fa-times"></i></button>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className={styles.agendaNoEvents} onClick={ user?.user_metadata?.is_admin ? () => handleAddEvent(dayData.day) : undefined} style={{ cursor: user?.user_metadata?.is_admin ? 'pointer' : 'default' }}>
+
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }

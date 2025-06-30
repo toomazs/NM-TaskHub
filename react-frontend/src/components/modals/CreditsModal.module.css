@@ -1,0 +1,484 @@
+/* Estilos Genéricos de Modal */
+.modal {
+    position: fixed; z-index: 1000; left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    display: flex; justify-content: center; align-items: center;
+    padding: 1rem;
+    animation: modalFadeIn 0.3s ease-out;
+}
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal.closing { animation: modalFadeOut 0.3s ease-out forwards; }
+@keyframes modalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+.modalContent {
+    background: var(--bg-modal);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-modal);
+    border: 1px solid var(--border-color);
+    animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    display: flex;
+    flex-direction: column;
+}
+@keyframes modalSlideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal.closing .modalContent { animation: modalSlideOut 0.3s ease-out forwards; }
+@keyframes modalSlideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(20px); opacity: 0; } }
+
+.modalHeader {
+    padding: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+.modalHeader h2 {
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+.modalHeader h2 i { color: var(--accent-blue); }
+
+.modalClose {
+    position: absolute; top: 1.5rem; right: 1.5rem;
+    background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    border-radius: 8px; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); cursor: pointer; z-index: 10;
+    transition: all 0.2s ease;
+}
+.modalClose:hover { 
+    background: var(--bg-secondary); 
+    color: var(--text-primary); 
+    transform: scale(1.1);
+}
+
+.modalBody { 
+    padding: 2rem; 
+    overflow-y: auto; 
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+.modalBody::-webkit-scrollbar { width: 6px; }
+.modalBody::-webkit-scrollbar-track { background: transparent; }
+.modalBody::-webkit-scrollbar-thumb { 
+    background: var(--border-color); 
+    border-radius: 3px; 
+}
+
+/* Estilos Específicos do Modal de Créditos */
+.creditsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--bg-tertiary);
+}
+.sectionTitle i {
+    color: var(--accent-blue);
+    font-size: 1.1rem;
+}
+
+.developersSection {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.developerCard {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.developerCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent-blue);
+}
+.developerCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.developerCard:hover::before {
+    opacity: 1;
+}
+
+.developerPhotoContainer {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.developerPhoto {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent-blue);
+    transition: all 0.3s ease;
+}
+.developerCard:hover .developerPhoto {
+    border-color: var(--accent-green);
+    transform: scale(1.05);
+}
+
+.avatarFallback {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: white;
+    border: 3px solid var(--accent-blue);
+}
+
+.photoOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.developerPhotoContainer:hover .photoOverlay {
+    opacity: 1;
+}
+
+.socialLinks {
+    display: flex;
+    gap: 0.5rem;
+}
+.socialLinks a {
+    color: white;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+.socialLinks a:hover {
+    color: var(--accent-blue);
+    transform: scale(1.2);
+}
+
+.developerInfo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.developerName {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.developerRole {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent-blue);
+    margin: 0 0 0.75rem 0;
+    font-style: italic;
+}
+
+.developerDescription {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
+}
+
+.skillsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.skillTag {
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+.skillTag:hover {
+    background: var(--accent-blue);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Seção de Estatísticas */
+.statsSection {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.statsContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.animatedStat {
+    text-align: center;
+    padding: 1rem;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    animation: statFadeIn 0.5s ease-in-out;
+}
+
+@keyframes statFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.statLabel {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.statValue {
+    font-size: 2rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.statIndicators {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.3s ease;
+}
+.indicator.active {
+    background: var(--accent-blue);
+    transform: scale(1.2);
+}
+
+/* Rodapé do Modal */
+.modalFooter {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.versionInfo {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.versionInfo span {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.techStack {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.footerActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.repoLink, .copyButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.repoLink:hover, .copyButton:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.copyButton {
+    background: var(--bg-secondary);
+}
+.copyButton:hover {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+.buildInfo {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.buildDate, .buildStatus {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.buildDate i {
+    color: var(--accent-blue);
+}
+
+.buildStatus i {
+    color: var(--accent-green);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .modalContent {
+        max-width: 95%;
+        margin: 1rem;
+    }
+    
+    .modalHeader, .modalBody {
+        padding: 1.5rem;
+    }
+    
+    .developerCard {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .developerPhoto, .avatarFallback {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .footerActions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .repoLink, .copyButton {
+        width: 100%;
+        max-width: 200px;
+        justify-content: center;
+    }
+    
+    .buildInfo {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* =================================== */
+/* MEDIA QUERIES ADICIONAIS (Mobile)   */
+/* =================================== */
+
+@media (max-width: 480px) {
+    .modalContent {
+        max-width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .modalHeader, .modalBody {
+        padding: 1rem;
+    }
+
+    .modalHeader h2 {
+        font-size: 1.25rem;
+    }
+
+    .sectionTitle {
+        font-size: 1.1rem;
+    }
+    
+    .developerCard {
+        padding: 1rem;
+    }
+    
+    .developerPhoto, .avatarFallback {
+        width: 80px;
+        height: 80px;
+    }
+
+    .developerName {
+        font-size: 1.1rem;
+    }
+
+    .statValue {
+        font-size: 1.75rem;
+    }
+}

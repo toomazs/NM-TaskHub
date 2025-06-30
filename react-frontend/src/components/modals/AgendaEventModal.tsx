@@ -5,11 +5,11 @@ import toast from 'react-hot-toast';
 
 import { useModal } from '../../contexts/ModalContext';
 import * as agendaService from '../../services/agenda';
-import { AgendaEvent } from '../../types/kanban';
+import styles from './AgendaEventModal.module.css';
 
 export function AgendaEventModal() {
   const { closeModal, modalProps, isClosing } = useModal();
-  const { date, onSave, event: editingEvent } = modalProps || {};
+  const { date, onSave, event: editingEvent, isReadOnly } = modalProps || {};
   const isEditing = !!editingEvent;
 
   const [title, setTitle] = useState('');
@@ -18,14 +18,10 @@ export function AgendaEventModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const predefinedColors = [
-    { color: '#58a6ff', name: 'Azul' }, 
-    { color: '#f85149', name: 'Vermelho' },
-    { color: '#3fb950', name: 'Verde' }, 
-    { color: '#d29922', name: 'Amarelo' },
-    { color: '#bc8cff', name: 'Roxo' }, 
-    { color: '#fd7e14', name: 'Laranja' },
-    { color: '#20c997', name: 'Ciano' }, 
-    { color: '#e83e8c', name: 'Rosa' },
+    { color: '#58a6ff', name: 'Azul' }, { color: '#f85149', name: 'Vermelho' },
+    { color: '#3fb950', name: 'Verde' }, { color: '#d29922', name: 'Amarelo' },
+    { color: '#bc8cff', name: 'Roxo' }, { color: '#fd7e14', name: 'Laranja' },
+    { color: '#20c997', name: 'Ciano' }, { color: '#e83e8c', name: 'Rosa' },
   ];
   
   useEffect(() => {
@@ -42,6 +38,7 @@ export function AgendaEventModal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     
     if (!title.trim()) {
       toast.error('Por favor, insira um título para o evento.');
@@ -58,12 +55,8 @@ export function AgendaEventModal() {
     
     try {
       const eventDate = isEditing && editingEvent ? editingEvent.event_date : `${date}T00:00:00.000Z`;
-
       const eventData = {
-        title: title.trim(),
-        color,
-        description: description.trim(),
-        event_date: eventDate,
+        title: title.trim(), color, description: description.trim(), event_date: eventDate,
       };
 
       if (isEditing && editingEvent) {
@@ -74,16 +67,11 @@ export function AgendaEventModal() {
         toast.success('Evento criado com sucesso!', { id: toastId });
       }
       
-      if (onSave) {
-        onSave();
-      }
+      if (onSave) onSave();
       closeModal();
     } catch (error) {
       console.error('Erro ao salvar evento:', error);
-      toast.error(
-        isEditing ? 'Falha ao atualizar evento.' : 'Falha ao criar evento.', 
-        { id: toastId }
-      );
+      toast.error(isEditing ? 'Falha ao atualizar evento.' : 'Falha ao criar evento.', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -93,165 +81,79 @@ export function AgendaEventModal() {
     try {
       const dateObj = new Date(dateString + 'T00:00:00');
       return format(dateObj, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    } catch {
-      return dateString;
-    }
+    } catch { return dateString; }
   };
 
   const handleModalClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isSubmitting) {
-      closeModal();
-    }
+    if (e.target === e.currentTarget && !isSubmitting) closeModal();
   };
 
   const displayDate = isEditing && editingEvent 
     ? formatDisplayDate(editingEvent.event_date.split('T')[0])
     : date ? formatDisplayDate(date) : '';
 
+  const modalTitleText = isReadOnly ? 'Visualizar Evento' : (isEditing ? 'Editar Evento' : 'Novo Evento');
+
   return (
-    <div 
-      className={`modal agenda-event-modal ${isClosing ? 'closing' : ''}`} 
-      onClick={handleModalClick}
-    >
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title">
-            <i className={`fas ${isEditing ? 'fa-edit' : 'fa-calendar-plus'} modal-icon`}></i>
-            <div>
-              <h2>{isEditing ? 'Editar Evento' : 'Novo Evento'}</h2>
-              <p className="modal-subtitle">
-                {displayDate}
-              </p>
-            </div>
+    <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} onClick={handleModalClick}>
+      <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <div className={styles.modalTitle}>
+            <i className={`fas ${isReadOnly ? 'fa-eye' : (isEditing ? 'fa-edit' : 'fa-calendar-plus')} ${styles.modalIcon}`}></i>
+            <div><h2>{modalTitleText}</h2><p className={styles.modalSubtitle}>{displayDate}</p></div>
           </div>
-          <button 
-            className="modal-close" 
-            onClick={closeModal} 
-            title="Fechar"
-            disabled={isSubmitting}
-          >
-            <i className="fas fa-times"></i>
-          </button>
+          <button className={styles.modalClose} onClick={closeModal} title="Fechar" disabled={isSubmitting}><i className="fas fa-times"></i></button>
         </div>
-
-        <div className="modal-body">
-          <div className="modal-main">
-            <form onSubmit={handleSubmit} className="event-form">
-              <div className="form-section">
-                <div className="form-group">
-                  <label className="form-label">
-                    <i className="fas fa-heading"></i> 
-                    Título do Evento *
-                  </label>
-                  <input 
-                    type="text" 
-                    value={title} 
-                    onChange={e => setTitle(e.target.value)} 
-                    className="form-input" 
-                    placeholder="Digite o título do evento..." 
-                    required 
-                    autoFocus 
-                    maxLength={100}
-                    disabled={isSubmitting}
+        <div className={styles.modalBody}>
+          <div className={styles.modalMain}>
+            <form onSubmit={handleSubmit} className={styles.eventForm}>
+              <div className={styles.formSection}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}><i className="fas fa-heading"></i> Título do Evento *</label>
+                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} className={styles.formInput} 
+                    placeholder="Digite o título do evento..." required autoFocus maxLength={100} disabled={isSubmitting || isReadOnly}
                   />
-                  <small className="form-hint">{title.length}/100 caracteres</small>
+                  {!isReadOnly && <small className={styles.formHint}>{title.length}/100 caracteres</small>}
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    <i className="fas fa-align-left"></i> 
-                    Descrição
-                  </label>
-                  <textarea 
-                    value={description} 
-                    onChange={e => setDescription(e.target.value)} 
-                    className="form-textarea" 
-                    rows={3} 
-                    placeholder="Adicione uma descrição para o evento (opcional)..." 
-                    maxLength={500}
-                    disabled={isSubmitting}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}><i className="fas fa-align-left"></i> Descrição</label>
+                  <textarea value={description} onChange={e => setDescription(e.target.value)} className={styles.formTextarea}
+                    rows={3} placeholder="Adicione uma descrição para o evento (opcional)..." maxLength={500} disabled={isSubmitting || isReadOnly}
                   />
-                  <small className="form-hint">{description.length}/500 caracteres</small>
+                  {!isReadOnly && <small className={styles.formHint}>{description.length}/500 caracteres</small>}
                 </div>
               </div>
-
-              <div className="form-section">
-                <label className="form-label">
-                  <i className="fas fa-palette"></i> 
-                  Cor do Evento
-                </label>
-                <div className="color-selection">
-                  <div className="predefined-colors">
+              <div className={styles.formSection}>
+                <label className={styles.formLabel}><i className="fas fa-palette"></i> Cor do Evento</label>
+                <div className={styles.colorSelection}>
+                  <div className={styles.predefinedColors}>
                     {predefinedColors.map((colorOption) => (
-                      <button 
-                        type="button" 
-                        key={colorOption.color} 
-                        className={`color-option ${color === colorOption.color ? 'selected' : ''}`} 
-                        style={{ backgroundColor: colorOption.color }} 
-                        onClick={() => setColor(colorOption.color)} 
-                        title={colorOption.name}
-                        disabled={isSubmitting}
-                      >
-                        {color === colorOption.color && (
-                          <i className="fas fa-check"></i>
-                        )}
+                      <button type="button" key={colorOption.color} 
+                        className={`${styles.colorOption} ${color === colorOption.color ? styles.selected : ''}`}
+                        style={{ backgroundColor: colorOption.color }} onClick={() => setColor(colorOption.color)} title={colorOption.name} disabled={isSubmitting || isReadOnly}>
+                        {color === colorOption.color && <i className="fas fa-check"></i>}
                       </button>
                     ))}
                   </div>
-                  <div className="custom-color">
-                    <label className="custom-color-label">
-                      <i className="fas fa-eyedropper"></i>
-                    </label>
-                    <input 
-                      type="color" 
-                      value={color} 
-                      onChange={e => setColor(e.target.value)} 
-                      className="form-color-input"
-                      disabled={isSubmitting}
-                    />
+                  <div className={styles.customColor}>
+                    <label className={styles.customColorLabel}><i className="fas fa-eyedropper"></i></label>
+                    <input type="color" value={color} onChange={e => setColor(e.target.value)} className={styles.formColorInput} disabled={isSubmitting || isReadOnly}/>
                   </div>
                 </div>
-
-                <div className="color-preview">
-                  <span className="preview-label">Preview:</span>
-                  <div 
-                    className="event-preview" 
-                    style={{ backgroundColor: `${color}BF` }}
-                  >
-                    <i className="fas fa-circle event-dot"></i>
-                    <span>{title || 'Título do evento'}</span>
+                <div className={styles.colorPreview}><span className={styles.previewLabel}>Preview:</span>
+                  <div className={styles.eventPreview} style={{ backgroundColor: `${color}BF` }}>
+                    <i className={`fas fa-circle ${styles.eventDot}`}></i><span>{title || 'Título do evento'}</span>
                   </div>
                 </div>
               </div>
-
-              <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={closeModal} 
-                  disabled={isSubmitting}
-                >
-                  <i className="fas fa-times"></i> 
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  disabled={isSubmitting || !title.trim()}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin"></i> 
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <i className={`fas ${isEditing ? 'fa-save' : 'fa-plus'}`}></i> 
-                      {isEditing ? 'Atualizar Evento' : 'Criar Evento'}
-                    </>
-                  )}
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className={styles.formActions}>
+                  <button type="button" className={`btn ${styles.btnSecondary}`} onClick={closeModal} disabled={isSubmitting}><i className="fas fa-times"></i> Cancelar</button>
+                  <button type="submit" className={`btn ${styles.btnPrimary}`} disabled={isSubmitting || !title.trim()}>
+                    {isSubmitting ? (<><i className="fas fa-spinner fa-spin"></i> Salvando...</>) : (<><i className={`fas ${isEditing ? 'fa-save' : 'fa-plus'}`}></i> {isEditing ? 'Atualizar Evento' : 'Criar Evento'}</>)}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
