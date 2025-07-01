@@ -1,4 +1,4 @@
-/* Estilos Genéricos de Modal e Formulário */
+/* Estilos Genéricos de Modal e Formulário - OTIMIZADO PARA PERFORMANCE */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -6,21 +6,30 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.3s ease-out;
+    /* Performance optimizations */
+    will-change: opacity;
+    transform: translate3d(0, 0, 0); /* Force hardware acceleration */
+    backface-visibility: hidden;
 }
 
-@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalFadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
 
 .modal.closing {
     animation: modalFadeOut 0.3s ease-out forwards;
 }
-@keyframes modalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modalFadeOut { 
+    from { opacity: 1; } 
+    to { opacity: 0; } 
+}
 
 .modalContentPrivate {
     background: var(--bg-modal);
@@ -35,25 +44,44 @@
     animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    /* Performance optimizations */
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0); /* Force hardware acceleration */
+    backface-visibility: hidden;
+    contain: layout style paint; /* CSS containment for better performance */
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from { 
+        transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1); 
+        opacity: 1; 
+    }
 }
 
 .modal.closing .modalContentPrivate {
     animation: modalSlideOut 0.3s ease-out forwards;
 }
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+    from { 
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); 
+        opacity: 0; 
+    }
 }
 
 .modalHeader {
     padding: 2rem 2rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
+    /* Performance optimization */
+    contain: layout style;
 }
 
 .modalHeader h2 {
@@ -90,7 +118,10 @@
     color: var(--text-secondary);
     cursor: pointer;
     z-index: 10;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    /* Performance optimizations */
+    will-change: background-color, color;
+    transform: translate3d(0, 0, 0);
 }
 
 .modalClose:hover {
@@ -106,6 +137,8 @@
     justify-content: center;
     align-items: center;
     padding: 2rem;
+    /* Performance optimization */
+    contain: layout style;
 }
 
 .formGroup {
@@ -130,7 +163,10 @@
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    /* Performance optimizations */
+    will-change: border-color, background-color, box-shadow;
+    transform: translate3d(0, 0, 0);
 }
 
 .formInput:focus, .formTextarea:focus {
@@ -165,14 +201,20 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    /* Performance optimizations */
+    will-change: transform, background-color, border-color;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
 }
 
 .btnPrimary {
     background: var(--gradient-primary);
     color: white;
 }
-.btnPrimary:hover { transform: translateY(-2px); }
+.btnPrimary:hover { 
+    transform: translate3d(0, -2px, 0); 
+}
 
 .btnSecondary {
     background: var(--bg-tertiary);
@@ -186,8 +228,14 @@
 
 .faSpin {
     animation: fa-spin 1s infinite linear;
+    /* Performance optimization */
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
 }
-@keyframes fa-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes fa-spin { 
+    0% { transform: rotate3d(0, 0, 1, 0deg); } 
+    100% { transform: rotate3d(0, 0, 1, 360deg); } 
+}
 
 /* =================================== */
 /* MEDIA QUERIES (Mobile)              */

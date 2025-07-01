@@ -1,4 +1,4 @@
-/* Estilos Genéricos de Modal */
+/* Estilos Genéricos de Modal - OTIMIZADO */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -6,18 +6,22 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.3s ease-out;
+    /* Otimizações de performance */
+    will-change: opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .modal.closing {
     animation: modalFadeOut 0.3s ease-out forwards;
+    will-change: opacity;
 }
 @keyframes modalFadeOut { from { opacity: 1; } to { opacity: 0; } }
 
@@ -34,25 +38,46 @@
     animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    /* Otimizações de performance */
+    will-change: transform, opacity;
+    transform: translateZ(0); /* Força aceleração por hardware */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: layout style paint; /* CSS Containment para isolamento */
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from { 
+        transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1); 
+        opacity: 1; 
+    }
 }
 
 .modal.closing .modalContent {
     animation: modalSlideOut 0.3s ease-out forwards;
+    will-change: transform, opacity;
 }
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+    from { 
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); 
+        opacity: 0; 
+    }
 }
 
 .modalHeader {
     padding: 2rem 2rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
+    /* Otimização para evitar reflow */
+    contain: layout style;
 }
 
 .modalHeader h2 {
@@ -63,6 +88,8 @@
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
+    /* Otimização de rendering de texto */
+    text-rendering: optimizeSpeed;
 }
 
 .modalHeader h2 i {
@@ -85,7 +112,11 @@
     color: var(--text-secondary);
     cursor: pointer;
     z-index: 10;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    /* Otimizações */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
 }
 
 .modalClose:hover {
@@ -97,12 +128,20 @@
     display: block;
     padding: 2rem;
     overflow-y: auto;
+    /* Otimizações de scroll */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    contain: layout style;
 }
 
-/* Estilos Específicos do Modal */
+/* Estilos Específicos do Modal - OTIMIZADO */
 .memberList {
     max-height: 400px;
     overflow-y: auto;
+    /* Otimizações de scroll específicas para lista */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    contain: layout style;
 }
 
 .memberListItem {
@@ -112,6 +151,9 @@
     padding: 0.75rem;
     border-radius: 8px;
     transition: background-color 0.2s ease;
+    /* Otimizações */
+    will-change: background-color;
+    contain: layout style paint;
 }
 
 .memberListItem:hover {
@@ -122,6 +164,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    contain: layout style;
 }
 
 .userAvatar {
@@ -137,11 +180,17 @@
     background: var(--gradient-primary);
     background-size: cover;
     background-position: center;
+    /* Otimizações para avatares */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
+    text-rendering: optimizeSpeed;
 }
 
 .memberDetails .userName {
     font-weight: 500;
     color: var(--text-primary);
+    text-rendering: optimizeSpeed;
 }
 
 .memberDetails .userRoleTag {
@@ -152,16 +201,24 @@
     border-radius: 4px;
     margin-left: 0.5rem;
     font-weight: 600;
+    /* Otimizações para tags */
+    contain: layout style paint;
+    text-rendering: optimizeSpeed;
 }
 
 .btnRemoveMember {
     background: none;
     border: 1px solid var(--border-color);
     color: var(--text-muted);
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
     border-radius: 6px;
+    /* Otimizações */
+    will-change: background-color, border-color, color;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
 }
 
 .btnRemoveMember:hover:not(:disabled) {
@@ -172,11 +229,15 @@
 
 .faSpin {
     animation: fa-spin 1s infinite linear;
+    /* Otimização para animação de loading */
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 @keyframes fa-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% { transform: translateZ(0) rotate(0deg); }
+    100% { transform: translateZ(0) rotate(360deg); }
 }
 
 /* =================================== */
@@ -217,4 +278,34 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+/* Otimizações globais para dispositivos de baixa performance */
+@media (prefers-reduced-motion: reduce) {
+    .modal,
+    .modal.closing,
+    .modalContent,
+    .modal.closing .modalContent,
+    .memberListItem,
+    .btnRemoveMember,
+    .faSpin {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .faSpin {
+        transform: none !important;
+    }
+}
+
+/* Otimização adicional para listas grandes */
+.memberList {
+    /* Virtual scrolling hint para navegadores modernos */
+    content-visibility: auto;
+}
+
+.memberListItem {
+    /* Hint para elementos fora da viewport */
+    content-visibility: auto;
+    contain-intrinsic-size: 0 60px; /* Altura aproximada de cada item */
 }

@@ -3,7 +3,7 @@ import {
     FaTimes, FaUndo, FaClipboardList, FaUser, FaCalendarCheck, FaPhoneSlash,
     FaExclamationTriangle, FaSave, FaUserCheck, FaUserPlus, FaServer, 
     FaSitemap, FaFingerprint, FaSpinner, FaTasks,
-    FaArrowDown, FaArrowUp
+    FaArrowDown, FaArrowUp, FaBarcode
 } from 'react-icons/fa';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -122,7 +122,7 @@ export function ContatoModal() {
     const formattedStatus = getFormattedStatus(cliente.status);
 
     const statusOptions = [
-        { key: 'Agendado O.S.' as StatusKey, label: 'Agendado O.S.', icon: FaCalendarCheck, className: styles.btnPrimary, description: 'Ordem de serviço foi agendada', actionLabel: 'Agendamento de O.S.' },
+        { key: 'Agendado O.S.' as StatusKey, label: 'Agendado O.S.', icon: FaCalendarCheck, className: styles.btnPrimaryButton, description: 'Ordem de serviço foi agendada', actionLabel: 'Agendamento de O.S.' },
         { key: 'Nao conseguido contato' as StatusKey, label: 'Não Consegui Contato', icon: FaPhoneSlash, className: styles.btnSecondary, description: 'Cliente não atendeu ou não foi localizado', actionLabel: 'Registro de tentativa de contato' },
         { key: 'Nao solucionado' as StatusKey, label: 'Não Solucionado', icon: FaExclamationTriangle, className: styles.btnDanger, description: 'Problema não foi resolvido', actionLabel: 'Marcação como não solucionado' }
     ];
@@ -181,7 +181,8 @@ export function ContatoModal() {
                                 <div className={styles.detailItem}><FaArrowUp /><strong>TX:</strong><span>{cliente.tx ? cliente.tx.toFixed(2) : 'N/A'} dBm</span></div>
                                 <div className={styles.detailItem}><FaServer /><strong>OLT:</strong><span>{cliente.olt}</span></div>
                                 <div className={styles.detailItem}><FaSitemap /><strong>PON:</strong><span>{cliente.ponid}</span></div>
-                                <div className={`${styles.detailItem} ${styles.fullWidth}`}><FaFingerprint /><strong>ID:</strong><span>{cliente.id}</span></div>
+                                <div className={`${styles.detailItem}`}><FaFingerprint /><strong>ID:</strong><span>{cliente.id}</span></div>
+                                <div className={`${styles.detailItem}`}><FaBarcode /><strong>MAC:</strong><span>{cliente.mac}</span></div>
                              </div>
                         </div>
                     </div>
@@ -214,35 +215,53 @@ export function ContatoModal() {
                     </div>
                 )}
 
-                <div className={styles.modalFooter}>
-                    <div className={styles.footerActions}>
-                        <div className={styles.statusButtons}>
-                            {!cliente.assigned_to && !isAdmin && onAssign && (
-                                <button className={`${styles.btn} ${styles.assignButton}`} onClick={handleAssignClick} disabled={isSubmitting}><FaUserPlus /> Assumir Tarefa</button>
-                            )}
+<div className={styles.modalFooter}>
+    {/* A classe 'footerActions' agora vai controlar os 2 grupos */}
+    <div className={styles.footerActions}>
 
-                            {isEditing ? (
-                                <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={() => handleSave('pendente', resolucao, 'Retorno para pendentes')} disabled={isSubmitting}>
-                                    {isSubmitting && submitAction === 'Retorno para pendentes' ? <><FaSpinner className="fa-spin" /> Processando...</> : <><FaUndo /> Salvar e Retornar</>}
-                                </button>
-                            ) : (
-                                statusOptions.map((option) => (
-                                    <button key={option.key} className={`${styles.btn} ${option.className}`} onClick={() => handleSave(option.key, resolucao, option.actionLabel)} disabled={isSubmitting || !canTakeAction} title={!canTakeAction ? 'Tarefa já assumida por outro usuário' : option.description}>
-                                        {isSubmitting && submitAction === option.actionLabel ? <><FaSpinner className="fa-spin" /> Processando...</> : <><option.icon /> {option.label}</>}
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                    
-                    {hasChanges && !isSubmitting && (
-                        <div className={styles.changesAlert}><FaSave />Anotações não salvas serão guardadas ao definir um status.</div>
-                    )}
-                    
-                    {isSubmitting && (
-                        <div className={styles.submittingIndicator}><FaSpinner className="fa-spin" /> Processando {submitAction.toLowerCase()}...</div>
-                    )}
-                </div>
+        {/* GRUPO DA ESQUERDA: Apenas o botão de Assumir Tarefa */}
+        <div className={styles.leftActions}>
+            {!cliente.assigned_to && !isAdmin && onAssign && (
+                <button className={`${styles.btn} ${styles.assignButton}`} onClick={handleAssignClick} disabled={isSubmitting}>
+                    <FaUserPlus /> Assumir Tarefa
+                </button>
+            )}
+        </div>
+
+        {/* GRUPO DA DIREITA: Todos os outros botões de status */}
+        <div className={styles.statusButtons}>
+            {isEditing ? (
+                <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={() => handleSave('pendente', resolucao, 'Retorno para pendentes')} disabled={isSubmitting}>
+                    {isSubmitting && submitAction === 'Retorno para pendentes' ? <><FaSpinner className="fa-spin" /> Processando...</> : <><FaUndo /> Salvar e Retornar</>}
+                </button>
+            ) : (
+                statusOptions.map((option) => (
+                    <button 
+                        key={option.key} 
+                        className={`${styles.btn} ${option.className}`} 
+                        onClick={() => handleSave(option.key, resolucao, option.actionLabel)} 
+                        disabled={isSubmitting || !canTakeAction} 
+                        title={!canTakeAction ? 'Tarefa já assumida por outro usuário' : option.description}
+                    >
+                        {isSubmitting && submitAction === option.actionLabel ? <><FaSpinner className="fa-spin" /> Processando...</> : <><option.icon /> {option.label}</>}
+                    </button>
+                ))
+            )}
+        </div>
+    </div>
+    
+    {hasChanges && !isSubmitting && (
+        <div className={styles.changesAlert}>
+            <FaSave />Anotações não salvas serão guardadas ao definir um status.
+        </div>
+    )}
+    
+    {isSubmitting && (
+        <div className={styles.submittingIndicator}>
+            <FaSpinner className="fa-spin" /> Processando {submitAction.toLowerCase()}...
+        </div>
+    )}
+</div>
             </div>
         </div>
     );

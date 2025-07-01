@@ -345,7 +345,7 @@ export function ContatosPage() {
         <main className={styles.contatosPage} id="contatos-preventivos-page">
             <header className={styles.contatosHeader}>
                 <div className={styles.contatosHeaderTitle}>
-                    <h1><i className="fa-solid fa-house-signal"></i> Sinais Atenuados</h1>
+                    <h1><i className="fa-solid fa-house-signal"></i> Contatos Preventivos </h1>
                     <p>Gerencie clientes com sinal fora do padrão e registre ações de contato.</p>
                 </div>
             </header>

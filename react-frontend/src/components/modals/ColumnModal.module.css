@@ -1,4 +1,4 @@
-/* Estilos Genéricos de Modal e Formulário */
+/* Estilos Genéricos de Modal e Formulário - OTIMIZADO */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -6,13 +6,16 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.3s ease-out;
+    /* Otimizações de performance */
+    will-change: opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 @keyframes modalFadeIn {
@@ -22,6 +25,7 @@
 
 .modal.closing {
     animation: modalFadeOut 0.3s ease-out forwards;
+    will-change: opacity;
 }
 
 @keyframes modalFadeOut {
@@ -42,26 +46,47 @@
     animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    /* Otimizações de performance */
+    will-change: transform, opacity;
+    transform: translateZ(0); /* Força aceleração por hardware */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: layout style paint; /* CSS Containment para isolamento */
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from { 
+        transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1); 
+        opacity: 1; 
+    }
 }
 
 .modal.closing .modalContentPrivate {
     animation: modalSlideOut 0.3s ease-out forwards;
+    will-change: transform, opacity;
 }
 
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+    from { 
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); 
+        opacity: 0; 
+    }
 }
 
 .modalHeader {
     padding: 2rem 2rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
+    /* Otimização para evitar reflow */
+    contain: layout style;
 }
 
 .modalHeader h2 {
@@ -72,6 +97,8 @@
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
+    /* Otimização de rendering de texto */
+    text-rendering: optimizeSpeed;
 }
 .modalHeader h2 i {
     color: var(--accent-blue);
@@ -97,13 +124,18 @@
     color: var(--text-secondary);
     cursor: pointer;
     z-index: 10;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    /* Otimizações */
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
 }
 
 .modalClose:hover {
     background: var(--bg-secondary);
     color: var(--text-primary);
-    transform: scale(1.05);
+    transform: translateZ(0) scale(1.05);
 }
 
 .modalBodyPrivate {
@@ -114,10 +146,13 @@
     justify-content: center;
     align-items: center;
     padding: 2rem;
+    /* Otimização para layout */
+    contain: layout style;
 }
 
 .formGroup {
     margin-bottom: 1.5rem;
+    contain: layout style;
 }
 
 .formLabel {
@@ -128,6 +163,7 @@
     color: var(--text-primary);
     font-weight: 500;
     font-size: 0.9rem;
+    text-rendering: optimizeSpeed;
 }
 
 .formInput {
@@ -138,7 +174,10 @@
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    /* Otimizações */
+    will-change: border-color, box-shadow, background-color;
+    contain: layout style;
 }
 
 .formInput:focus {
@@ -156,6 +195,7 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
     margin-top: 1.5rem;
+    contain: layout style;
 }
 
 .btn {
@@ -168,7 +208,12 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    /* Otimizações */
+    will-change: box-shadow, background-color, border-color;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
 }
 
 .btnPrimary {
@@ -176,7 +221,9 @@
     color: white;
     box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
 }
-.btnPrimary:hover { box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); }
+.btnPrimary:hover { 
+    box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); 
+}
 
 .btnSecondary {
     background: var(--bg-tertiary);
@@ -228,5 +275,23 @@
     .btn {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* Otimizações globais para dispositivos de baixa performance */
+@media (prefers-reduced-motion: reduce) {
+    .modal,
+    .modal.closing,
+    .modalContentPrivate,
+    .modal.closing .modalContentPrivate,
+    .modalClose,
+    .formInput,
+    .btn {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .modalClose:hover {
+        transform: none;
     }
 }

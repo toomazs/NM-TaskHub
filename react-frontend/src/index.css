@@ -1,7 +1,4 @@
-/* ============================================= */
-/* ===== 1. ROOT & ESTILOS GLOBAIS         ===== */
-/* ============================================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import './assets/fonts/inter.css';
 
 :root {
     /* Cores Base */
@@ -68,13 +65,12 @@ body {
     min-height: 100vh;
 }
 
+
 /* Estilização Global da Barra de Rolagem */
-/* Para Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
 }
-/* Para Chrome, Edge, Safari e outros baseados em WebKit */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -92,9 +88,7 @@ body {
   background-color: var(--scrollbar-thumb-hover-color);
 }
 
-/* Estilos de botões que você quer que sejam globais (opcional) */
-/* Se você quiser que .btn, .btn-primary, etc. sejam globais, mantenha-os aqui. */
-/* Se não, eles devem ser definidos em cada módulo que os utiliza. */
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -121,12 +115,12 @@ html {
 
 .main-content {
   transition: margin-left 0.3s ease-in-out;
-  margin-left: var(--sidebar-width-expanded); /* Largura padrão da sidebar */
+  margin-left: var(--sidebar-width-expanded); 
   padding: 1rem;
 }
 
 .main-content.sidebar-collapsed {
-  margin-left: var(--sidebar-width-collapsed); /* Largura da sidebar encolhida */
+  margin-left: var(--sidebar-width-collapsed);
 }
 
 @media (max-width: 992px) {
@@ -143,6 +137,6 @@ html {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999; /* Fica abaixo da sidebar, mas acima do conteúdo */
+    z-index: 999;
   }
 }

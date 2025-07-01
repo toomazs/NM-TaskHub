@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useModal } from '../contexts/ModalContext';
-import { useAuth } from '../contexts/AuthContext'; // Importar o hook de autenticação
+import { useAuth } from '../contexts/AuthContext'; 
 import * as ligacaoService from '../services/ligacoes';
 import { Ligacao } from '../types/kanban';
 import { Loader } from '../components/ui/Loader';
@@ -9,7 +9,7 @@ import styles from './LigacoesPage.module.css';
 
 export function LigacoesPage() {
     const { openModal } = useModal();
-    const { user } = useAuth(); // Obter o usuário logado
+    const { user } = useAuth(); 
     const [ligacoes, setLigacoes] = useState<Ligacao[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -211,7 +211,7 @@ export function LigacoesPage() {
                                         <p className={styles.ligacaoCardAddress}><i className="fas fa-map-marker-alt"></i>{ligacao.address || 'Endereço não informado'}</p>
                                         {ligacao.end_date && (<p className={styles.ligacaoCardDate}><i className="fas fa-calendar"></i>{new Date(ligacao.end_date).toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>)}
                                     </div>
-                                    <button onClick={(e) => { e.stopPropagation(); if (ligacao.spreadsheet_url) window.open(ligacao.spreadsheet_url, '_blank'); else toast.error('Nenhuma planilha vinculada a esta ligação.'); }} className={`btn ${styles.ligacaoCardPlanilhaBtn} ${!ligacao.spreadsheet_url ? styles.disabled : ''}`} disabled={!ligacao.spreadsheet_url} title={ligacao.spreadsheet_url ? 'Abrir planilha' : 'Nenhuma planilha vinculada'}><i className="fas fa-table"></i> {ligacao.spreadsheet_url ? 'Abrir Planilha' : 'Sem Planilha'}</button>
+                                    <button onClick={(e) => { e.stopPropagation(); if (ligacao.spreadsheet_url) window.open(ligacao.spreadsheet_url, '_blank'); else toast.error('Nenhuma planilha vinculada a esta ligação.'); }} className={`btn ${styles.btnPrimary} ${!ligacao.spreadsheet_url ? styles.disabled : ''}`} disabled={!ligacao.spreadsheet_url} title={ligacao.spreadsheet_url ? 'Abrir planilha' : 'Nenhuma planilha vinculada'}><i className="fas fa-table"></i> {ligacao.spreadsheet_url ? 'Abrir Planilha' : 'Sem Planilha'}</button>
                                 </div>
                             </div>
                         ))}

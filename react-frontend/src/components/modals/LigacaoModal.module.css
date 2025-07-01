@@ -6,20 +6,21 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
-    animation: modalFadeIn 0.3s ease-out;
+    opacity: 0;
+    animation: modalFadeIn 0.3s ease-out forwards;
+    will-change: opacity;
 }
-@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalFadeIn { to { opacity: 1; } }
 
 .modal.closing {
     animation: modalFadeOut 0.3s ease-out forwards;
 }
-@keyframes modalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modalFadeOut { to { opacity: 0; } }
 
 .modalContent {
     background: var(--bg-modal);
@@ -31,13 +32,15 @@
     position: relative;
     box-shadow: var(--shadow-modal);
     border: 1px solid var(--border-color);
-    animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    transform: translateY(20px) scale(0.98);
+    opacity: 0;
+    animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    will-change: transform, opacity;
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
@@ -45,7 +48,6 @@
     animation: modalSlideOut 0.3s ease-out forwards;
 }
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
     to { transform: translateY(20px) scale(0.98); opacity: 0; }
 }
 
@@ -109,7 +111,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     z-index: 10;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .modalClose:hover {
@@ -152,7 +154,7 @@
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .formInput:focus, .formSelect:focus, .formTextarea:focus {
@@ -192,7 +194,8 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    will-change: transform;
 }
 
 .btnPrimary {
@@ -270,8 +273,8 @@
     border: 2px dashed var(--border-color);
     border-radius: 8px;
     background: var(--bg-tertiary);
-    transition: all 0.3s ease;
     cursor: pointer;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 .fileInputWrapper:hover {
     border-color: var(--accent-blue);
@@ -336,7 +339,8 @@
     justify-content: center;
     cursor: pointer;
     margin-left: auto;
-    transition: all 0.2s ease;
+    transition: filter 0.2s ease, transform 0.2s ease;
+    will-change: transform;
 }
 .fileRemove:hover {
     filter: brightness(1.2);
@@ -365,10 +369,7 @@
     100% { transform: rotate(360deg); }
 }
 
-/* =================================== */
-/* MEDIA QUERIES (Mobile)              */
-/* =================================== */
-
+/* Media queries otimizadas */
 @media (max-width: 768px) {
     .modalContent {
         max-width: 95vw;

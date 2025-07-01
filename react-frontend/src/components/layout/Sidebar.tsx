@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react'; 
 import toast from 'react-hot-toast';
 
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,6 +23,20 @@ export function Sidebar() {
   const avatarUploadRef = useRef<HTMLInputElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 992);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 992);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []); 
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -103,9 +117,13 @@ export function Sidebar() {
             </button>
             {showNotifications && <NotificationsDropdown />}
           </div>
-          <button id="toggleSidebar" className={styles.sidebarActionBtn} onClick={toggleSidebar} title={isSidebarCollapsed ? "Expandir" : "Recolher"}>
-            {isSidebarCollapsed ? <i className="fas fa-chevron-right"></i> : <i className="fas fa-chevron-left"></i>}
-          </button>
+          
+          {!isMobileView && (
+            <button id="toggleSidebar" className={styles.sidebarActionBtn} onClick={toggleSidebar} title={isSidebarCollapsed ? "Expandir" : "Recolher"}>
+              {isSidebarCollapsed ? <i className="fas fa-chevron-right"></i> : <i className="fas fa-chevron-left"></i>}
+            </button>
+          )}
+
         </div>
       </div>
 
@@ -117,7 +135,7 @@ export function Sidebar() {
           <li title="Avaliações Negativas"><NavLink to="/avaliacoes" onClick={handleNavLinkClick} className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}><i className="fas fa-star-half-alt"></i><span>Avaliações Negativas</span></NavLink></li>
           <li title="Dashboard"><NavLink to="/dashboard" onClick={handleNavLinkClick} className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}><i className="fas fa-chart-line"></i><span>Dashboard</span></NavLink></li>
           <li title="Agenda Diária"><NavLink to="/agenda" onClick={handleNavLinkClick} className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}><i className="fas fa-calendar-day"></i><span>Agenda Diária</span></NavLink></li>
-          <li title="Sinais Atenuados"><NavLink to="/contatos-preventivos" onClick={handleNavLinkClick} className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}><i className="fa-solid fa-house-signal"></i><span>Sinais Atenuados</span></NavLink></li>
+          <li title="Contatos Preventivos"><NavLink to="/contatos-preventivos" onClick={handleNavLinkClick} className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}><i className="fa-solid fa-house-signal"></i><span>Contatos Preventivos</span></NavLink></li>
         </ul>
       </nav>
 

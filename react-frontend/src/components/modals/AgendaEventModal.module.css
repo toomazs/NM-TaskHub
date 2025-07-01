@@ -1,4 +1,4 @@
-/* Estilos Genéricos de Modal e Formulário */
+/* Estilos Genéricos de Modal e Formulário - OTIMIZADO PARA PERFORMANCE */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -6,13 +6,16 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.6s ease-out;
+    /* Otimizações de performance */
+    will-change: opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0); /* Force hardware acceleration */
 }
 
 @keyframes modalFadeIn {
@@ -22,6 +25,7 @@
 
 .modal.closing {
     animation: modalFadeOut 0.3s ease-out forwards;
+    will-change: opacity;
 }
 
 @keyframes modalFadeOut {
@@ -41,20 +45,38 @@
     display: flex;
     flex-direction: column;
     max-width: 550px; /* Específico deste modal */
+    /* Otimizações de performance */
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0); /* Force hardware acceleration */
+    contain: layout style paint; /* CSS Containment para isolar repaint */
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from { 
+        transform: translateY(20px) scale(0.98) translateZ(0); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0) scale(1) translateZ(0); 
+        opacity: 1; 
+    }
 }
 
 .modal.closing .modalContent {
     animation: modalSlideOut 0.3s ease-out forwards;
+    will-change: transform, opacity;
 }
 
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+    from { 
+        transform: translateY(0) scale(1) translateZ(0); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translateY(20px) scale(0.98) translateZ(0); 
+        opacity: 0; 
+    }
 }
 
 .modalHeader {
@@ -64,6 +86,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    /* Otimização */
+    contain: layout style;
 }
 
 .modalClose {
@@ -77,13 +101,17 @@
     justify-content: center;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    /* Otimizações */
+    will-change: background-color, color, transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .modalClose:hover {
     background: var(--bg-secondary);
     color: var(--text-primary);
-    transform: scale(1.05);
+    transform: scale(1.05) translateZ(0);
 }
 
 .modalBody {
@@ -91,12 +119,18 @@
     background: var(--bg-modal);
     flex: 1;
     min-height: 0;
+    /* Otimização */
+    contain: layout;
 }
 
 .modalMain {
     flex: 1;
     padding: 2rem;
     overflow-y: auto;
+    /* Otimizações de scroll */
+    overscroll-behavior: contain;
+    transform: translateZ(0); /* Hardware acceleration for scroll */
+    will-change: scroll-position;
 }
 
 .formGroup {
@@ -121,7 +155,10 @@
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    /* Otimizações */
+    will-change: border-color, background-color;
+    transform: translateZ(0);
 }
 
 .formInput:focus, .formTextarea:focus {
@@ -135,6 +172,8 @@
     resize: vertical;
     min-height: 100px;
     font-family: inherit;
+    /* Otimização de scroll */
+    overscroll-behavior: contain;
 }
 
 .formActions {
@@ -157,7 +196,11 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: box-shadow 0.2s ease;
+    /* Otimizações */
+    will-change: box-shadow;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .btnPrimary {
@@ -165,12 +208,16 @@
     color: white;
     box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
 }
-.btnPrimary:hover { box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); }
+.btnPrimary:hover { 
+    box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); 
+}
 
 .btnSecondary {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    will-change: background-color, border-color;
 }
 .btnSecondary:hover {
     background: var(--bg-card);
@@ -228,6 +275,8 @@
 
 .formSection {
     margin-bottom: 0; /* Removido para usar o gap do flex */
+    /* Otimização */
+    contain: layout style;
 }
 
 .formHint {
@@ -256,17 +305,21 @@
     border-radius: 50%;
     border: 2px solid var(--border-color);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    /* Otimizações */
+    will-change: border-color, transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .colorOption.selected,
 .colorOption:hover {
     border-color: var(--text-primary);
-    transform: scale(1.1);
+    transform: scale(1.1) translateZ(0);
 }
 
 .customColor {
@@ -289,6 +342,8 @@
     background-color: transparent;
     border: none;
     cursor: pointer;
+    /* Otimização */
+    transform: translateZ(0);
 }
 
 .formColorInput::-webkit-color-swatch {
@@ -305,6 +360,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* Otimização */
+    contain: layout style;
 }
 
 .previewLabel {
@@ -320,6 +377,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* Otimização */
+    contain: layout style;
 }
 .eventPreview span {
     white-space: nowrap;
@@ -334,13 +393,15 @@
 }
 
 /* =================================== */
-/* MEDIA QUERIES (Mobile)              */
+/* MEDIA QUERIES (Mobile) - OTIMIZADO */
 /* =================================== */
 
 @media (max-width: 768px) {
     .modalContent {
         max-width: 95vw;
         max-height: 95vh;
+        /* Reduz complexidade em mobile */
+        contain: layout style;
     }
 
     .modalHeader {
@@ -365,6 +426,24 @@
     .btn {
         width: 100%;
         justify-content: center;
+        /* Remove hover effects em mobile */
+        transition: none;
+    }
+    
+    .btn:hover {
+        box-shadow: none;
+    }
+    
+    /* Remove hover effects em mobile para economizar recursos */
+    .colorOption:hover {
+        transform: none;
+        border-color: var(--border-color);
+    }
+    
+    .modalClose:hover {
+        transform: none;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
     }
 }
 
@@ -385,5 +464,19 @@
 
     .eventPreview span {
         max-width: 150px;
+    }
+    
+    /* Simplifica transições em mobile */
+    .formInput, .formTextarea, .colorOption {
+        transition: none;
+    }
+    
+    /* Reduz motion para devices com low power */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
     }
 }

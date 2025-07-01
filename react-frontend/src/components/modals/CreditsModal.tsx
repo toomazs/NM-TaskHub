@@ -29,7 +29,7 @@ const developers: Developer[] = [
   {
     name: 'Gabriel Marques',
     role: 'Analista de Suporte e Processos',
-    description: 'Responsável pela especificação de requisitos, análise de processos e pela validação completa de todas as funcionalidades do sistema. Adicionalmente, liderou o desenvolvimento e criou a API de Sinais Atenuados.',
+    description: 'Liderou o desenvolvimento do sistema inteiro, com destaque para a criação da API de Sinais Atenuados. Também foi responsável pela especificação de requisitos, análise de processos e validação completa de todas as funcionalidades existentes.',
     avatarUrl: gabrielAvatarUrl,
     skills: ['Gestão de Pessoas', 'Designer UX/UI', 'QA Tester', 'Automações'],
     githubUrl: 'https://github.com/GabrielMarques011',

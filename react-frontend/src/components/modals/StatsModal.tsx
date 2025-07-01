@@ -142,7 +142,7 @@ export function StatsModal(): React.ReactElement {
                                 return (
                                     <div key={card.id} className={styles.statsListItem} onClick={() => handleCardClick(card)}>
                                         <div className={styles.itemHeader}>
-                                            <div className={styles.taskTitle}><i className="fas fa-ticket-alt"></i>{card.title}</div>
+                                            <div className={styles.taskTitle}><i className="fas fa-user"></i>{card.title}</div>
                                             <div className={styles.itemActions}><i className="fa-solid fa-pen-to-square"></i></div>
                                         </div>
                                         <div className={styles.taskMeta}>

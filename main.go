@@ -557,6 +557,7 @@ func (app *App) handleGetContatosStatus(c *fiber.Ctx) error {
 	return c.JSON(statuses)
 }
 
+// setar contato status
 func (app *App) handleSetContatoStatus(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 
@@ -574,39 +575,64 @@ func (app *App) handleSetContatoStatus(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "contato_id e status são obrigatórios"})
 	}
 
-	query := `
-		INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by)
-		VALUES ($1, $2, $3, NOW(), $4)
-		ON CONFLICT (contato_id) 
-		DO UPDATE SET
-			status = EXCLUDED.status,
-			anotacao = EXCLUDED.anotacao,
-			updated_at = NOW(),
-			updated_by = EXCLUDED.updated_by
-		RETURNING id
-	`
-
+	var query string
 	var returnedId int
-	err := app.db.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
+	var err error
+
+	tx, err := app.db.Begin(context.Background())
 	if err != nil {
-		log.Printf("Erro ao fazer upsert do status do contato: %v", err)
+		log.Printf("Erro ao iniciar transação para setar status: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro interno do servidor"})
+	}
+	defer tx.Rollback(context.Background())
+
+	if payload.Status == "pendente" {
+		query = `
+			INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by, assigned_to, assigned_to_name, assigned_to_avatar)
+			VALUES ($1, $2, $3, NOW(), $4, NULL, NULL, NULL)
+			ON CONFLICT (contato_id) 
+			DO UPDATE SET
+				status = EXCLUDED.status,
+				anotacao = EXCLUDED.anotacao,
+				updated_at = NOW(),
+				updated_by = EXCLUDED.updated_by,
+				assigned_to = NULL,
+				assigned_to_name = NULL,
+				assigned_to_avatar = NULL
+			RETURNING id
+		`
+		err = tx.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
+	} else {
+		query = `
+			INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by)
+			VALUES ($1, $2, $3, NOW(), $4)
+			ON CONFLICT (contato_id) 
+			DO UPDATE SET
+				status = EXCLUDED.status,
+				anotacao = EXCLUDED.anotacao,
+				updated_at = NOW(),
+				updated_by = EXCLUDED.updated_by
+			RETURNING id
+		`
+		err = tx.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
+	}
+
+	if err != nil {
+		log.Printf("Erro ao fazer upsert do status do contato (%s): %v", payload.Status, err)
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao salvar o status no banco de dados"})
 	}
+
+	if err := tx.Commit(context.Background()); err != nil {
+		log.Printf("Erro ao commitar transação de setar status: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Erro ao confirmar a alteração no banco de dados"})
+	}
+	// --- FIM DA LÓGICA CORRIGIDA ---
 
 	return c.Status(200).JSON(fiber.Map{"status": "success", "id": returnedId})
 }
 
 func (app *App) handleAssignContato(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-
-	// Busca nome e avatar do usuário
-	var userName, userAvatar sql.NullString
-	err := app.db.QueryRow(context.Background(),
-		"SELECT raw_user_meta_data->>'username', raw_user_meta_data->>'avatar_url' FROM auth.users WHERE id = $1",
-		userID).Scan(&userName, &userAvatar)
-	if err != nil {
-		log.Printf("Aviso: não foi possível encontrar metadados para o userID %s: %v", userID, err)
-	}
 
 	var payload struct {
 		ContatoID string `json:"contato_id"`
@@ -618,6 +644,29 @@ func (app *App) handleAssignContato(c *fiber.Ctx) error {
 
 	if payload.ContatoID == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "contato_id é obrigatório"})
+	}
+
+	var (
+		email       string
+		userName    sql.NullString
+		userAvatar  sql.NullString
+		displayName string
+	)
+
+	err := app.db.QueryRow(context.Background(),
+		"SELECT email, raw_user_meta_data->>'username', raw_user_meta_data->>'avatar_url' FROM auth.users WHERE id = $1",
+		userID).Scan(&email, &userName, &userAvatar)
+
+	if err != nil {
+		log.Printf("Aviso: não foi possível encontrar metadados para o userID %s: %v", userID, err)
+	}
+
+	if name, ok := userDisplayNameMap[email]; ok {
+		displayName = name
+	} else if userName.Valid && userName.String != "" {
+		displayName = userName.String
+	} else {
+		displayName = email
 	}
 
 	query := `
@@ -638,7 +687,7 @@ func (app *App) handleAssignContato(c *fiber.Ctx) error {
 	var updatedAt time.Time
 	var anotacao sql.NullString
 
-	err = app.db.QueryRow(context.Background(), query, payload.ContatoID, userID, userID, userName.String, userAvatar.String).Scan(&returnedId, &status, &anotacao, &updatedAt)
+	err = app.db.QueryRow(context.Background(), query, payload.ContatoID, userID, userID, displayName, userAvatar.String).Scan(&returnedId, &status, &anotacao, &updatedAt)
 	if err != nil {
 		log.Printf("Erro ao fazer upsert para assumir contato: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao salvar a atribuição no banco de dados"})
@@ -647,7 +696,7 @@ func (app *App) handleAssignContato(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"status":             "success",
 		"assigned_to":        userID,
-		"assigned_to_name":   userName.String,
+		"assigned_to_name":   displayName,
 		"assigned_to_avatar": userAvatar.String,
 		"updated_at":         updatedAt,
 	})
@@ -2197,7 +2246,7 @@ func main() {
 	fiberApp := fiber.New()
 	fiberApp.Use(logger.New(), recover.New())
 	fiberApp.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:10001, http://127.0.0.1:10001",
+		AllowOrigins:     "http://10.0.30.251:10000, http://localhost:10001",
 		AllowCredentials: true,
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",

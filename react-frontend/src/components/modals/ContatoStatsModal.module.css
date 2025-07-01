@@ -6,13 +6,13 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.3s ease-out;
+    will-change: opacity;
 }
 
 @keyframes modalFadeIn {
@@ -33,8 +33,8 @@
     background: var(--bg-modal);
     border-radius: 16px;
     width: 100%;
-    max-width: 900px; /* Específico deste modal */
-    max-height: 85vh; /* Específico deste modal */
+    max-width: 900px;
+    max-height: 85vh;
     overflow: hidden;
     position: relative;
     box-shadow: var(--shadow-modal);
@@ -42,11 +42,13 @@
     animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from { transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); opacity: 0; }
+    to { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); opacity: 1; }
 }
 
 .modal.closing .modalContent {
@@ -54,8 +56,8 @@
 }
 
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+    from { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); opacity: 1; }
+    to { transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); opacity: 0; }
 }
 
 .modalHeader {
@@ -66,6 +68,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    contain: layout style;
 }
 
 .modalHeader h2 {
@@ -79,30 +82,28 @@
     flex-grow: 1;
 }
 
-.modalHeader h2 i, .modalHeader h2 svg {
+.modalHeader h2 i,
+.modalHeader h2 svg,
+.statsCount svg,
+.summaryItem i,
+.taskTitle > i,
+.metaItem > i,
+.metaItem > svg {
     color: var(--accent-blue);
     font-size: 1.25rem;
 }
-.statsCount svg {
-    color: var(--accent-blue);
-    font-size: 1.25rem;
+
+.itemActions i,
+.itemActions svg {
+    color: var(--text-muted);
 }
-.summaryItem i {
-    color: var(--accent-blue);
-    font-size: 1.25rem;
-}
-.taskTitle > i {
-    color: var(--accent-blue);
-    font-size: 1.25rem;
-}
-.itemActions i, .itemActions svg {
-    color: var(--text-muted); /* Mantém cor para efeito hover */
-}
-.metaItem > i, .metaItem > svg {
-    color: var(--accent-blue);
+
+.metaItem > i,
+.metaItem > svg {
     width: 14px;
     text-align: center;
 }
+
 .emptyIcon {
     color: var(--accent-blue);
     font-size: 3rem;
@@ -124,7 +125,8 @@
     justify-content: center;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    transform: translate3d(0, 0, 0);
 }
 
 .modalClose:hover {
@@ -155,6 +157,7 @@
     flex-grow: 1;
     overflow-y: auto;
     background: var(--bg-modal);
+    contain: layout style;
 }
 
 .statsSummary {
@@ -174,8 +177,10 @@
     color: var(--text-secondary);
     font-size: 0.9rem;
 }
-.summaryItem i { color: var(--accent-blue); }
-.summaryItem strong { color: var(--text-primary); }
+
+.summaryItem strong {
+    color: var(--text-primary);
+}
 
 .statsList {
     display: flex;
@@ -188,14 +193,16 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 1rem 1.25rem;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
     border-left: 4px solid transparent;
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
 }
 
 .statsListItem:hover {
     border-color: var(--accent-blue);
-    transform: translateX(4px);
+    transform: translate3d(4px, 0, 0);
     background: var(--bg-tertiary);
     border-left-color: var(--accent-blue);
 }
@@ -225,6 +232,7 @@
     color: var(--text-muted);
     transition: color 0.2s ease;
 }
+
 .statsListItem:hover .itemActions {
     color: var(--accent-blue);
 }
@@ -245,11 +253,14 @@
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
-.metaItem > i, .metaItem > svg {
+
+.metaItem > i,
+.metaItem > svg {
     width: 14px;
     text-align: center;
     color: var(--text-muted);
 }
+
 .metaItem.annotation {
     font-style: italic;
 }
@@ -317,14 +328,17 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     min-width: 120px;
+    transform: translate3d(0, 0, 0);
 }
+
 .paginationBtn:hover:not(:disabled) {
     background: var(--accent-blue);
     color: white;
     border-color: var(--accent-blue);
 }
+
 .paginationBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

@@ -1,4 +1,4 @@
-/* Estilos Genéricos de Modal e Formulário */
+/* Estilos Genéricos de Modal e Formulário - OTIMIZADO PARA PERFORMANCE */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -6,20 +6,30 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.3s ease-out;
+    /* Otimizações de performance */
+    will-change: opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0); /* Force hardware acceleration */
 }
-@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalFadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
 
 .modal.closing {
     animation: modalFadeOut 0.3s ease-out forwards;
+    will-change: opacity;
 }
-@keyframes modalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modalFadeOut { 
+    from { opacity: 1; } 
+    to { opacity: 0; } 
+}
 
 .modalContent {
     background: var(--bg-modal);
@@ -34,30 +44,49 @@
     animation: modalSlideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    /* Otimizações de performance */
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0); /* Force hardware acceleration */
+    contain: layout style paint; /* CSS Containment para isolar repaint */
 }
 
 .modalContent.priority-baixa { border-left: 4px solid var(--priority-baixa); }
 .modalContent.priority-media { border-left: 4px solid var(--priority-media); }
 .modalContent.priority-alta { border-left: 4px solid var(--priority-alta); }
 
-
 @keyframes modalSlideIn {
-    from { transform: translateY(20px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from { 
+        transform: translateY(20px) scale(0.98) translateZ(0); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0) scale(1) translateZ(0); 
+        opacity: 1; 
+    }
 }
 
 .modal.closing .modalContent {
     animation: modalSlideOut 0.3s ease-out forwards;
+    will-change: transform, opacity;
 }
 @keyframes modalSlideOut {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(20px) scale(0.98); opacity: 0; }
+    from { 
+        transform: translateY(0) scale(1) translateZ(0); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translateY(20px) scale(0.98) translateZ(0); 
+        opacity: 0; 
+    }
 }
 
 .modalHeader {
     padding: 2rem 2rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
+    /* Otimização */
+    contain: layout style;
 }
 
 .modalHeader h2 {
@@ -91,6 +120,9 @@
     cursor: pointer;
     z-index: 10;
     transition: all 0.2s ease;
+    /* Otimizações */
+    will-change: background-color, color;
+    transform: translateZ(0);
 }
 
 .modalClose:hover {
@@ -103,12 +135,18 @@
     background: var(--bg-modal);
     flex: 1;
     min-height: 0;
+    /* Otimização */
+    contain: layout;
 }
 
 .modalMain {
     flex: 1.2;
     padding: 2rem;
     overflow-y: auto;
+    /* Otimizações de scroll */
+    overscroll-behavior: contain;
+    transform: translateZ(0); /* Hardware acceleration for scroll */
+    will-change: scroll-position;
 }
 
 .formSection {
@@ -117,6 +155,8 @@
     background: var(--bg-secondary);
     border-radius: 12px;
     border: 1px solid var(--border-subtle);
+    /* Otimização */
+    contain: layout style;
 }
 
 .formGroup {
@@ -134,7 +174,7 @@
 }
 .formLabel i {
     color: var(--accent-blue);
-    font-size: 1rem; /* Tamanho ajustado para formulários */
+    font-size: 1rem;
 }
 
 .formInput, .formTextarea {
@@ -145,7 +185,10 @@
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    /* Otimizações */
+    will-change: border-color, background-color;
+    transform: translateZ(0);
 }
 
 .formInput:focus, .formTextarea:focus {
@@ -158,6 +201,8 @@
 .formTextarea {
     resize: vertical;
     font-family: inherit;
+    /* Otimização de scroll */
+    overscroll-behavior: contain;
 }
 
 .formActions {
@@ -180,25 +225,63 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Otimizações */
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
-.btn:hover { transform: translateY(-2px); }
+.btn:hover { 
+    transform: translateY(-2px) translateZ(0); 
+}
 
-.btnPrimary { background: var(--gradient-primary); color: white; box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3); }
-.btnPrimary:hover { box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); }
+.btnPrimary { 
+    background: var(--gradient-primary); 
+    color: white; 
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3); 
+}
+.btnPrimary:hover { 
+    box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4); 
+}
 
-.btnDanger { background: var(--gradient-danger); color: white; box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3); }
-.btnDanger:hover { box-shadow: 0 6px 20px rgba(248, 81, 73, 0.4); }
+.btnDanger { 
+    background: var(--gradient-danger); 
+    color: white; 
+    box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3); 
+}
+.btnDanger:hover { 
+    box-shadow: 0 6px 20px rgba(248, 81, 73, 0.4); 
+}
 
-.btnSecondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
-.btnSecondary:hover { background: var(--bg-card); border-color: var(--accent-blue); }
+.btnSecondary { 
+    background: var(--bg-tertiary); 
+    color: var(--text-primary); 
+    border: 1px solid var(--border-color);
+    will-change: background-color, border-color;
+}
+.btnSecondary:hover { 
+    background: var(--bg-card); 
+    border-color: var(--accent-blue); 
+}
 
-.btnSolved { background: var(--gradient-success); color: white; box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3); }
-.btnSolved:hover { box-shadow: 0 6px 20px rgba(63, 185, 80, 0.4); }
+.btnSolved { 
+    background: var(--gradient-success); 
+    color: white; 
+    box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3); 
+}
+.btnSolved:hover { 
+    box-shadow: 0 6px 20px rgba(63, 185, 80, 0.4); 
+}
 
-.btnUnsolved { background: var(--gradient-danger); color: white; box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3); }
-.btnUnsolved:hover { box-shadow: 0 6px 20px rgba(248, 81, 73, 0.4); }
+.btnUnsolved { 
+    background: var(--gradient-danger); 
+    color: white; 
+    box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3); 
+}
+.btnUnsolved:hover { 
+    box-shadow: 0 6px 20px rgba(248, 81, 73, 0.4); 
+}
 
 /* Estilos Específicos do Modal de Tarefa */
 .autosaveIndicator {
@@ -209,21 +292,41 @@
     align-items: center;
     gap: 0.5rem;
     transition: opacity 0.3s ease;
+    /* Otimização */
+    will-change: opacity;
+    transform: translateZ(0);
 }
 .autosaveIndicator i {
     color: var(--accent-blue);
     font-size: 1rem;
 }
 
-.fadeIn { animation: fadeIn 0.5s ease-in-out forwards; }
-.fadeOut { animation: fadeOut 0.5s ease-in-out forwards; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+.fadeIn { 
+    animation: fadeIn 0.5s ease-in-out forwards;
+    will-change: opacity;
+}
+.fadeOut { 
+    animation: fadeOut 0.5s ease-in-out forwards;
+    will-change: opacity;
+}
+@keyframes fadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
+@keyframes fadeOut { 
+    from { opacity: 1; } 
+    to { opacity: 0; } 
+}
 
 .faSpin {
     animation: fa-spin 1s infinite linear;
+    will-change: transform;
+    transform-origin: center;
 }
-@keyframes fa-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes fa-spin { 
+    0% { transform: rotate(0deg) translateZ(0); } 
+    100% { transform: rotate(360deg) translateZ(0); } 
+}
 
 .sectionLabel {
     display: flex;
@@ -258,10 +361,13 @@
     border-radius: 8px;
     border: 1px solid var(--border-color);
     background: var(--bg-tertiary);
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     flex: 1;
     min-width: 120px;
     justify-content: center;
+    /* Otimizações */
+    will-change: border-color, background-color;
+    transform: translateZ(0);
 }
 
 .priorityRadio:hover {
@@ -289,6 +395,8 @@
     height: 12px;
     border-radius: 50%;
     border: 2px solid currentColor;
+    /* Otimização */
+    transform: translateZ(0);
 }
 .priorityIndicator.priority-baixa { background: var(--priority-baixa); border-color: var(--priority-baixa); }
 .priorityIndicator.priority-media { background: var(--priority-media); border-color: var(--priority-media); }
@@ -297,7 +405,8 @@
 .priorityText {
     color: var(--text-secondary);
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, font-weight 0.2s ease;
+    will-change: color;
 }
 
 .mainActions {
@@ -316,11 +425,14 @@
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
+    /* Otimização */
+    contain: layout;
 }
 
 .commentsHeader {
     padding: 1.5rem 2rem 1rem;
     border-bottom: 1px solid var(--border-color);
+    contain: layout style;
 }
 .commentsHeader h3 {
     display: flex;
@@ -340,6 +452,10 @@
     flex: 1;
     overflow-y: auto;
     padding: 1rem;
+    /* Otimizações de scroll */
+    overscroll-behavior: contain;
+    transform: translateZ(0);
+    will-change: scroll-position;
 }
 
 /* Toast de Confirmação */
@@ -359,13 +475,15 @@
 }
 
 /* =================================== */
-/* MEDIA QUERIES (Mobile)              */
+/* MEDIA QUERIES (Mobile) - OTIMIZADO */
 /* =================================== */
 
 @media (max-width: 992px) {
     .modalContent {
         max-width: 95vw;
         max-height: 95vh;
+        /* Reduz complexidade em mobile */
+        contain: layout style;
     }
 
     .modalBody {
@@ -375,11 +493,16 @@
     .modalComments {
         border-left: none;
         border-top: 2px solid var(--border-color);
-        max-height: 40vh; /* Limita a altura dos comentários */
+        max-height: 40vh;
     }
     
     .commentsHeader {
         padding: 1.5rem;
+    }
+    
+    /* Desabilita algumas animações em mobile para economizar recursos */
+    .btn:hover {
+        transform: none;
     }
 }
 
@@ -413,9 +536,30 @@
     .btn {
         width: 100%;
         justify-content: center;
+        /* Remove hover effects em mobile */
+        transition: none;
+    }
+    
+    .btn:hover {
+        transform: none;
+        box-shadow: none;
     }
 
     .commentsHeader {
         padding: 1rem;
+    }
+    
+    /* Simplifica transições em mobile */
+    .formInput, .formTextarea, .priorityRadio {
+        transition: none;
+    }
+    
+    /* Reduz motion para devices com low power */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
     }
 }
