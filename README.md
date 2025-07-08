@@ -29,7 +29,7 @@ NM TaskHub é uma aplicação web full-stack de quadro Kanban, projetada para ge
 -  <img src="https://i.imgur.com/61saOIt.png" width="600"/><br><br>
 
 - Ligações Ativas <br> <br>
-  <img src="https://i.imgur.com/r5dhP39.png" width="600"/><br><br>
+  <img src="https://i.imgur.com/gJAULgo.png" width="600"/><br><br>
 
 - Avaliações Negativas <br> <br>
   <img src="https://i.imgur.com/LntyCAH.png" width="600"/><br><br>
