@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { Comment } from '../../types/kanban';
 import { useBoard } from '../../contexts/BoardContext';
 import { userDisplayNameMap } from '../../api/config';
-import styles from './CommentSection.module.css'; // Importando o módulo CSS
+import styles from './CommentSection.module.css';
 
 interface CommentSectionProps {
   title: string;

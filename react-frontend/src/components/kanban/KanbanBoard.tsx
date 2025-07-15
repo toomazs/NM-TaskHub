@@ -10,7 +10,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { useBoard } from '../../contexts/BoardContext';
 import { useModal } from '../../contexts/ModalContext';
 import { KanbanCard } from './KanbanCard';
-import styles from './KanbanBoard.module.css'; // Importando o módulo CSS
+import styles from './KanbanBoard.module.css'; 
 
 export function KanbanBoard() {
   const { columns, setColumns, board, fetchBoardData, solucionadoId, naoSolucionadoId, setIsColumnDragging } = useBoard();

@@ -125,7 +125,7 @@ html {
 
 @media (max-width: 992px) {
   .main-content {
-    margin-left: 0; /* O conteúdo ocupa toda a tela */
+    margin-left: 0; 
     transition: filter 0.3s ease-in-out;
   }
   
@@ -138,5 +138,74 @@ html {
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
+  }
+}
+
+.modal-backdrop {
+  position: fixed; 
+  top: 0;
+  left: 0;
+  z-index: 1000; 
+  width: 100vw;  
+  height: 100vh; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6); 
+  padding: 1rem;
+}
+
+.modal-container {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  width: auto; 
+  max-width: 90vw; 
+  animation: modal-fade-in 0.2s ease-out forwards;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 0; 
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useModal } from '../contexts/ModalContext';
-import { useAuth } from '../contexts/AuthContext'; // Importar
+import { useAuth } from '../contexts/AuthContext'; 
 import * as avaliacaoService from '../services/avaliacoes';
 import { Avaliacao } from '../types/kanban';
 import { useBoard } from '../contexts/BoardContext';
@@ -140,7 +140,7 @@ const StatsCards = ({ avaliacoes }: { avaliacoes: Avaliacao[] }) => {
 export function AvaliacoesPage() {
     const { openModal } = useModal();
     const { users } = useBoard();
-    const { user } = useAuth(); // Obter usuário
+    const { user } = useAuth(); 
     const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filters, setFilters] = useState({ status: 'Todos', source: 'Todos' });

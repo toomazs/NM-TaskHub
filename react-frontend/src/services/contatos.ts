@@ -65,9 +65,10 @@ export async function setContatoStatus(payload: {
 }): Promise<any> {
     const response = await api('/contatos/status', {
         method: 'POST',
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload) 
     });
-     if (!response.ok) {
+
+    if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
         console.error("Erro do servidor ao salvar status:", errorData);
         throw new Error(errorData.error || 'Falha ao salvar o status do contato');
@@ -101,7 +102,20 @@ export async function unassignContato(contatoId: string): Promise<any> {
     return response.json();
 }
 
-// NOVA FUNÇÃO PARA ADMINS
+
+export const updateContatoAnotacao = async (contatoId: string, anotacao: string): Promise<void> => {
+    const response = await api(`/contatos/${contatoId}/anotacao`, {
+        method: 'PUT',
+        body: JSON.stringify({ anotacao })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        console.error("Erro no salvamento automático:", errorData);
+        throw new Error(errorData.error || 'Falha ao salvar anotação');
+    }
+};
+
 export async function adminAssignContato(contatoId: string, assigneeId: string): Promise<any> {
     const response = await api('/contatos/admin-assign', {
         method: 'POST',
@@ -114,3 +128,4 @@ export async function adminAssignContato(contatoId: string, assigneeId: string):
     }
     return response.json();
 }
+

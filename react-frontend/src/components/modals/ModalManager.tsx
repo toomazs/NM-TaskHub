@@ -27,11 +27,33 @@ const modalComponents = {
     credits: CreditsModal,
 };
 
+const ComponentModal = () => {
+    const { modalProps, closeModal } = useModal();
+
+    return (
+        <div className="modal-backdrop" onClick={closeModal}>
+            <div className="modal-container" style={{maxWidth: 'fit-content'}} onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>{modalProps.title}</h3>
+                    <button onClick={closeModal} className="modal-close-btn">&times;</button>
+                </div>
+                <div className="modal-body">
+                    {modalProps.children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export function ModalManager() {
     const { isModalOpen, modalType } = useModal();
     
     if (!isModalOpen || !modalType) {
         return null;
+    }
+
+    if (modalType === 'component') {
+        return <ComponentModal />;
     }
 
     const SpecificModal = modalComponents[modalType];

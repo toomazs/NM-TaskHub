@@ -248,3 +248,135 @@
         gap: 1rem;
     }
 }
+
+
+.contatosStatsItemCancelado .contatosStatsNumber {
+    color: #800020;
+}
+.contatosStatsItemCancelado:hover {
+    background: var(--bg-tertiary);
+}
+
+.contatosUserFilter {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    height: 55px;
+    padding: 0.8rem 1rem;
+
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-right: 2.5rem; 
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%208l5%205%205-5z%22%20fill%3D%22%238b949e%22/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center; 
+}
+
+.contatosUserFilter:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+.contatosUserFilter:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Estiliza as opções do dropdown para temas escuros */
+.contatosUserFilter option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+
+/* NOVO: Estilos para a seção de detalhes no card (telefone) 
+*/
+.contatosClienteDetails {
+    display: flex;
+    flex-direction: column; /* Itens empilhados verticalmente */
+    gap: 0.6rem; /* Espaço entre os detalhes */
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color-muted); /* Linha separadora sutil */
+}
+
+.contatosClienteDetails span {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.detailItem {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem; 
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* NOVO: Wrapper para o ícone e o texto do detalhe */
+.detailItemContent {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.detailIcon {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    flex-shrink: 0; /* Previne que o ícone seja esmagado */
+}
+
+/* NOVO: Estilos para o botão de copiar */
+.copyButton {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.copyButton:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--accent-blue);
+}
+
+
+.contatosAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    /* ALTERADO: Usa a cor de fundo padrão do tema */
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+
+/* Substitua a classe .contatosAvatarInitial existente por esta 
+  para garantir que a letra seja sempre branca.
+*/
+.contatosAvatarInitial {
+    font-size: 0.9rem;
+    font-weight: 600;
+    /* ALTERADO: Cor da fonte forçada para branco */
+    color: #FFFFFF;
+}

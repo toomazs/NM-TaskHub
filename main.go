@@ -155,15 +155,13 @@ type Avaliacao struct {
 
 // estrutura contatos
 type ContatoStatus struct {
-	ID               int       `json:"id" db:"id"`
-	ContatoID        string    `json:"contato_id" db:"contato_id"`
-	Status           string    `json:"status" db:"status"`
-	Anotacao         string    `json:"anotacao" db:"anotacao"`
-	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
-	UpdatedBy        string    `json:"updated_by" db:"updated_by"`
-	AssignedTo       *string   `json:"assigned_to,omitempty" db:"assigned_to"`
-	AssignedToName   *string   `json:"assigned_to_name,omitempty" db:"assigned_to_name"`
-	AssignedToAvatar *string   `json:"assigned_to_avatar,omitempty" db:"assigned_to_avatar"`
+	ID         int       `json:"id" db:"id"`
+	ContatoID  string    `json:"contato_id" db:"contato_id"`
+	Status     string    `json:"status" db:"status"`
+	Anotacao   string    `json:"anotacao" db:"anotacao"`
+	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+	UpdatedBy  string    `json:"updated_by" db:"updated_by"`
+	AssignedTo *string   `json:"assigned_to,omitempty" db:"assigned_to"`
 }
 
 // estrutura reorderpayload
@@ -528,7 +526,7 @@ func (app *App) deleteBoard(c *fiber.Ctx) error {
 }
 
 func (app *App) handleGetContatosStatus(c *fiber.Ctx) error {
-	query := `SELECT contato_id, status, anotacao, updated_at, updated_by, assigned_to, assigned_to_name, assigned_to_avatar FROM contato_status`
+	query := `SELECT contato_id, status, anotacao, updated_at, updated_by, assigned_to FROM contato_status`
 	rows, err := app.db.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Erro ao buscar status de contatos: %v", err)
@@ -539,19 +537,17 @@ func (app *App) handleGetContatosStatus(c *fiber.Ctx) error {
 	statuses := make([]ContatoStatus, 0)
 	for rows.Next() {
 		var cs ContatoStatus
-		var anotacao, assignedTo, assignedToName, assignedToAvatar sql.NullString
-		if err := rows.Scan(&cs.ContatoID, &cs.Status, &anotacao, &cs.UpdatedAt, &cs.UpdatedBy, &assignedTo, &assignedToName, &assignedToAvatar); err == nil {
+		var anotacao sql.NullString
+		var assignedTo sql.NullString
+
+		if err := rows.Scan(&cs.ContatoID, &cs.Status, &anotacao, &cs.UpdatedAt, &cs.UpdatedBy, &assignedTo); err == nil {
 			cs.Anotacao = anotacao.String
 			if assignedTo.Valid {
 				cs.AssignedTo = &assignedTo.String
 			}
-			if assignedToName.Valid {
-				cs.AssignedToName = &assignedToName.String
-			}
-			if assignedToAvatar.Valid {
-				cs.AssignedToAvatar = &assignedToAvatar.String
-			}
 			statuses = append(statuses, cs)
+		} else {
+			log.Printf("Erro ao escanear status de contato: %v", err)
 		}
 	}
 	return c.JSON(statuses)
@@ -575,9 +571,19 @@ func (app *App) handleSetContatoStatus(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "contato_id e status são obrigatórios"})
 	}
 
-	var query string
-	var returnedId int
-	var err error
+	allowedStatuses := map[string]bool{
+		"pendente":               true,
+		"Agendado O.S.":          true,
+		"Nao conseguido contato": true,
+		"Nao solucionado":        true,
+		"Cancelados":             true,
+	}
+	if !allowedStatuses[payload.Status] {
+		log.Printf("ERRO DE VALIDAÇÃO: Status inválido recebido do frontend: '%s'", payload.Status)
+		return c.Status(400).JSON(fiber.Map{
+			"error": fmt.Sprintf("O status '%s' é inválido.", payload.Status),
+		})
+	}
 
 	tx, err := app.db.Begin(context.Background())
 	if err != nil {
@@ -586,36 +592,24 @@ func (app *App) handleSetContatoStatus(c *fiber.Ctx) error {
 	}
 	defer tx.Rollback(context.Background())
 
-	if payload.Status == "pendente" {
-		query = `
-			INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by, assigned_to, assigned_to_name, assigned_to_avatar)
-			VALUES ($1, $2, $3, NOW(), $4, NULL, NULL, NULL)
-			ON CONFLICT (contato_id) 
-			DO UPDATE SET
-				status = EXCLUDED.status,
-				anotacao = EXCLUDED.anotacao,
-				updated_at = NOW(),
-				updated_by = EXCLUDED.updated_by,
-				assigned_to = NULL,
-				assigned_to_name = NULL,
-				assigned_to_avatar = NULL
-			RETURNING id
-		`
-		err = tx.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
-	} else {
-		query = `
-			INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by)
-			VALUES ($1, $2, $3, NOW(), $4)
-			ON CONFLICT (contato_id) 
-			DO UPDATE SET
-				status = EXCLUDED.status,
-				anotacao = EXCLUDED.anotacao,
-				updated_at = NOW(),
-				updated_by = EXCLUDED.updated_by
-			RETURNING id
-		`
-		err = tx.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
-	}
+	var returnedId int
+
+	query := `
+        INSERT INTO contato_status (contato_id, status, anotacao, updated_at, updated_by, assigned_to)
+        VALUES (
+            $1, $2, $3, NOW(), $4,
+            CASE WHEN $2 = 'pendente' THEN NULL ELSE (SELECT assigned_to FROM contato_status WHERE contato_id = $1) END
+        )
+        ON CONFLICT (contato_id)
+        DO UPDATE SET
+            status = EXCLUDED.status,
+            anotacao = EXCLUDED.anotacao,
+            updated_at = NOW(),
+            updated_by = EXCLUDED.updated_by,
+            assigned_to = CASE WHEN EXCLUDED.status = 'pendente' THEN NULL ELSE contato_status.assigned_to END
+        RETURNING id
+    `
+	err = tx.QueryRow(context.Background(), query, payload.ContatoID, payload.Status, payload.Anotacao, userID).Scan(&returnedId)
 
 	if err != nil {
 		log.Printf("Erro ao fazer upsert do status do contato (%s): %v", payload.Status, err)
@@ -626,7 +620,6 @@ func (app *App) handleSetContatoStatus(c *fiber.Ctx) error {
 		log.Printf("Erro ao commitar transação de setar status: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao confirmar a alteração no banco de dados"})
 	}
-	// --- FIM DA LÓGICA CORRIGIDA ---
 
 	return c.Status(200).JSON(fiber.Map{"status": "success", "id": returnedId})
 }
@@ -646,62 +639,29 @@ func (app *App) handleAssignContato(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "contato_id é obrigatório"})
 	}
 
-	var (
-		email       string
-		userName    sql.NullString
-		userAvatar  sql.NullString
-		displayName string
-	)
-
-	err := app.db.QueryRow(context.Background(),
-		"SELECT email, raw_user_meta_data->>'username', raw_user_meta_data->>'avatar_url' FROM auth.users WHERE id = $1",
-		userID).Scan(&email, &userName, &userAvatar)
-
-	if err != nil {
-		log.Printf("Aviso: não foi possível encontrar metadados para o userID %s: %v", userID, err)
-	}
-
-	if name, ok := userDisplayNameMap[email]; ok {
-		displayName = name
-	} else if userName.Valid && userName.String != "" {
-		displayName = userName.String
-	} else {
-		displayName = email
-	}
-
 	query := `
-        INSERT INTO contato_status (contato_id, status, updated_by, assigned_to, assigned_to_name, assigned_to_avatar)
-        VALUES ($1, 'pendente', $2, $3, $4, $5)
+        INSERT INTO contato_status (contato_id, status, updated_by, assigned_to)
+        VALUES ($1, 'pendente', $2, $3)
         ON CONFLICT (contato_id)
         DO UPDATE SET
             assigned_to = EXCLUDED.assigned_to,
-            assigned_to_name = EXCLUDED.assigned_to_name,
-            assigned_to_avatar = EXCLUDED.assigned_to_avatar,
             updated_at = NOW(),
             updated_by = EXCLUDED.updated_by
-        RETURNING id, status, anotacao, updated_at
     `
 
-	var returnedId int
-	var status string
-	var updatedAt time.Time
-	var anotacao sql.NullString
-
-	err = app.db.QueryRow(context.Background(), query, payload.ContatoID, userID, userID, displayName, userAvatar.String).Scan(&returnedId, &status, &anotacao, &updatedAt)
+	_, err := app.db.Exec(context.Background(), query, payload.ContatoID, userID, userID)
 	if err != nil {
 		log.Printf("Erro ao fazer upsert para assumir contato: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Erro ao salvar a atribuição no banco de dados"})
 	}
 
 	return c.Status(200).JSON(fiber.Map{
-		"status":             "success",
-		"assigned_to":        userID,
-		"assigned_to_name":   displayName,
-		"assigned_to_avatar": userAvatar.String,
-		"updated_at":         updatedAt,
+		"status":      "success",
+		"assigned_to": userID,
 	})
 }
 
+// desassociar
 func (app *App) handleUnassignContato(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 
@@ -736,8 +696,6 @@ func (app *App) handleUnassignContato(c *fiber.Ctx) error {
         UPDATE contato_status
         SET 
             assigned_to = NULL,
-            assigned_to_name = NULL,
-            assigned_to_avatar = NULL,
             updated_at = NOW(),
             updated_by = $2::uuid
 	`
@@ -756,7 +714,12 @@ func (app *App) handleUnassignContato(c *fiber.Ctx) error {
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return c.Status(403).JSON(fiber.Map{"error": "Tarefa não encontrada ou você não tem permissão para desassociá-la."})
+		var exists int
+		app.db.QueryRow(context.Background(), "SELECT 1 FROM contato_status WHERE contato_id = $1", payload.ContatoID).Scan(&exists)
+		if exists != 1 {
+			return c.Status(404).JSON(fiber.Map{"error": "Tarefa não encontrada."})
+		}
+		return c.Status(403).JSON(fiber.Map{"error": "Você não tem permissão para desassociar esta tarefa."})
 	}
 
 	return c.Status(200).JSON(fiber.Map{"status": "success"})
@@ -765,14 +728,13 @@ func (app *App) handleUnassignContato(c *fiber.Ctx) error {
 func (app *App) setupRoutes(fiberApp *fiber.App) {
 	api := fiberApp.Group("/api")
 
-	// --- Grupo para TODOS os usuários autenticados ---
+	// --- TODOS os usuários autenticados ---
 	protected := api.Group("")
 	protected.Use(app.authMiddleware)
 
 	protected.Get("/users", app.getUsers)
 	protected.Post("/user/avatar", app.handleAvatarUpload)
 
-	// Rotas do Kanban
 	protected.Get("/boards/public", app.getPublicBoards)
 	protected.Get("/boards/private", app.getPrivateBoards)
 	protected.Post("/boards", app.createBoard)
@@ -788,7 +750,6 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Delete("/cards/:id", app.deleteCard)
 	protected.Post("/cards/move", app.moveCard)
 
-	// Rotas de Membros e Convites
 	protected.Get("/boards/:id/members", app.getBoardMembers)
 	protected.Get("/boards/:id/invitable-users", app.getInvitableUsers)
 	protected.Post("/boards/:id/invite", app.inviteUserToBoard)
@@ -796,12 +757,10 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Delete("/boards/:boardId/members/:memberId", app.removeBoardMember)
 	protected.Post("/boards/:id/leave", app.leaveBoard)
 
-	// Notificações
 	protected.Get("/notifications", app.getNotifications)
 	protected.Post("/notifications/:id/read", app.markNotificationRead)
 	protected.Post("/notifications/mark-all-as-read", app.markAllNotificationsRead)
 
-	// Rotas de Leitura e Edição para todos
 	protected.Get("/ligacoes", app.getLigacoes)
 	protected.Put("/ligacoes/:id", app.updateLigacao)
 
@@ -811,32 +770,28 @@ func (app *App) setupRoutes(fiberApp *fiber.App) {
 	protected.Get("/avaliacoes", app.getAvaliacoes)
 	protected.Put("/avaliacoes/:id", app.updateAvaliacao)
 
-	// Rotas de Contato para todos
 	protected.Get("/contatos/status", app.handleGetContatosStatus)
 	protected.Post("/contatos/status", app.handleSetContatoStatus)
 	protected.Post("/contatos/assign", app.handleAssignContato)
 	protected.Post("/contatos/unassign", app.handleUnassignContato)
+	protected.Put("/contatos/:id/anotacao", app.handleUpdateContatoAnotacao)
 
-	// --- Grupo EXCLUSIVO para Administradores ---
-	// Todas as rotas aqui dentro exigem que o usuário seja admin.
+	// --- EXCLUSIVO para Administradores ---
 	adminProtected := api.Group("")
-	adminProtected.Use(app.authMiddleware)  // 1. Verifica se está logado
-	adminProtected.Use(app.adminMiddleware) // 2. Verifica se é admin
 
-	// Admin: Ligações
+	adminProtected.Use(app.authMiddleware)
+	adminProtected.Use(app.adminMiddleware)
+
 	adminProtected.Post("/ligacoes", app.createLigacao)
 	adminProtected.Delete("/ligacoes/:id", app.deleteLigacao)
 	adminProtected.Post("/ligacoes/:id/image", app.handleLigacaoImageUpload)
 
-	// Admin: Agenda
 	adminProtected.Post("/agenda/events", app.createAgendaEvent)
 	adminProtected.Delete("/agenda/events/:id", app.deleteAgendaEvent)
 
-	// Admin: Avaliações
 	adminProtected.Post("/avaliacoes", app.createAvaliacao)
 	adminProtected.Delete("/avaliacoes/:id", app.deleteAvaliacao)
 
-	// Admin: Contatos
 	adminProtected.Post("/contatos/admin-assign", app.handleAdminAssignContato)
 }
 
@@ -851,6 +806,36 @@ UPDATE auth.users
 SET raw_user_meta_data = raw_user_meta_data || '{"is_admin": false}'::jsonb
 WHERE email = 'email@kanban.local';
 */
+
+func (app *App) handleUpdateContatoAnotacao(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	contatoID := c.Params("id")
+
+	var payload struct {
+		Anotacao string `json:"anotacao"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Payload inválido"})
+	}
+
+	query := `
+        INSERT INTO contato_status (contato_id, status, anotacao, updated_by)
+        VALUES ($1, 'pendente', $2, $3)
+        ON CONFLICT (contato_id)
+        DO UPDATE SET
+            anotacao = EXCLUDED.anotacao,
+            updated_at = NOW(),
+            updated_by = EXCLUDED.updated_by
+    `
+	_, err := app.db.Exec(context.Background(), query, contatoID, payload.Anotacao, userID)
+	if err != nil {
+		log.Printf("Erro no auto-save da anotação para o contato %s: %v", contatoID, err)
+		return c.Status(500).JSON(fiber.Map{"error": "Falha ao salvar anotação"})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
 
 // endpoint users
 func (app *App) getUsers(c *fiber.Ctx) error {
@@ -923,46 +908,27 @@ func (app *App) handleAdminAssignContato(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "contato_id e assignee_id são obrigatórios"})
 	}
 
-	var userName, userAvatar sql.NullString
-	err := app.db.QueryRow(context.Background(),
-		"SELECT raw_user_meta_data->>'username', raw_user_meta_data->>'avatar_url' FROM auth.users WHERE id = $1",
-		payload.AssigneeID).Scan(&userName, &userAvatar)
-	if err != nil {
-		log.Printf("Aviso: não foi possível encontrar metadados para o assigneeID %s: %v", payload.AssigneeID, err)
-	}
-
 	updatedBy := c.Locals("userID").(string)
 
 	query := `
-        INSERT INTO contato_status (contato_id, status, updated_by, assigned_to, assigned_to_name, assigned_to_avatar)
-        VALUES ($1, 'pendente', $2, $3, $4, $5)
+        INSERT INTO contato_status (contato_id, status, updated_by, assigned_to)
+        VALUES ($1, 'pendente', $2, $3)
         ON CONFLICT (contato_id)
         DO UPDATE SET
             assigned_to = EXCLUDED.assigned_to,
-            assigned_to_name = EXCLUDED.assigned_to_name,
-            assigned_to_avatar = EXCLUDED.assigned_to_avatar,
             updated_at = NOW(),
             updated_by = EXCLUDED.updated_by
-        RETURNING id, status, anotacao, updated_at
     `
 
-	var returnedId int
-	var status string
-	var updatedAt time.Time
-	var anotacao sql.NullString
-
-	err = app.db.QueryRow(context.Background(), query, payload.ContatoID, updatedBy, payload.AssigneeID, userName.String, userAvatar.String).Scan(&returnedId, &status, &anotacao, &updatedAt)
+	_, err := app.db.Exec(context.Background(), query, payload.ContatoID, updatedBy, payload.AssigneeID)
 	if err != nil {
 		log.Printf("Erro ao fazer upsert para admin assumir contato: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao salvar a atribuição no banco de dados"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":             "success",
-		"assigned_to":        payload.AssigneeID,
-		"assigned_to_name":   userName.String,
-		"assigned_to_avatar": userAvatar.String,
-		"updated_at":         updatedAt,
+		"status":      "success",
+		"assigned_to": payload.AssigneeID,
 	})
 }
 
@@ -2246,7 +2212,7 @@ func main() {
 	fiberApp := fiber.New()
 	fiberApp.Use(logger.New(), recover.New())
 	fiberApp.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://10.0.30.251:10000, http://localhost:10001",
+		AllowOrigins:     "http://10.0.30.251:10000, http://localhost:10000",
 		AllowCredentials: true,
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",

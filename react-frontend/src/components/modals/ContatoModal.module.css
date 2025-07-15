@@ -12,17 +12,20 @@
     align-items: center;
     padding: 1rem;
     animation: modalFadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    /* Otimizações de performance */
     will-change: opacity;
     backface-visibility: hidden;
     transform: translateZ(0);
+}
+
+.modal.closing {
+    animation: modalFadeOut 0.3s ease-out forwards;
 }
 
 .modalContent {
     background: var(--bg-modal);
     border-radius: 12px;
     width: 100%;
-    max-width: 900px;
+    max-width: 1200px;
     max-height: 90vh;
     overflow: hidden;
     position: relative;
@@ -31,18 +34,21 @@
     animation: modalSlideIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
-    /* Otimizações de performance */
     will-change: transform, opacity;
     transform: translateZ(0);
     contain: layout style paint;
 }
+
+/* ... (O restante do CSS do modal, como .modalHeader, .modalBody, etc., permanece o mesmo) ... */
 
 .modalHeader {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-modal) 100%);
     flex-shrink: 0;
-    /* Otimização */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     contain: layout style;
 }
 
@@ -60,10 +66,28 @@
     color: var(--accent-blue);
 }
 
+.headerIndicators {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.dirtyIndicator {
+    color: #f59e0b;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.savingIndicator {
+    color: var(--accent-blue);
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .modalClose {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -76,7 +100,6 @@
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
     font-size: 0.8rem;
-    /* Otimização - reduzir transições custosas */
     will-change: background-color, color;
 }
 
@@ -88,41 +111,40 @@
 /* Layout do Corpo do Modal */
 .modalBody {
     display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
+    grid-template-columns: 400px 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    /* Otimização de scroll */
     -webkit-overflow-scrolling: touch;
     contain: layout style;
 }
 
-.infoAndActionsColumn {
+.clientInfoColumn {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    min-width: 260px;
+    gap: 1.5rem;
     contain: layout style;
 }
 
-.formSection {
+.commentsColumn {
     display: flex;
     flex-direction: column;
     min-height: 0;
     contain: layout style;
+    gap: 1rem;
 }
 
 .sectionTitle {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 0.75rem 0;
-    padding-bottom: 0.4rem;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -131,519 +153,494 @@
     font-size: 0.8rem;
 }
 
-/* Seção de Info do Cliente */
-.clientInfo, .technicalDetails {
+/* Seções de Informações */
+.clientInfo, .addressInfo, .contactInfo, .technicalDetails {
     background: var(--bg-secondary);
     border-radius: 10px;
     border: 1px solid var(--border-color);
-    padding: 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 1.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     contain: layout style paint;
 }
 
-.clientPrimaryInfo {
+.clientLoginContainer {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .clientLogin {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
 }
 
 .clientLogin strong {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: var(--text-primary);
     font-weight: 700;
 }
 
-.clientStatus {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 6px;
-    font-weight: 600;
+.assignedToIndicator {
     font-size: 0.75rem;
-    background-color: rgba(var(--status-color), 0.1);
-    color: var(--status-color);
-    border: 1px solid rgba(var(--status-color), 0.2);
-}
-
-.assigneeInfo {
-    margin-top: 0.75rem;
-}
-
-.assignedBadge, .unassignedBadge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: var(--accent-blue);
+    background-color: rgba(59, 130, 246, 0.1);
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    align-self: flex-start;
     font-weight: 500;
-    padding: 0.5rem 0.7rem;
-    border-radius: 6px;
-    width: 100%;
-    font-size: 0.75rem;
 }
 
-.assignedBadge {
-    color: var(--accent-green);
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.2);
+/* Endereço, Contatos, Detalhes Técnicos... */
+.addressGrid, .contactGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-.assignedBadge svg {
-    color: var(--accent-blue);
-}
-
-.unassignedBadge {
+.addressItem, .contactItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
 }
-
-.unassignedBadge svg {
+.addressItem svg, .contactItem svg {
     color: var(--accent-blue);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.addressItem strong, .contactItem strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+.addressItem span, .contactItem span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.addressNumber {
+    font-size: 0.8rem;
+    padding: 0,0rem 0.5rem;
+    border-radius: 4px;
+}
+.contactItem span {
+    font-family: 'JetBrains Mono', monospace;
 }
 
-/* Grid para Detalhes Técnicos */
 .detailsGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem;
+    gap: 0.75rem;
     contain: layout;
 }
-
 .detailItem {
     background: var(--bg-modal);
-    padding: 0.5rem 0.7rem;
+    padding: 0.75rem;
     border-radius: 6px;
     border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    min-height: 32px;
+    min-height: 40px;
     contain: layout style;
 }
+.detailItem svg { color: var(--accent-blue); font-size: 0.9rem; flex-shrink: 0; }
+.detailItem strong { color: var(--text-primary); font-weight: 600; margin-right: 0.25rem; }
+.detailItem span { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-primary); font-weight: 500; }
 
-.detailItem.fullWidth {
-    grid-column: 1 / -1;
+/* ===== NOVO CSS PARA A SEÇÃO DE COMENTÁRIOS (BASEADO NA IMAGEM) ===== */
+
+.commentsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Espaço entre "Tentativas" e "Resolução" */
+    height: 100%;
+    min-height: 0;
 }
 
-.detailItem svg {
-    color: var(--accent-blue);
-    font-size: 0.8rem;
-    flex-shrink: 0;
+.commentSection {
+    background: var(--bg-tertiary); /* Cor de fundo de toda a caixa */
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.detailItem strong {
-    color: var(--text-primary);
-    font-weight: 600;
-    margin-right: 0.2rem;
+.commentSectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--border-subtle);
 }
 
-.detailItem span {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
+.commentSectionHeader h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     color: var(--text-primary);
     font-weight: 500;
-}
-
-/* Estilos do Formulário */
-.formLabel {
-    display: block;
-    margin-bottom: 0.5rem;
     font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    margin: 0;
 }
 
-.formTextarea {
-    width: 100%;
-    padding: 0.75rem;
+.commentSectionHeader h4 svg {
+    color: var(--accent-blue);
+    width: 16px;
+}
+
+.addCommentBtn {
     background: var(--bg-tertiary);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addCommentBtn:hover {
+    background: var(--accent-blue);
+    color: white;
+    transform: scale(1.05);
+}
+
+.commentList {
+    padding: 1rem;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.noCommentsMessage {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     flex-grow: 1;
-    resize: none;
-    font-family: inherit;
-    line-height: 1.5;
-    min-height: 150px;
-    /* Otimização */
-    will-change: border-color, box-shadow;
 }
 
-.formTextarea:focus {
-    outline: none;
+.comment {
+    display: flex; /* Alterado para alinhar avatar e corpo do comentário */
+    align-items: flex-start; /* Alinha o avatar no topo */
+    gap: 1rem; /* Espaço entre o avatar e o conteúdo */
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 1rem;
+    position: relative;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.comment:hover {
     border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-.textareaFooter {
+.commentText {
+    color: var(--text-primary);
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.commentBody {
+    flex-grow: 1; /* Permite que o corpo do comentário ocupe o espaço restante */
+}
+
+.commentHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 0.4rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
-.helpText {
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-    font-style: italic;
-}
-
-.characterCount {
-    font-size: 0.7rem;
+.commentAuthor {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 500;
-    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
 }
 
-/* Seção de Atribuição e Footer */
-.adminAssignSectionHorizontal {
-    margin: 0;
+.commentTimestamp {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+
+/* === CORREÇÃO DO AVATAR === */
+.commentAvatar {
+    width: 32px;  /* Tamanho da div pai */
+    height: 32px; /* Tamanho da div pai */
+    border-radius: 50%;
+    background-color: var(--bg-tertiary);
+    flex-shrink: 0;
+    overflow: hidden; /* Garante que a imagem não saia do círculo */
+}
+
+/* Regra para a IMAGEM dentro do avatar */
+.commentAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Essencial: redimensiona a imagem para cobrir o espaço, mantendo a proporção */
+}
+
+/* Regra para a INICIAL (fallback) dentro do avatar */
+.commentAvatarInitial {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+/* === FIM DA CORREÇÃO === */
+
+
+.commentItemActions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.comment:hover .commentItemActions {
+    opacity: 1;
+}
+
+.editCommentBtn,
+.deleteCommentBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+.editCommentBtn:hover { color: var(--accent-blue); }
+.deleteCommentBtn:hover { color: var(--accent-red); }
+
+/* Área de edição/adição de comentário */
+.commentEditContainer {
+    padding: 1rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-modal);
+}
+
+.commentEditTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    resize: vertical;
+    margin-bottom: 1rem;
+    font-family: inherit;
+    min-height: 80px;
+}
+
+.commentEditTextarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.commentActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btnSave {
+    background: var(--gradient-success);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+.btnSave:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3);
+}
+
+.btnCancelEdit {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnCancelEdit:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+
+/* ===== FIM DA SEÇÃO DE COMENTÁRIOS ===== */
+
+
+/* Seção de Atribuição Admin */
+.adminAssignSection {
     padding: 1rem 1.5rem;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
-    contain: layout style;
 }
 
-.adminAssignSectionHorizontal .assigneeTitle {
-    margin: 0 0 0.6rem 0;
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: flex;  
+.assigneeTitle {
+    display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
 }
 
-.adminAssignSectionHorizontal .assigneeTitle svg {
+.assigneeTitle svg {
     color: var(--accent-blue);
 }
 
+/* Rodapé do Modal */
 .modalFooter {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
     background: var(--bg-modal);
     flex-shrink: 0;
-    contain: layout style;
-}
-
-.footerActions {
-    display: flex;
-    justify-content: flex-end;
-    width: 100%;
 }
 
 .statusButtons {
     display: flex;
-    gap: 0.6rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
+/* Botões */
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.6rem 1rem;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
     border: none;
     border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    min-height: 34px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-height: 40px;
     white-space: nowrap;
-    /* Otimização - menos propriedades na transição */
     will-change: transform;
 }
 
 .btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .btn svg {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
 }
 
-.btnPrimary { 
-    background: var(--gradient-primary); 
-    color: white; 
+.btnPrimary { background: var(--gradient-primary); color: white; }
+.btnPrimaryButton { background: var(--gradient-success); color: white; box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3); }
+.btnSecondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.btnSecondary:hover { border-color: var(--accent-blue); }
+.btnDanger { background: var(--gradient-danger); color: white; }
+.btnCancel { background-color: #800020; color: white; }
+.btnCancel:hover { background-color: #9a0027; }
+
+/* Animações */
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalSlideIn {
+    from { transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); opacity: 0; }
+    to { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); opacity: 1; }
 }
 
-.btnPrimaryButton { 
-background: var(--gradient-success); color: white; box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3);
+.closing { animation: modalFadeOut 0.25s ease-out forwards; }
+.closing .modalContent { animation: modalSlideOut 0.25s ease-out forwards; }
+
+@keyframes modalFadeOut { to { opacity: 0; } }
+@keyframes modalSlideOut {
+    to { transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); opacity: 0; }
 }
 
-.btnSecondary { 
-    background: var(--bg-tertiary); 
-    color: var(--text-primary); 
-    border: 1px solid var(--border-color); 
-}
-
-.btnSecondary:hover { 
-    border-color: var(--accent-blue); 
-}
-
-.btnDanger { 
-    background: var(--gradient-danger); 
-    color: white; 
-}
-
-.changesAlert, .submittingIndicator {
-    margin-top: 0.75rem;
-    padding: 0.7rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    text-align: center;
-    width: 100%;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-}
-
-.changesAlert {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-.changesAlert svg {
-    color: #f59e0b;
-}
-
-.submittingIndicator {
-    color: var(--accent-blue);
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.submittingIndicator svg {
-    color: var(--accent-blue);
-}
-
-/* Animações Otimizadas */
-@keyframes modalFadeIn { 
-    from { opacity: 0; } 
-    to { opacity: 1; } 
-}
-
-@keyframes modalSlideIn { 
-    from { transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); opacity: 0; } 
-    to { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); opacity: 1; } 
-}
-
-.closing { 
-    animation: modalFadeOut 0.25s ease-out forwards; 
-}
-
-.closing .modalContent { 
-    animation: modalSlideOut 0.25s ease-out forwards; 
-}
-
-@keyframes modalFadeOut { 
-    to { opacity: 0; } 
-}
-
-@keyframes modalSlideOut { 
-    to { transform: translate3d(0, 20px, 0) scale3d(0.98, 0.98, 1); opacity: 0; } 
-}
+.fa-spin { animation: fa-spin 1s infinite linear; }
+@keyframes fa-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* Responsividade */
+@media (max-width: 1400px) {
+    .modalContent { max-width: 1000px; }
+    .modalBody { grid-template-columns: 350px 1fr; gap: 1.5rem; }
+}
 @media (max-width: 1200px) {
-    .modalContent {
-        max-width: 800px;
-    }
-    
-    .modalBody {
-        gap: 1.25rem;
-        padding: 1rem 1.25rem;
-    }
+    .modalContent { max-width: 900px; }
+    .modalBody { grid-template-columns: 320px 1fr; gap: 1.25rem; }
 }
-
 @media (max-width: 992px) {
-    .modalBody {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        padding: 1rem;
-        overflow-y: auto;
-    }
-    
-    .modalHeader, .modalFooter, .adminAssignSectionHorizontal {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    .infoAndActionsColumn {
-        min-width: unset;
-    }
-    
-    .footerActions {
-        justify-content: center;
-    }
-    
-    .statusButtons {
-        width: 100%;
-        flex-direction: column;
-    }
-    
-    .btn {
-        width: 100%;
-        justify-content: center;
-    }
+    .modalBody { grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
+    .clientInfoColumn { order: 2; }
+    .commentsColumn { order: 1; }
+    .statusButtons { justify-content: center; width: 100%; }
+    .btn { flex: 1; min-width: 140px; }
 }
-
-@media (max-width: 640px) {
-    .modal {
-        padding: 0.5rem;
-    }
-    
-    .modalContent {
-        max-height: 95vh;
-    }
-    
-    .modalHeader, .modalFooter, .adminAssignSectionHorizontal {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-    }
-    
-    .modalBody {
-        padding: 0.75rem;
-    }
-    
-    .modalHeader h2 {
-        font-size: 1rem;
-    }
-    
-    .detailsGrid {
-        grid-template-columns: 1fr;
-    }
-    
-    .clientPrimaryInfo {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
+@media (max-width: 768px) {
+    .modal { padding: 0.5rem; }
+    .modalContent { max-height: 95vh; }
+    .modalHeader, .modalBody, .modalFooter { padding: 1rem; }
+    .statusButtons { flex-direction: column; gap: 0.5rem; }
+    .btn { width: 100%; justify-content: center; }
+    .detailsGrid { grid-template-columns: 1fr; }
 }
-
-/* =================================== */
-/* MEDIA QUERIES ADICIONAIS (Mobile)   */
-/* =================================== */
-
 @media (max-width: 480px) {
-    .modal {
-        padding: 0;
-    }
-
-    .modalContent {
-        max-width: 100%;
-        height: 100%;
-        max-height: 100vh;
-        border-radius: 0;
-    }
-
-    .modalHeader {
-        padding: 0.75rem 1rem;
-    }
-
-    .modalClose {
-        width: 28px;
-        height: 28px;
-        top: 0.75rem;
-        right: 0.75rem;
-    }
-
-    .modalBody {
-        padding: 0.75rem;
-    }
-
-    .detailsGrid {
-        grid-template-columns: 1fr;
-    }
-
-    .clientInfo, .technicalDetails {
-        padding: 0.75rem;
-    }
-    
-    .statusButtons {
-        gap: 0.5rem;
-    }
-
-    .btn {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.7rem;
-    }
+    .modal { padding: 0; }
+    .modalContent { max-width: 100%; height: 100%; max-height: 100vh; border-radius: 0; }
+    .modalHeader, .modalBody, .modalFooter { padding: 0.75rem; }
+    .modalClose { width: 28px; height: 28px; }
+    .clientInfo, .addressInfo, .contactInfo, .technicalDetails { padding: 1rem; }
+    .btn { padding: 0.6rem 0.75rem; font-size: 0.8rem; }
 }
 
-.assigneeAvatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    border: 2px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    flex-shrink: 0;
-    contain: layout style paint;
-}
-
-.assigneeAvatarImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.assigneeAvatarInitial {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.assigneeText {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-}
-
-.assigneeText strong {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.footerActions {
-    display: flex;
-    justify-content: space-between; 
-    align-items: center; 
-    width: 100%;
-}
-
-.leftActions {
-}
-
-.statusButtons {
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-}
-
-.assignButton { 
-    background: var(--gradient-primary); 
-    color: white; 
-}

@@ -175,7 +175,7 @@ export function AgendaPage() {
                                                 <div key={event.id} className={styles.agendaEventItem} style={{ backgroundColor: event.color ? `${event.color}BF` : 'var(--accent-blue)', borderColor: event.color || 'var(--accent-blue)' }} onClick={() => handleEditEvent(event)} title={`${event.title}${event.description ? ' - ' + event.description : ''}`}>
                                                     <div className={styles.agendaEventContent}>
                                                         <i className={`fas fa-circle ${styles.agendaEventDot}`} style={{ color: event.color || 'var(--text-primary)' }}></i>
-                                                        <span className={styles.agendaEventTitle}>{truncateText(event.title, 21)}</span>
+                                                        <span className={styles.agendaEventTitle}>{truncateText(event.title, 24)}</span>
                                                     </div>
                                                     {user?.user_metadata?.is_admin && (
                                                         <button className={styles.agendaDeleteEventBtn} onClick={(e) => handleDeleteEvent(e, event.id)} title="Excluir evento"><i className="fas fa-times"></i></button>

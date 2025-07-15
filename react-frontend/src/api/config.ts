@@ -12,7 +12,7 @@ export const userDisplayNameMap: Record<string, string> = {
 export const userDisplayNameModalMap: Record<string, string> = {
     'eduardo@kanban.local': 'Eduardo', 'alison@kanban.local': 'Alison',
     'marques@kanban.local': 'Marques', 'rosa@kanban.local': 'Rosa',
-    'miyake@kanban.local': 'Miyake', 'gomes@kanban.local': 'Gomes',
+    'miyake@kanban.local': 'Miyake', 'gomes@kanban.local': 'J. Gomes',
     'rodrigo@kanban.local': 'Rodrigo', 'rubens@kanban.local': 'Rubens',
     'kaiky@kanban.local': 'Kaiky', 'pedro@kanban.local': 'Pedro',
     'diego@kanban.local': 'Diego', 'cesar@kanban.local': 'César',

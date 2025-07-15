@@ -1,0 +1,192 @@
+[
+  {
+    "id": "101",
+    "olt": "OLT_SP_CENTRO_01",
+    "login": "joao_silva",
+    "ponid": "0/1/5",
+    "mac": " ",
+    "rx": -22.45,
+    "tx": -31.80,
+    "endereco": {
+      "rua": "Rua das Acácias",
+      "numero": "854",
+      "bairro": "Jardim das Flores"
+    },
+    "contatos": {
+      "celular": "(11) 98123-4567",
+      "whatsapp": "(11) 98123-4567",
+      "fone": "(11) 4123-7890"
+    }
+  },
+  {
+    "id": "215",
+    "olt": "OLT_OSASCO_02",
+    "login": "maria_santos",
+    "ponid": "0/8/11",
+    "mac": " ",
+    "rx": -28.15,
+    "tx": -33.10,
+    "endereco": {
+      "rua": "Avenida Brasil",
+      "numero": "1234",
+      "bairro": "Vila Yara"
+    },
+    "contatos": {
+      "celular": "(11) 98876-5432",
+      "whatsapp": "(11) 98876-5432",
+      "fone": "(11) 3685-1234"
+    }
+  },
+  {
+    "id": "332",
+    "olt": "OLT_BARUERI_01",
+    "login": "user9982",
+    "ponid": "0/4/2",
+    "mac": " ",
+    "rx": -25.05,
+    "tx": -32.50,
+    "endereco": {
+      "rua": "Alameda Rio Negro",
+      "numero": "500",
+      "bairro": "Alphaville"
+    },
+    "contatos": {
+      "celular": "(11) 97765-4321",
+      "whatsapp": "(11) 97765-4321",
+      "fone": "(11) 4195-6789"
+    }
+  },
+  {
+    "id": "450",
+    "olt": "OLT_SP_ZONA_SUL_03",
+    "login": "ana_pereira",
+    "ponid": "0/11/1",
+    "mac": " ",
+    "rx": -21.90,
+    "tx": -30.55,
+    "endereco": {
+      "rua": "Travessa dos Coqueiros",
+      "numero": "78",
+      "bairro": "Santo Amaro"
+    },
+    "contatos": {
+      "celular": "(11) 96543-2109",
+      "whatsapp": "(11) 96543-2109",
+      "fone": "(11) 5523-9876"
+    }
+  },
+  {
+    "id": "512",
+    "olt": "OLT_SP_CENTRO_01",
+    "login": "carlos_souza",
+    "ponid": "0/2/9",
+    "mac": " ",
+    "rx": -29.50,
+    "tx": -34.00,
+    "endereco": {
+      "rua": "Rua Sete de Setembro",
+      "numero": "199",
+      "bairro": "Liberdade"
+    },
+    "contatos": {
+      "celular": "(11) 95432-1098",
+      "whatsapp": "(11) 95432-1098",
+      "fone": "(11) 3105-4321"
+    }
+  },
+  {
+    "id": "678",
+    "olt": "OLT_OSASCO_02",
+    "login": "2023_user",
+    "ponid": "0/9/15",
+    "mac": " ",
+    "rx": -23.88,
+    "tx": -31.20,
+    "endereco": {
+      "rua": "Praça das Estrelas",
+      "numero": "33",
+      "bairro": "Bela Vista"
+    },
+    "contatos": {
+      "celular": "(11) 98210-9876",
+      "whatsapp": "(11) 98210-9876",
+      "fone": "(11) 3601-5432"
+    }
+  },
+  {
+    "id": "711",
+    "olt": "OLT_BARUERI_01",
+    "login": "fernanda_costa",
+    "ponid": "0/6/7",
+    "mac": " ",
+    "rx": -26.75,
+    "tx": -32.90,
+    "endereco": {
+      "rua": "Avenida das Nações",
+      "numero": "2045",
+      "bairro": "Jardim Silveira"
+    },
+    "contatos": {
+      "celular": "(11) 97123-4501",
+      "whatsapp": "(11) 97123-4501",
+      "fone": "(11) 4163-8765"
+    }
+  },
+  {
+    "id": "845",
+    "olt": "OLT_SP_ZONA_SUL_03",
+    "login": "roberto_alves",
+    "ponid": "0/14/0",
+    "mac": " ",
+    "rx": -20.50,
+    "tx": -30.15,
+    "endereco": {
+      "rua": "Rua dos Girassóis",
+      "numero": "555",
+      "bairro": "Moema"
+    },
+    "contatos": {
+      "celular": "(11) 99345-6789",
+      "whatsapp": "(11) 99345-6789",
+      "fone": "(11) 5051-2345"
+    }
+  },
+  {
+    "id": "902",
+    "olt": "OLT_SP_CENTRO_01",
+    "login": "lucia_gomes",
+    "ponid": "0/3/12",
+    "mac": " ",
+    "rx": -27.30,
+    "tx": -33.45,
+    "endereco": {
+      "rua": "Rua da Consolação",
+      "numero": "2200",
+      "bairro": "Higienópolis"
+    },
+    "contatos": {
+      "celular": "(11) 98456-7890",
+      "whatsapp": "(11) 98456-7890",
+      "fone": "(11) 3255-6789"
+    }
+  },
+  {
+    "id": "998",
+    "olt": "OLT_OSASCO_02",
+    "login": "antonio_lima",
+    "ponid": "0/10/3",
+    "mac": " ",
+    "rx": -24.10,
+    "tx": -31.95,
+    "endereco": {
+      "rua": "Avenida dos Autonomistas",
+      "numero": "4500",
+      "bairro": "Centro"
+    },
+    "contatos": {
+      "celular": "(11) 97567-8901",
+      "whatsapp": "(11) 97567-8901",
+      "fone": "(11) 3688-9012"
+    }
+  }
+]
